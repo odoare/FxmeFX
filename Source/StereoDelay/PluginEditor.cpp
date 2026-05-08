@@ -17,7 +17,7 @@ FxmeStereoDelayAudioProcessorEditor::FxmeStereoDelayAudioProcessorEditor (FxmeSt
     addAndMakeVisible (stereoDelayComponent);
     setResizable (true, true);
     setResizeLimits (500, 350, 1800, 1300);
-    setSize (760, 520);
+    setSize (600, 300);
 }
 
 FxmeStereoDelayAudioProcessorEditor::~FxmeStereoDelayAudioProcessorEditor() = default;

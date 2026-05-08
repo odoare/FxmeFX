@@ -15,7 +15,7 @@ drum kits).
 | FxmeCompressor   | `COMP`      | Compressor with peak/RMS detector, three release modes (Linear / Opto / Vintage), soft-knee and gain-reduction meter. |
 | FxmeEqualizer    | `EQUL`      | 5-band parametric EQ. Each band switches between Lowpass, Highpass, Peak, Low Shelf and High Shelf, with an interactive frequency-response graph. |
 | FxmeTube         | `TUBE`      | Valve / tube saturation with four models (Standard, Dynamic, Triode, Class-AB), bias, tone and power-supply sag. |
-| FxmeTransient    | `TRNS`      | SPL-style transient designer using the Differential Envelope Technique — independent attack and sustain shaping. |
+| FxmeTransient    | `TRNS`      | SPL-style transient designer using the Differential Envelope Technique - independent attack and sustain shaping. |
 | FxmeStereoDelay  | `SDEL`      | Tempo-synced stereo delay with cross-feedback and a state-variable lowpass in the feedback path. |
 | FxmeConvolReverb | `CREV`      | Convolution reverb (WDL engine) with six embedded impulse responses, length / shape / start-offset shaping, plus an "External…" slot for loading a user IR. |
 
@@ -120,6 +120,12 @@ git push origin v0.1.0
 
 ## License
 
-MIT — see individual source headers and the [WDL](WDL/) and
-[FxmeJuceTools](https://github.com/odoare/FxmeJuceTools) license terms for
-their respective vendored / external code.
+FxmeFX is released under the **GNU Lesser General Public License, version 3**
+(LGPL-3.0) - see [LICENSE](LICENSE).
+
+Vendored / external code keeps its own terms:
+
+- [WDL](WDL/) - zlib-style license (see `WDL/WDL/LICENSE.md`).
+- [JUCE](https://juce.com/) - used per its end-user license; the GPL build is
+  the one exercised here.
+- [FxmeJuceTools](https://github.com/odoare/FxmeJuceTools) - MIT.

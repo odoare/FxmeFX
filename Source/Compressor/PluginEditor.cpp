@@ -17,7 +17,7 @@ FxmeCompressorAudioProcessorEditor::FxmeCompressorAudioProcessorEditor (FxmeComp
     addAndMakeVisible (compressorComponent);
     setResizable (true, true);
     setResizeLimits (400, 300, 1600, 1200);
-    setSize (640, 480);
+    setSize (600, 300);
 }
 
 FxmeCompressorAudioProcessorEditor::~FxmeCompressorAudioProcessorEditor()

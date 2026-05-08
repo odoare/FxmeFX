@@ -17,7 +17,7 @@ FxmeEqualizerAudioProcessorEditor::FxmeEqualizerAudioProcessorEditor (FxmeEquali
     addAndMakeVisible (equalizerComponent);
     setResizable (true, true);
     setResizeLimits (600, 360, 2000, 1400);
-    setSize (900, 540);
+    setSize (600, 700);
 }
 
 FxmeEqualizerAudioProcessorEditor::~FxmeEqualizerAudioProcessorEditor() = default;
