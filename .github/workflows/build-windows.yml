@@ -1,0 +1,50 @@
+name: Build Windows
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout FxmeFX
+        uses: actions/checkout@v4
+        with:
+          path: FxmeFX
+          submodules: recursive
+
+      - name: Checkout JUCE
+        uses: actions/checkout@v4
+        with:
+          repository: juce-framework/JUCE
+          ref: 8.0.12
+          path: JUCE
+
+      - name: Checkout FxmeJuceTools
+        uses: actions/checkout@v4
+        with:
+          repository: odoare/FxmeJuceTools
+          path: _fxme_tmp
+
+      - name: Install FxmeJuceTools module
+        shell: bash
+        run: |
+          mkdir -p JUCE/usermodules
+          mv _fxme_tmp/module/FxmeJuceTools JUCE/usermodules/FxmeJuceTools
+
+      - name: Configure
+        run: cmake -B FxmeFX/build -S FxmeFX -G "Visual Studio 17 2022"
+
+      - name: Build
+        run: cmake --build FxmeFX/build --config Release --parallel
+
+      - name: Upload VST3 artefacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: FxmeFX-VST3-Windows-x86_64
+          path: FxmeFX/build/Source/*/Fxme*_artefacts/Release/VST3/

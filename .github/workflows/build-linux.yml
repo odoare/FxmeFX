@@ -1,0 +1,65 @@
+name: Build Linux
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - runner: ubuntu-latest
+            arch: x86_64
+          - runner: ubuntu-24.04-arm
+            arch: arm64
+
+    runs-on: ${{ matrix.runner }}
+    name: Linux ${{ matrix.arch }}
+
+    steps:
+      - name: Install system dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y \
+            libasound2-dev libx11-dev libxrandr-dev libxinerama-dev \
+            libxcursor-dev libfreetype-dev libfontconfig1-dev libgl1-mesa-dev
+
+      - name: Checkout FxmeFX
+        uses: actions/checkout@v4
+        with:
+          path: FxmeFX
+          submodules: recursive
+
+      - name: Checkout JUCE
+        uses: actions/checkout@v4
+        with:
+          repository: juce-framework/JUCE
+          ref: 8.0.12
+          path: JUCE
+
+      - name: Checkout FxmeJuceTools
+        uses: actions/checkout@v4
+        with:
+          repository: odoare/FxmeJuceTools
+          path: _fxme_tmp
+
+      - name: Install FxmeJuceTools module
+        run: |
+          mkdir -p JUCE/usermodules
+          mv _fxme_tmp/module/FxmeJuceTools JUCE/usermodules/FxmeJuceTools
+
+      - name: Configure
+        run: cmake -B FxmeFX/build -S FxmeFX -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build FxmeFX/build --config Release --parallel
+
+      - name: Upload VST3 artefacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: FxmeFX-VST3-Linux-${{ matrix.arch }}
+          path: FxmeFX/build/Source/*/Fxme*_artefacts/Release/VST3/

@@ -1,0 +1,60 @@
+name: Build macOS Universal
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-14  # Apple Silicon — Clang cross-compiles x86_64 too
+
+    steps:
+      - name: Checkout FxmeFX
+        uses: actions/checkout@v4
+        with:
+          path: FxmeFX
+          submodules: recursive
+
+      - name: Checkout JUCE
+        uses: actions/checkout@v4
+        with:
+          repository: juce-framework/JUCE
+          # Pin to a specific JUCE release for reproducible builds.
+          ref: 8.0.12
+          path: JUCE
+
+      - name: Checkout FxmeJuceTools
+        uses: actions/checkout@v4
+        with:
+          repository: odoare/FxmeJuceTools
+          path: _fxme_tmp
+
+      - name: Install FxmeJuceTools module
+        run: |
+          mkdir -p JUCE/usermodules
+          mv _fxme_tmp/module/FxmeJuceTools JUCE/usermodules/FxmeJuceTools
+
+      - name: Configure CMake
+        run: cmake -B FxmeFX/build -S FxmeFX -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build FxmeFX/build --config Release
+
+      - name: Verify a universal binary
+        run: |
+          lipo -info "FxmeFX/build/Source/Compressor/FxmeCompressor_artefacts/Release/VST3/FxmeCompressor.vst3/Contents/MacOS/FxmeCompressor"
+
+      - name: Upload VST3 artefacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: FxmeFX-VST3-macOS-universal
+          path: FxmeFX/build/Source/*/Fxme*_artefacts/Release/VST3/
+
+      - name: Upload AU artefacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: FxmeFX-AU-macOS-universal
+          path: FxmeFX/build/Source/*/Fxme*_artefacts/Release/AU/

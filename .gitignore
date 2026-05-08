@@ -1,0 +1,17 @@
+# CMake build trees
+build/
+**/build/
+
+# Projucer-generated build trees
+Builds/
+
+# IDE / editor scratch
+.vscode/
+.idea/
+.cache/
+*.swp
+*~
+
+# macOS / Windows
+.DS_Store
+Thumbs.db
