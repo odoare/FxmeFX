@@ -41,7 +41,10 @@ jobs:
         run: cmake -B FxmeFX/build -S FxmeFX -DCMAKE_BUILD_TYPE=Release
 
       - name: Build
-        run: cmake --build FxmeFX/build --config Release
+        # --parallel 2: see note in build-linux.yml — six plugins + LTO + a
+        # universal build is heavy; cap parallelism to stay under the runner's
+        # memory budget.
+        run: cmake --build FxmeFX/build --config Release --parallel 2
 
       - name: Verify a universal binary
         run: |

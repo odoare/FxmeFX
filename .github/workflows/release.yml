@@ -43,7 +43,7 @@ jobs:
       - name: Configure & Build
         run: |
           cmake -B FxmeFX/build -S FxmeFX -DCMAKE_BUILD_TYPE=Release
-          cmake --build FxmeFX/build --config Release --parallel
+          cmake --build FxmeFX/build --config Release --parallel 2
 
       - name: Package
         shell: bash
@@ -95,7 +95,7 @@ jobs:
       - name: Configure & Build
         run: |
           cmake -B FxmeFX/build -S FxmeFX -DCMAKE_BUILD_TYPE=Release
-          cmake --build FxmeFX/build --config Release --parallel
+          cmake --build FxmeFX/build --config Release --parallel 2
 
       - name: Package
         shell: bash
@@ -140,7 +140,7 @@ jobs:
       - name: Configure & Build
         run: |
           cmake -B FxmeFX/build -S FxmeFX -G "Visual Studio 17 2022"
-          cmake --build FxmeFX/build --config Release --parallel
+          cmake --build FxmeFX/build --config Release --parallel 2
 
       - name: Package
         shell: bash
@@ -186,7 +186,7 @@ jobs:
       - name: Configure & Build
         run: |
           cmake -B FxmeFX/build -S FxmeFX -DCMAKE_BUILD_TYPE=Release
-          cmake --build FxmeFX/build --config Release --parallel
+          cmake --build FxmeFX/build --config Release --parallel 2
 
       - name: Verify a universal binary
         run: |

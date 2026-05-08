@@ -56,7 +56,10 @@ jobs:
         run: cmake -B FxmeFX/build -S FxmeFX -DCMAKE_BUILD_TYPE=Release
 
       - name: Build
-        run: cmake --build FxmeFX/build --config Release --parallel
+        # --parallel 2: building all six plugins together pulls in the full
+        # JUCE module set per plugin and LTOs every link. Unlimited parallelism
+        # OOM-kills the runner.
+        run: cmake --build FxmeFX/build --config Release --parallel 2
 
       - name: Upload VST3 artefacts
         uses: actions/upload-artifact@v4
