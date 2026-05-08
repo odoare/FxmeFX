@@ -10,6 +10,9 @@ on:
 jobs:
   build:
     strategy:
+      # Don't cancel the other architecture when one fails; we want to see
+      # both logs independently.
+      fail-fast: false
       matrix:
         include:
           - runner: ubuntu-latest
@@ -55,11 +58,18 @@ jobs:
       - name: Configure
         run: cmake -B FxmeFX/build -S FxmeFX -DCMAKE_BUILD_TYPE=Release
 
-      - name: Build
-        # --parallel 2: building all six plugins together pulls in the full
-        # JUCE module set per plugin and LTOs every link. Unlimited parallelism
-        # OOM-kills the runner.
-        run: cmake --build FxmeFX/build --config Release --parallel 2
+      - name: Build (one plugin at a time)
+        # Build each plugin sequentially. Building all six together pulls in
+        # the full JUCE module set per plugin (six independent translation
+        # units) plus an LTO link each, which can OOM-kill the runner; doing
+        # them one-at-a-time keeps peak memory bounded by a single plugin's
+        # build.
+        run: |
+          for plugin in Compressor Equalizer Tube Transient StereoDelay ConvolReverb; do
+            echo "::group::Build Fxme${plugin}"
+            cmake --build FxmeFX/build --config Release --target "Fxme${plugin}_All" --parallel 2
+            echo "::endgroup::"
+          done
 
       - name: Upload VST3 artefacts
         uses: actions/upload-artifact@v4

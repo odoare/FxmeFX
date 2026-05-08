@@ -40,10 +40,16 @@ jobs:
           mkdir -p JUCE/usermodules
           mv _fxme_tmp/module/FxmeJuceTools JUCE/usermodules/FxmeJuceTools
 
-      - name: Configure & Build
+      - name: Configure
+        run: cmake -B FxmeFX/build -S FxmeFX -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build (one plugin at a time)
         run: |
-          cmake -B FxmeFX/build -S FxmeFX -DCMAKE_BUILD_TYPE=Release
-          cmake --build FxmeFX/build --config Release --parallel 2
+          for plugin in Compressor Equalizer Tube Transient StereoDelay ConvolReverb; do
+            echo "::group::Build Fxme${plugin}"
+            cmake --build FxmeFX/build --config Release --target "Fxme${plugin}_All" --parallel 2
+            echo "::endgroup::"
+          done
 
       - name: Package
         shell: bash
@@ -92,10 +98,16 @@ jobs:
           mkdir -p JUCE/usermodules
           mv _fxme_tmp/module/FxmeJuceTools JUCE/usermodules/FxmeJuceTools
 
-      - name: Configure & Build
+      - name: Configure
+        run: cmake -B FxmeFX/build -S FxmeFX -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build (one plugin at a time)
         run: |
-          cmake -B FxmeFX/build -S FxmeFX -DCMAKE_BUILD_TYPE=Release
-          cmake --build FxmeFX/build --config Release --parallel 2
+          for plugin in Compressor Equalizer Tube Transient StereoDelay ConvolReverb; do
+            echo "::group::Build Fxme${plugin}"
+            cmake --build FxmeFX/build --config Release --target "Fxme${plugin}_All" --parallel 2
+            echo "::endgroup::"
+          done
 
       - name: Package
         shell: bash
@@ -137,10 +149,18 @@ jobs:
           mkdir -p JUCE/usermodules
           mv _fxme_tmp/module/FxmeJuceTools JUCE/usermodules/FxmeJuceTools
 
-      - name: Configure & Build
+      - name: Configure
+        run: cmake -B FxmeFX/build -S FxmeFX -G "Visual Studio 17 2022"
+
+      - name: Build (one plugin at a time)
+        shell: pwsh
         run: |
-          cmake -B FxmeFX/build -S FxmeFX -G "Visual Studio 17 2022"
-          cmake --build FxmeFX/build --config Release --parallel 2
+          foreach ($plugin in 'Compressor','Equalizer','Tube','Transient','StereoDelay','ConvolReverb') {
+            Write-Host "::group::Build Fxme$plugin"
+            cmake --build FxmeFX/build --config Release --target "Fxme${plugin}_All" --parallel 2
+            if ($LASTEXITCODE -ne 0) { throw "Build of Fxme$plugin failed" }
+            Write-Host "::endgroup::"
+          }
 
       - name: Package
         shell: bash
@@ -183,10 +203,16 @@ jobs:
           mkdir -p JUCE/usermodules
           mv _fxme_tmp/module/FxmeJuceTools JUCE/usermodules/FxmeJuceTools
 
-      - name: Configure & Build
+      - name: Configure
+        run: cmake -B FxmeFX/build -S FxmeFX -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build (one plugin at a time)
         run: |
-          cmake -B FxmeFX/build -S FxmeFX -DCMAKE_BUILD_TYPE=Release
-          cmake --build FxmeFX/build --config Release --parallel 2
+          for plugin in Compressor Equalizer Tube Transient StereoDelay ConvolReverb; do
+            echo "::group::Build Fxme${plugin}"
+            cmake --build FxmeFX/build --config Release --target "Fxme${plugin}_All" --parallel 2
+            echo "::endgroup::"
+          done
 
       - name: Verify a universal binary
         run: |
