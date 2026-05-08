@@ -28,6 +28,7 @@ set(_all_plugins
     Transient
     StereoDelay
     ConvolReverb
+    Cabinet
 )
 
 if(PLUGIN STREQUAL "")

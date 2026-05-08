@@ -18,6 +18,7 @@ drum kits).
 | FxmeTransient    | `TRNS`      | SPL-style transient designer using the Differential Envelope Technique - independent attack and sustain shaping. |
 | FxmeStereoDelay  | `SDEL`      | Tempo-synced stereo delay with cross-feedback and a state-variable lowpass in the feedback path. |
 | FxmeConvolReverb | `CREV`      | Convolution reverb (WDL engine) with six embedded impulse responses, length / shape / start-offset shaping, plus an "External…" slot for loading a user IR. |
+| FxmeCabinet      | `CABN`      | Stereo cabinet/IR loader. Two independent mono-IR slots (one per output channel), 19 embedded cabinet IRs, output gain. |
 
 All plugins build as **VST3**, **AU** (macOS) and a **Standalone** application.
 
@@ -36,6 +37,8 @@ FxmeFX/
 │   ├── StereoDelay/
 │   ├── ConvolReverb/
 │   │   └── ir/                 # built-in impulse responses (embedded as binary data)
+│   ├── Cabinet/
+│   │   └── IR/                 # built-in cabinet impulse responses (embedded as binary data)
 │   └── VuMeter/                # shared VU-meter DSP + component
 ├── WDL/                        # WDL submodule (FFT, convolution engine, resampler)
 └── .github/workflows/          # CI: per-OS builds + tag-driven release
@@ -93,7 +96,7 @@ cmake --build build --parallel
 ```
 
 `PLUGIN` accepts: `Compressor`, `Equalizer`, `Tube`, `Transient`,
-`StereoDelay`, `ConvolReverb`.
+`StereoDelay`, `ConvolReverb`, `Cabinet`.
 
 ### A single plugin standalone
 
