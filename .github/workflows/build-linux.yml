@@ -9,19 +9,8 @@ on:
 
 jobs:
   build:
-    strategy:
-      # Don't cancel the other architecture when one fails; we want to see
-      # both logs independently.
-      fail-fast: false
-      matrix:
-        include:
-          - runner: ubuntu-latest
-            arch: x86_64
-          - runner: ubuntu-24.04-arm
-            arch: arm64
-
-    runs-on: ${{ matrix.runner }}
-    name: Linux ${{ matrix.arch }}
+    runs-on: ubuntu-latest
+    name: Linux x86_64
 
     steps:
       - name: Install system dependencies
@@ -74,5 +63,5 @@ jobs:
       - name: Upload VST3 artefacts
         uses: actions/upload-artifact@v4
         with:
-          name: FxmeFX-VST3-Linux-${{ matrix.arch }}
+          name: FxmeFX-VST3-Linux-x86_64
           path: FxmeFX/build/Source/*/Fxme*_artefacts/Release/VST3/

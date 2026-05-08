@@ -64,63 +64,6 @@ jobs:
           name: linux-x86_64
           path: FxmeFX-VST3-Linux-x86_64.zip
 
-  # ── Linux arm64 ───────────────────────────────────────────────────────────
-  build-linux-arm64:
-    runs-on: ubuntu-24.04-arm
-    steps:
-      - name: Install system dependencies
-        run: |
-          sudo apt update
-          sudo apt install -y \
-            libasound2-dev libx11-dev libxrandr-dev libxinerama-dev \
-            libxcursor-dev libfreetype-dev libfontconfig1-dev libgl1-mesa-dev
-
-      - uses: actions/checkout@v4
-        with:
-          path: FxmeFX
-          submodules: recursive
-
-      - uses: actions/checkout@v4
-        with:
-          repository: juce-framework/JUCE
-          ref: 8.0.12
-          path: JUCE
-
-      - name: Checkout FxmeJuceTools
-        uses: actions/checkout@v4
-        with:
-          repository: odoare/FxmeJuceTools
-          path: _fxme_tmp
-
-      - name: Install FxmeJuceTools module
-        shell: bash
-        run: |
-          mkdir -p JUCE/usermodules
-          mv _fxme_tmp/module/FxmeJuceTools JUCE/usermodules/FxmeJuceTools
-
-      - name: Configure
-        run: cmake -B FxmeFX/build -S FxmeFX -DCMAKE_BUILD_TYPE=Release
-
-      - name: Build (one plugin at a time)
-        run: |
-          for plugin in Compressor Equalizer Tube Transient StereoDelay ConvolReverb Cabinet; do
-            echo "::group::Build Fxme${plugin}"
-            cmake --build FxmeFX/build --config Release --target "Fxme${plugin}_All" --parallel 2
-            echo "::endgroup::"
-          done
-
-      - name: Package
-        shell: bash
-        run: |
-          mkdir -p stage/VST3
-          cp -r FxmeFX/build/Source/*/Fxme*_artefacts/Release/VST3/*.vst3 stage/VST3/
-          cd stage
-          zip -r "${{ github.workspace }}/FxmeFX-VST3-Linux-arm64.zip" VST3/
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: linux-arm64
-          path: FxmeFX-VST3-Linux-arm64.zip
 
   # ── Windows x86_64 ────────────────────────────────────────────────────────
   build-windows:
@@ -240,7 +183,7 @@ jobs:
 
   # ── Publish GitHub Release ────────────────────────────────────────────────
   release:
-    needs: [build-linux-x86_64, build-linux-arm64, build-windows, build-macos]
+    needs: [build-linux-x86_64, build-windows, build-macos]
     runs-on: ubuntu-latest
     permissions:
       contents: write
