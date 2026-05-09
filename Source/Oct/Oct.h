@@ -41,14 +41,16 @@ public:
     static void addParameters (std::vector<std::unique_ptr<juce::RangedAudioParameter>>& params,
                                const juce::String& prefix);
 
-private:
-    // 2nd-order biquad coefficients (TDF2). Two of these cascaded give the
-    // 4th-order Butterworth detection low-pass.
+    // 2nd-order biquad coefficients (TDF2). Two cascaded give the 4th-order
+    // Butterworth detection low-pass. Public so the .cpp's helper functions
+    // can reference it; it's a POD with no invariants worth hiding.
     struct BiquadCoeffs
     {
         float b0 = 1.0f, b1 = 0.0f, b2 = 0.0f;
         float a1 = 0.0f, a2 = 0.0f;
     };
+
+private:
 
     struct ChannelState
     {
