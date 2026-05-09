@@ -19,6 +19,7 @@ drum kits).
 | FxmeStereoDelay  | `SDEL`      | Tempo-synced stereo delay with cross-feedback and a state-variable lowpass in the feedback path. |
 | FxmeConvolReverb | `CREV`      | Convolution reverb (WDL engine) with six embedded impulse responses, length / shape / start-offset shaping, plus an "External…" slot for loading a user IR. |
 | FxmeCab          | `CABN`      | Stereo cabinet/IR loader. Two independent mono-IR slots (one per output channel), 19 embedded cabinet IRs, output gain. |
+| FxmeOct          | `OCTV`      | Boss OC-2-style monophonic octaver. Schmitt-trigger zero-crossing + ÷2 / ÷4 flip-flops, envelope-tracked square synthesis, dry / -1 oct / -2 oct mix, detection LPF and tone LPF. Zero latency, stable on bass. |
 
 All plugins build as **VST3**, **AU** (macOS) and a **Standalone** application.
 
@@ -39,6 +40,7 @@ FxmeFX/
 │   │   └── ir/                 # built-in impulse responses (embedded as binary data)
 │   ├── Cab/
 │   │   └── IR/                 # built-in cabinet impulse responses (embedded as binary data)
+│   ├── Oct/                    # Boss-style frequency-division octaver
 │   └── VuMeter/                # shared VU-meter DSP + component
 ├── WDL/                        # WDL submodule (FFT, convolution engine, resampler)
 └── .github/workflows/          # CI: per-OS builds + tag-driven release
@@ -96,7 +98,7 @@ cmake --build build --parallel
 ```
 
 `PLUGIN` accepts: `Compressor`, `Equalizer`, `Tube`, `Transient`,
-`StereoDelay`, `ConvolReverb`, `Cab`.
+`StereoDelay`, `ConvolReverb`, `Cab`, `Oct`.
 
 ### A single plugin standalone
 

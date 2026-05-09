@@ -29,6 +29,7 @@ set(_all_plugins
     StereoDelay
     ConvolReverb
     Cab
+    Oct
 )
 
 if(PLUGIN STREQUAL "")
