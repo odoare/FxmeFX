@@ -58,7 +58,7 @@ OctComponent::OctComponent (Oct& o,
     setupRotary (drySlider,    dryLabel,    "Dry",    -60.0, 12.0,  0.0,   " dB");
     setupRotary (oct1Slider,   oct1Label,   "-1 Oct", -60.0, 12.0, -6.0,   " dB");
     setupRotary (oct2Slider,   oct2Label,   "-2 Oct", -60.0, 12.0, -60.0,  " dB");
-    setupRotary (detectSlider, detectLabel, "Detect", 200.0, 3000.0, 800.0,  " Hz");
+    setupRotary (detectSlider, detectLabel, "Detect",  60.0, 1500.0, 400.0,  " Hz");
     setupRotary (toneSlider,   toneLabel,   "Tone",   300.0, 10000.0, 2000.0, " Hz");
 
     drySlider   .setAttachment (new SliderAttachment (apvts, prefix + "_Oct_Dry",    drySlider));

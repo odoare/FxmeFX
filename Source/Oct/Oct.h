@@ -42,18 +42,40 @@ public:
                                const juce::String& prefix);
 
 private:
+    // 2nd-order biquad coefficients (TDF2). Two of these cascaded give the
+    // 4th-order Butterworth detection low-pass.
+    struct BiquadCoeffs
+    {
+        float b0 = 1.0f, b1 = 0.0f, b2 = 0.0f;
+        float a1 = 0.0f, a2 = 0.0f;
+    };
+
     struct ChannelState
     {
-        // Pre-detection low-pass (1-pole) — strips high harmonics so the
-        // zero-crossing detector locks on the fundamental.
-        float detectLpState = 0.0f;
+        // Pre-detection 4th-order Butterworth low-pass (two cascaded biquads).
+        // 24 dB/oct is enough to suppress the 2nd/3rd harmonic of a bass note
+        // when the cutoff is set just above the fundamental, so the comparator
+        // sees a near-sinusoid and toggles cleanly.
+        float bq1s1 = 0.0f, bq1s2 = 0.0f;
+        float bq2s1 = 0.0f, bq2s2 = 0.0f;
 
         // Schmitt-trigger comparator state and the two toggle flip-flops.
         bool  schmittHigh = false;   // current comparator output
         bool  ff1 = false;           // ÷2 output (octave-down square)
         bool  ff2 = false;           // ÷4 output (two-octaves-down square)
 
-        // Envelope follower (peak with fast attack / slow release).
+        // Sample countdown that locks the comparator out for ~70% of the
+        // expected fundamental half-period after each toggle. This is the
+        // critical defense against the comparator double-firing on harmonics
+        // that survive the LP filter.
+        int   refractoryCounter = 0;
+
+        // Envelope of the LP-filtered detection signal (drives hysteresis).
+        // Sized from the LP output, not the raw input, because the comparator
+        // works on the LP signal and that's where amplitudes can collapse.
+        float detectEnvelope = 0.0f;
+
+        // Envelope follower of the input (drives output amplitude).
         float envelope = 0.0f;
 
         // Output tone low-pass states per octave (1-pole each).
@@ -65,13 +87,14 @@ private:
     bool   on = true;
 
     // Live coefficients
-    float detectLpCoef     = 0.0f;
+    BiquadCoeffs detectBq1, detectBq2;
+    int   refractorySamples = 0;
     float toneLpCoef       = 0.0f;
     float envAttackCoef    = 0.0f;
     float envReleaseCoef   = 0.0f;
 
     // Parameter-cache values
-    float detectFreqHz   = 800.0f;
+    float detectFreqHz   = 400.0f;
     float toneFreqHz     = 2000.0f;
     float dryGainLinear  = 1.0f;
     float oct1GainLinear = juce::Decibels::decibelsToGain (-6.0f);
@@ -80,7 +103,8 @@ private:
 
     static constexpr float envAttackMs  = 2.0f;    // fast — track transients
     static constexpr float envReleaseMs = 120.0f;  // slow — avoid flutter
-    static constexpr float hysteresisRatio = 0.05f; // schmitt hysteresis as a fraction of the envelope
+    static constexpr float hysteresisRatio = 0.20f; // schmitt hysteresis as a fraction of the LP-detected envelope
+    static constexpr float refractoryFrac  = 0.70f; // lock-out after a toggle, fraction of the half-period at the LP cutoff
 
     std::vector<ChannelState> channels;
 

@@ -20,6 +20,38 @@ float Oct::onePoleCoef (float cutoffHz, double sampleRate)
     return 1.0f - std::exp (-2.0f * juce::MathConstants<float>::pi * fc / fs);
 }
 
+namespace
+{
+    // RBJ-cookbook biquad LPF, normalised by a0.
+    Oct::BiquadCoeffs makeLowpass (float fc, double sampleRate, float Q)
+    {
+        Oct::BiquadCoeffs c;
+        const float fs    = (float) sampleRate;
+        const float clamp = juce::jlimit (1.0f, 0.45f * fs, fc);
+        const float w     = 2.0f * juce::MathConstants<float>::pi * clamp / fs;
+        const float cs    = std::cos (w);
+        const float sn    = std::sin (w);
+        const float alpha = sn / (2.0f * juce::jmax (0.001f, Q));
+        const float a0    = 1.0f + alpha;
+
+        c.b0 = ((1.0f - cs) * 0.5f) / a0;
+        c.b1 = (1.0f - cs) / a0;
+        c.b2 = c.b0;
+        c.a1 = (-2.0f * cs) / a0;
+        c.a2 = (1.0f - alpha) / a0;
+        return c;
+    }
+
+    // Transposed Direct Form II — robust under coefficient changes.
+    inline float processBiquad (const Oct::BiquadCoeffs& c, float x, float& s1, float& s2)
+    {
+        const float y = c.b0 * x + s1;
+        s1 = c.b1 * x - c.a1 * y + s2;
+        s2 = c.b2 * x - c.a2 * y;
+        return y;
+    }
+}
+
 void Oct::prepare (double sampleRate, int numChannels)
 {
     currentSampleRate = sampleRate;
@@ -29,10 +61,23 @@ void Oct::prepare (double sampleRate, int numChannels)
 
 void Oct::updateCoefficients()
 {
-    detectLpCoef    = onePoleCoef (detectFreqHz, currentSampleRate);
-    toneLpCoef      = onePoleCoef (toneFreqHz,   currentSampleRate);
+    // 4th-order Butterworth LPF: two cascaded biquads with the standard
+    // Butterworth Q values for a maximally-flat magnitude response.
+    detectBq1 = makeLowpass (detectFreqHz, currentSampleRate, 0.5411961f);
+    detectBq2 = makeLowpass (detectFreqHz, currentSampleRate, 1.3065630f);
+
+    toneLpCoef      = onePoleCoef (toneFreqHz,             currentSampleRate);
     envAttackCoef   = onePoleCoef (1000.0f / envAttackMs,  currentSampleRate);
     envReleaseCoef  = onePoleCoef (1000.0f / envReleaseMs, currentSampleRate);
+
+    // Lock the comparator out for a fraction of the half-period at the LP
+    // cutoff. The LP is the upper bound on the fundamental we expect to
+    // detect, so a half-period at the cutoff is the *minimum* time between
+    // legitimate same-direction zero-crossings of any signal that survives
+    // the filter. Anything shorter than that came from harmonic ripple.
+    refractorySamples = (int) ((float) currentSampleRate
+                                 * refractoryFrac
+                                 / (2.0f * juce::jmax (1.0f, detectFreqHz)));
 }
 
 void Oct::setOn (bool shouldBeOn)
@@ -63,11 +108,13 @@ void Oct::addParameters (std::vector<std::unique_ptr<juce::RangedAudioParameter>
     params.push_back (std::make_unique<juce::AudioParameterFloat> (
         juce::ParameterID { prefix + "_Oct_Oct2", 1 }, prefix + " Oct Oct2",  -60.0f, 12.0f, -60.0f));
 
-    // Pre-detection LPF cutoff: keeps the zero-crossing detector locked on the
-    // fundamental even when the input has lots of harmonics.
+    // Pre-detection LPF cutoff: a 4th-order Butterworth that strips
+    // harmonics before the comparator. Set this just above the fundamental
+    // of the played note — for a 5-string bass low B (≈30 Hz) try 80–120 Hz,
+    // for guitar low E (≈82 Hz) try 200–300 Hz.
     params.push_back (std::make_unique<juce::AudioParameterFloat> (
         juce::ParameterID { prefix + "_Oct_Detect", 1 }, prefix + " Oct Detect",
-        juce::NormalisableRange<float> (200.0f, 3000.0f, 1.0f, 0.5f), 800.0f));
+        juce::NormalisableRange<float> (60.0f, 1500.0f, 1.0f, 0.5f), 400.0f));
 
     // Output tone LPF — softens the synthesised square waves.
     params.push_back (std::make_unique<juce::AudioParameterFloat> (
@@ -136,35 +183,63 @@ void Oct::process (juce::AudioBuffer<float>& buffer)
         {
             const float in = data[i];
 
-            // ── Envelope follower (peak, fast attack / slow release) ──
+            // ── Input envelope follower (drives the output amplitude) ──
             const float absIn = std::abs (in);
             if (absIn > s.envelope)
-                s.envelope += envAttackCoef * (absIn - s.envelope);
+                s.envelope += envAttackCoef  * (absIn - s.envelope);
             else
                 s.envelope += envReleaseCoef * (absIn - s.envelope);
 
-            // ── Pre-detection LPF — keeps zero-crossing locked on the fundamental ──
-            s.detectLpState += detectLpCoef * (in - s.detectLpState);
+            // ── Pre-detection 4th-order Butterworth LPF ──
+            // Two cascaded biquads: 24 dB/oct rolloff strips harmonics so
+            // the comparator sees something close to a sine at the
+            // fundamental. This is the single biggest difference vs. the
+            // 1-pole version: a 1-pole at 800 Hz on a bass note barely
+            // attenuates the 2nd/3rd harmonic and lets them re-trigger the
+            // comparator inside one period.
+            float lp = processBiquad (detectBq1, in, s.bq1s1, s.bq1s2);
+            lp       = processBiquad (detectBq2, lp, s.bq2s1, s.bq2s2);
 
-            // ── Schmitt-trigger zero-crossing with envelope-tracked hysteresis ──
-            // Below the gate threshold the comparator stops toggling, which
-            // prevents noise from generating phantom octaves during silence.
-            const float hyst = juce::jmax (1.0e-6f, s.envelope * hysteresisRatio);
+            // Envelope of the *detection* signal (NOT the raw input) — this
+            // is the level the comparator actually sees and the right
+            // reference for sizing hysteresis.
+            const float absDetect = std::abs (lp);
+            if (absDetect > s.detectEnvelope)
+                s.detectEnvelope += envAttackCoef  * (absDetect - s.detectEnvelope);
+            else
+                s.detectEnvelope += envReleaseCoef * (absDetect - s.detectEnvelope);
+
+            // ── Refractory countdown ──
+            if (s.refractoryCounter > 0)
+                --s.refractoryCounter;
+
+            // ── Schmitt-trigger zero-crossing on the LP-filtered signal ──
+            // Hysteresis sized to 20 % of the *detected* envelope — generous
+            // enough to ignore residual harmonic ripple. Gated below the
+            // input-envelope threshold so silence doesn't generate phantom
+            // octaves.
+            const float hyst = juce::jmax (1.0e-6f, s.detectEnvelope * hysteresisRatio);
             const bool wasHigh = s.schmittHigh;
             if (s.envelope >= gateThreshold)
             {
-                if (s.schmittHigh && s.detectLpState < -hyst)
+                if (s.schmittHigh && lp < -hyst)
                     s.schmittHigh = false;
-                else if (! s.schmittHigh && s.detectLpState >  hyst)
+                else if (! s.schmittHigh && lp >  hyst)
                     s.schmittHigh = true;
             }
 
-            // Rising edge of the comparator toggles ÷2; rising edge of ÷2
-            // toggles ÷4 — exactly the OC-2 CD4013 cascade.
-            if (! wasHigh && s.schmittHigh)
+            // Rising edge toggles ÷2 (OC-2 CD4013 cascade), but only outside
+            // the refractory window. The refractory period rules out a second
+            // toggle inside one fundamental cycle even when the LP-filtered
+            // signal still has a small wobble.
+            const bool risingEdge = (! wasHigh && s.schmittHigh);
+            if (risingEdge && s.refractoryCounter <= 0)
             {
                 const bool ff1Was = s.ff1;
                 s.ff1 = ! s.ff1;
+                s.refractoryCounter = refractorySamples;
+
+                // ÷4 only ticks on rising edges of ÷2.
                 if (! ff1Was && s.ff1)
                     s.ff2 = ! s.ff2;
             }
