@@ -54,7 +54,7 @@ jobs:
         # them one-at-a-time keeps peak memory bounded by a single plugin's
         # build.
         run: |
-          for plugin in Compressor Equalizer Tube Transient StereoDelay ConvolReverb Cabinet; do
+          for plugin in Compressor Equalizer Tube Transient StereoDelay ConvolReverb Cab; do
             echo "::group::Build Fxme${plugin}"
             cmake --build FxmeFX/build --config Release --target "Fxme${plugin}_All" --parallel 2
             echo "::endgroup::"

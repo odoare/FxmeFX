@@ -1,22 +1,22 @@
 /*
   ==============================================================================
 
-    Cabinet.cpp
+    Cab.cpp
 
   ==============================================================================
 */
 
-#include "Cabinet.h"
+#include "Cab.h"
 #include "../../WDL/WDL/resample.h"
 
-Cabinet::Cabinet()
+Cab::Cab()
 {
     updateGain();
 }
 
-Cabinet::~Cabinet() = default;
+Cab::~Cab() = default;
 
-void Cabinet::prepare (double sampleRate, int samplesPerBlock)
+void Cab::prepare (double sampleRate, int samplesPerBlock)
 {
     currentSampleRate = sampleRate;
     engine.Reset();
@@ -28,7 +28,7 @@ void Cabinet::prepare (double sampleRate, int samplesPerBlock)
     rebuildEngineImpulse();
 }
 
-void Cabinet::process (juce::AudioBuffer<float>& buffer)
+void Cab::process (juce::AudioBuffer<float>& buffer)
 {
     juce::ScopedLock sl (lock);
     checkParameters();
@@ -82,7 +82,7 @@ void Cabinet::process (juce::AudioBuffer<float>& buffer)
     engine.Advance (toCopy);
 }
 
-void Cabinet::setImpulseList (const juce::StringArray& names, const juce::StringArray& resources)
+void Cab::setImpulseList (const juce::StringArray& names, const juce::StringArray& resources)
 {
     juce::ScopedLock sl (lock);
     irNames = names;
@@ -98,7 +98,7 @@ void Cabinet::setImpulseList (const juce::StringArray& names, const juce::String
     }
 }
 
-void Cabinet::selectImpulse (int channel, int index)
+void Cab::selectImpulse (int channel, int index)
 {
     if (channel < 0 || channel >= NumSlots)
         return;
@@ -113,12 +113,12 @@ void Cabinet::selectImpulse (int channel, int index)
     }
 }
 
-void Cabinet::setOn (bool shouldBeOn)
+void Cab::setOn (bool shouldBeOn)
 {
     on = shouldBeOn;
 }
 
-juce::AudioBuffer<float> Cabinet::getIR (int channel) const
+juce::AudioBuffer<float> Cab::getIR (int channel) const
 {
     juce::ScopedLock sl (lock);
     if (channel < 0 || channel >= NumSlots)
@@ -126,7 +126,7 @@ juce::AudioBuffer<float> Cabinet::getIR (int channel) const
     return monoIR[(size_t) channel];
 }
 
-void Cabinet::assignParameters (juce::AudioProcessorValueTreeState& apvts, const juce::String& prefix)
+void Cab::assignParameters (juce::AudioProcessorValueTreeState& apvts, const juce::String& prefix)
 {
     onParam   = apvts.getRawParameterValue (prefix + "_Cab_On");
     irLParam  = apvts.getRawParameterValue (prefix + "_Cab_IRL");
@@ -134,7 +134,7 @@ void Cabinet::assignParameters (juce::AudioProcessorValueTreeState& apvts, const
     gainParam = apvts.getRawParameterValue (prefix + "_Cab_Gain");
 }
 
-void Cabinet::addParameters (std::vector<std::unique_ptr<juce::RangedAudioParameter>>& params,
+void Cab::addParameters (std::vector<std::unique_ptr<juce::RangedAudioParameter>>& params,
                              const juce::String& prefix,
                              int numIRs)
 {
@@ -150,7 +150,7 @@ void Cabinet::addParameters (std::vector<std::unique_ptr<juce::RangedAudioParame
         juce::ParameterID { prefix + "_Cab_Gain", 1 }, prefix + " Cab Gain", -24.0f, 24.0f, 0.0f));
 }
 
-void Cabinet::loadResource (int channel, const juce::String& resourceName)
+void Cab::loadResource (int channel, const juce::String& resourceName)
 {
     int dataSize = 0;
     const char* data = BinaryData::getNamedResource (resourceName.toRawUTF8(), dataSize);
@@ -183,7 +183,7 @@ void Cabinet::loadResource (int channel, const juce::String& resourceName)
         monoIR[(size_t) channel].clear();
 }
 
-void Cabinet::loadIRFromReader (int channel, juce::AudioFormatReader& reader)
+void Cab::loadIRFromReader (int channel, juce::AudioFormatReader& reader)
 {
     auto& dest = monoIR[(size_t) channel];
 
@@ -228,7 +228,7 @@ void Cabinet::loadIRFromReader (int channel, juce::AudioFormatReader& reader)
         dest.setSample (0, i, (float) wdlOut[(size_t) i]);
 }
 
-void Cabinet::rebuildEngineImpulse()
+void Cab::rebuildEngineImpulse()
 {
     juce::ScopedLock sl (lock);
 
@@ -266,7 +266,7 @@ void Cabinet::rebuildEngineImpulse()
     engine.SetImpulse (&impulseBuffer);
 }
 
-void Cabinet::checkParameters()
+void Cab::checkParameters()
 {
     if (onParam && *onParam != lastOn)
     {
@@ -296,7 +296,7 @@ void Cabinet::checkParameters()
     }
 }
 
-void Cabinet::updateGain()
+void Cab::updateGain()
 {
     gainLinear = juce::Decibels::decibelsToGain (gaindB);
 }

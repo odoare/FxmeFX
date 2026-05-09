@@ -1,7 +1,7 @@
 /*
   ==============================================================================
 
-    Cabinet.h
+    Cab.h
 
     Stereo cabinet/IR convolver: two independent mono IR slots (one per
     output channel) backed by the WDL convolution engine.
@@ -20,13 +20,13 @@
 #include <atomic>
 #include <vector>
 
-class Cabinet
+class Cab
 {
 public:
     static constexpr int NumSlots = 2;            // 0 = left, 1 = right
 
-    Cabinet();
-    ~Cabinet();
+    Cab();
+    ~Cab();
 
     void prepare (double sampleRate, int samplesPerBlock);
     void process (juce::AudioBuffer<float>& buffer);
@@ -93,5 +93,5 @@ private:
     void rebuildEngineImpulse();
     void updateGain();
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Cabinet)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Cab)
 };

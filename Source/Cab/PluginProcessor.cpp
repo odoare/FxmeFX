@@ -1,7 +1,7 @@
 /*
   ==============================================================================
 
-    Cabinet plugin processor.
+    Cab plugin processor.
 
   ==============================================================================
 */
@@ -9,7 +9,7 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 
-void FxmeCabinetAudioProcessor::getBuiltInIRList (juce::StringArray& names, juce::StringArray& resources)
+void FxmeCabAudioProcessor::getBuiltInIRList (juce::StringArray& names, juce::StringArray& resources)
 {
     names.clear();
     resources.clear();
@@ -29,14 +29,14 @@ void FxmeCabinetAudioProcessor::getBuiltInIRList (juce::StringArray& names, juce
     }
 }
 
-int FxmeCabinetAudioProcessor::getNumBuiltInIRs()
+int FxmeCabAudioProcessor::getNumBuiltInIRs()
 {
     juce::StringArray n, r;
     getBuiltInIRList (n, r);
     return n.size();
 }
 
-FxmeCabinetAudioProcessor::FxmeCabinetAudioProcessor()
+FxmeCabAudioProcessor::FxmeCabAudioProcessor()
 #ifndef JucePlugin_PreferredChannelConfigurations
      : AudioProcessor (BusesProperties()
                      #if ! JucePlugin_IsMidiEffect
@@ -51,42 +51,42 @@ FxmeCabinetAudioProcessor::FxmeCabinetAudioProcessor()
      : apvts (*this, nullptr, "Parameters", createParameterLayout())
 #endif
 {
-    cabinet.assignParameters (apvts, parameterPrefix);
+    cab.assignParameters (apvts, parameterPrefix);
 
     juce::StringArray names, resources;
     getBuiltInIRList (names, resources);
-    cabinet.setImpulseList (names, resources);
+    cab.setImpulseList (names, resources);
 }
 
-FxmeCabinetAudioProcessor::~FxmeCabinetAudioProcessor() = default;
+FxmeCabAudioProcessor::~FxmeCabAudioProcessor() = default;
 
-juce::AudioProcessorValueTreeState::ParameterLayout FxmeCabinetAudioProcessor::createParameterLayout()
+juce::AudioProcessorValueTreeState::ParameterLayout FxmeCabAudioProcessor::createParameterLayout()
 {
     std::vector<std::unique_ptr<juce::RangedAudioParameter>> params;
-    Cabinet::addParameters (params, parameterPrefix, getNumBuiltInIRs());
+    Cab::addParameters (params, parameterPrefix, getNumBuiltInIRs());
     return { params.begin(), params.end() };
 }
 
-const juce::String FxmeCabinetAudioProcessor::getName() const          { return JucePlugin_Name; }
-bool   FxmeCabinetAudioProcessor::acceptsMidi() const                  { return false; }
-bool   FxmeCabinetAudioProcessor::producesMidi() const                 { return false; }
-bool   FxmeCabinetAudioProcessor::isMidiEffect() const                 { return false; }
-double FxmeCabinetAudioProcessor::getTailLengthSeconds() const         { return 0.5; }
-int    FxmeCabinetAudioProcessor::getNumPrograms()                     { return 1; }
-int    FxmeCabinetAudioProcessor::getCurrentProgram()                  { return 0; }
-void   FxmeCabinetAudioProcessor::setCurrentProgram (int)              {}
-const  juce::String FxmeCabinetAudioProcessor::getProgramName (int)    { return {}; }
-void   FxmeCabinetAudioProcessor::changeProgramName (int, const juce::String&) {}
+const juce::String FxmeCabAudioProcessor::getName() const          { return JucePlugin_Name; }
+bool   FxmeCabAudioProcessor::acceptsMidi() const                  { return false; }
+bool   FxmeCabAudioProcessor::producesMidi() const                 { return false; }
+bool   FxmeCabAudioProcessor::isMidiEffect() const                 { return false; }
+double FxmeCabAudioProcessor::getTailLengthSeconds() const         { return 0.5; }
+int    FxmeCabAudioProcessor::getNumPrograms()                     { return 1; }
+int    FxmeCabAudioProcessor::getCurrentProgram()                  { return 0; }
+void   FxmeCabAudioProcessor::setCurrentProgram (int)              {}
+const  juce::String FxmeCabAudioProcessor::getProgramName (int)    { return {}; }
+void   FxmeCabAudioProcessor::changeProgramName (int, const juce::String&) {}
 
-void FxmeCabinetAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
+void FxmeCabAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
-    cabinet.prepare (sampleRate, samplesPerBlock);
+    cab.prepare (sampleRate, samplesPerBlock);
 }
 
-void FxmeCabinetAudioProcessor::releaseResources() {}
+void FxmeCabAudioProcessor::releaseResources() {}
 
 #ifndef JucePlugin_PreferredChannelConfigurations
-bool FxmeCabinetAudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts) const
+bool FxmeCabAudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts) const
 {
     if (layouts.getMainOutputChannelSet() != juce::AudioChannelSet::mono()
      && layouts.getMainOutputChannelSet() != juce::AudioChannelSet::stereo())
@@ -97,7 +97,7 @@ bool FxmeCabinetAudioProcessor::isBusesLayoutSupported (const BusesLayout& layou
 }
 #endif
 
-void FxmeCabinetAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer&)
+void FxmeCabAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer&)
 {
     juce::ScopedNoDenormals noDenormals;
     auto totalIn  = getTotalNumInputChannels();
@@ -105,23 +105,23 @@ void FxmeCabinetAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, 
     for (auto i = totalIn; i < totalOut; ++i)
         buffer.clear (i, 0, buffer.getNumSamples());
 
-    cabinet.process (buffer);
+    cab.process (buffer);
 }
 
-bool FxmeCabinetAudioProcessor::hasEditor() const { return true; }
-juce::AudioProcessorEditor* FxmeCabinetAudioProcessor::createEditor()
+bool FxmeCabAudioProcessor::hasEditor() const { return true; }
+juce::AudioProcessorEditor* FxmeCabAudioProcessor::createEditor()
 {
-    return new FxmeCabinetAudioProcessorEditor (*this);
+    return new FxmeCabAudioProcessorEditor (*this);
 }
 
-void FxmeCabinetAudioProcessor::getStateInformation (juce::MemoryBlock& destData)
+void FxmeCabAudioProcessor::getStateInformation (juce::MemoryBlock& destData)
 {
     if (auto state = apvts.copyState(); state.isValid())
         if (auto xml = state.createXml())
             copyXmlToBinary (*xml, destData);
 }
 
-void FxmeCabinetAudioProcessor::setStateInformation (const void* data, int sizeInBytes)
+void FxmeCabAudioProcessor::setStateInformation (const void* data, int sizeInBytes)
 {
     if (auto xml = getXmlFromBinary (data, sizeInBytes))
         if (xml->hasTagName (apvts.state.getType()))
@@ -130,5 +130,5 @@ void FxmeCabinetAudioProcessor::setStateInformation (const void* data, int sizeI
 
 juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()
 {
-    return new FxmeCabinetAudioProcessor();
+    return new FxmeCabAudioProcessor();
 }

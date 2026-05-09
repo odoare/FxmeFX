@@ -1,7 +1,7 @@
 /*
   ==============================================================================
 
-    CabinetComponent.h
+    CabComponent.h
 
   ==============================================================================
 */
@@ -9,36 +9,36 @@
 #pragma once
 
 #include <JuceHeader.h>
-#include "Cabinet.h"
+#include "Cab.h"
 
 /** Compact two-channel impulse-response thumbnail. */
-class CabinetIRPlot : public juce::Component
+class CabIRPlot : public juce::Component
 {
 public:
-    explicit CabinetIRPlot (Cabinet& c) : cabinet (c) {}
+    explicit CabIRPlot (Cab& c) : cab (c) {}
 
     void paint (juce::Graphics& g) override;
     void updateGraph();
 
 private:
-    Cabinet& cabinet;
+    Cab& cab;
     juce::Path leftPath, rightPath;
 };
 
-class CabinetComponent : public juce::Component, public juce::Timer
+class CabComponent : public juce::Component, public juce::Timer
 {
 public:
-    CabinetComponent (Cabinet& cabinetToControl,
+    CabComponent (Cab& cabToControl,
                       juce::AudioProcessorValueTreeState& apvts,
                       const juce::String& prefix);
-    ~CabinetComponent() override;
+    ~CabComponent() override;
 
     void paint (juce::Graphics& g) override;
     void resized() override;
     void timerCallback() override;
 
 private:
-    Cabinet& cabinet;
+    Cab& cab;
     juce::AudioProcessorValueTreeState& apvts;
 
     juce::Label        titleLabel;
@@ -50,7 +50,7 @@ private:
     fxme::FxmeSlider gainSlider;
     juce::Label      gainLabel;
 
-    CabinetIRPlot irPlot;
+    CabIRPlot irPlot;
     std::atomic<bool> graphNeedsUpdate { true };
 
     using SliderAttachment   = juce::AudioProcessorValueTreeState::SliderAttachment;
@@ -66,5 +66,5 @@ private:
                          const juce::String& text, double min, double max, double def);
     void setSliderColours (juce::Slider& s, juce::Colour c);
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (CabinetComponent)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (CabComponent)
 };

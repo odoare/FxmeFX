@@ -1,19 +1,19 @@
 /*
   ==============================================================================
 
-    CabinetComponent.cpp
+    CabComponent.cpp
 
   ==============================================================================
 */
 
-#include "CabinetComponent.h"
+#include "CabComponent.h"
 
 namespace
 {
-    const auto cabinetTint = juce::Colours::orange;
+    const auto cabTint = juce::Colours::orange;
 }
 
-void CabinetIRPlot::paint (juce::Graphics& g)
+void CabIRPlot::paint (juce::Graphics& g)
 {
     g.fillAll (juce::Colours::black);
 
@@ -59,23 +59,23 @@ void CabinetIRPlot::paint (juce::Graphics& g)
 
     auto bounds = getLocalBounds().toFloat().reduced (2.0f);
     auto top = bounds.removeFromTop (bounds.getHeight() * 0.5f);
-    draw (leftPath,  cabinet.getIR (0), cabinetTint, top);
-    draw (rightPath, cabinet.getIR (1), cabinetTint.brighter (0.4f), bounds);
+    draw (leftPath,  cab.getIR (0), cabTint, top);
+    draw (rightPath, cab.getIR (1), cabTint.brighter (0.4f), bounds);
 }
 
-void CabinetIRPlot::updateGraph()
+void CabIRPlot::updateGraph()
 {
     repaint();
 }
 
-void CabinetComponent::setSliderColours (juce::Slider& s, juce::Colour c)
+void CabComponent::setSliderColours (juce::Slider& s, juce::Colour c)
 {
     s.setColour (juce::Slider::trackColourId, c.darker());
     s.setColour (juce::Slider::thumbColourId, c);
     s.setColour (juce::Slider::rotarySliderOutlineColourId, c.darker (2.0f));
 }
 
-void CabinetComponent::setupBarSlider (fxme::FxmeSlider& slider, juce::Label& label,
+void CabComponent::setupBarSlider (fxme::FxmeSlider& slider, juce::Label& label,
                                        const juce::String& text,
                                        double min, double max, double def)
 {
@@ -88,28 +88,28 @@ void CabinetComponent::setupBarSlider (fxme::FxmeSlider& slider, juce::Label& la
     slider.setTooltip (text);
     slider.setTextValueSuffix (" dB");
     slider.setLookAndFeel (&fxmeLookAndFeel);
-    setSliderColours (slider, cabinetTint);
+    setSliderColours (slider, cabTint);
 }
 
-CabinetComponent::CabinetComponent (Cabinet& c,
+CabComponent::CabComponent (Cab& c,
                                     juce::AudioProcessorValueTreeState& state,
                                     const juce::String& prefix)
-    : cabinet (c), apvts (state), irPlot (c)
+    : cab (c), apvts (state), irPlot (c)
 {
     addAndMakeVisible (titleLabel);
-    titleLabel.setText ("Cabinet", juce::NotificationType::dontSendNotification);
+    titleLabel.setText ("Cab", juce::NotificationType::dontSendNotification);
     titleLabel.setJustificationType (juce::Justification::centred);
     titleLabel.setFont (juce::Font (juce::FontOptions (16.0f, juce::Font::bold)));
 
     addAndMakeVisible (onButton);
     onButton.setButtonText ("On");
-    onButton.setColour (juce::ToggleButton::tickColourId, cabinetTint);
+    onButton.setColour (juce::ToggleButton::tickColourId, cabTint);
     onButton.setLookAndFeel (&fxmeLookAndFeel);
     onAtt = std::make_unique<ButtonAttachment> (apvts, prefix + "_Cab_On", onButton);
 
     auto fillCombo = [&] (juce::ComboBox& box)
     {
-        const auto& names = cabinet.getImpulseNames();
+        const auto& names = cab.getImpulseNames();
         for (int i = 0; i < names.size(); ++i)
             box.addItem (juce::File (names[i]).getFileNameWithoutExtension(), i + 1);
     };
@@ -142,28 +142,28 @@ CabinetComponent::CabinetComponent (Cabinet& c,
     startTimerHz (24);
 }
 
-CabinetComponent::~CabinetComponent() = default;
+CabComponent::~CabComponent() = default;
 
-void CabinetComponent::timerCallback()
+void CabComponent::timerCallback()
 {
     if (graphNeedsUpdate.exchange (false))
         irPlot.updateGraph();
 }
 
-void CabinetComponent::paint (juce::Graphics& g)
+void CabComponent::paint (juce::Graphics& g)
 {
     auto diagonale     = (getLocalBounds().getTopLeft() - getLocalBounds().getBottomRight()).toFloat();
     auto length        = diagonale.getDistanceFromOrigin();
     auto perpendicular = diagonale.rotatedAboutOrigin (juce::degreesToRadians (270.0f)) / length;
     auto height        = float (getWidth() * getHeight()) / length;
-    auto base          = cabinetTint.darker (4.f);
+    auto base          = cabTint.darker (4.f);
     juce::ColourGradient grad (base.darker().darker(),  perpendicular *  height,
                                base,                    perpendicular * -height, false);
     g.setGradientFill (grad);
     g.fillAll();
 }
 
-void CabinetComponent::resized()
+void CabComponent::resized()
 {
     using fi = juce::FlexItem;
     auto area = getLocalBounds().reduced (5);

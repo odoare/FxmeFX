@@ -1,7 +1,7 @@
 /*
   ==============================================================================
 
-    Cabinet plugin processor.
+    Cab plugin processor.
 
   ==============================================================================
 */
@@ -9,15 +9,15 @@
 #pragma once
 
 #include <JuceHeader.h>
-#include "Cabinet.h"
+#include "Cab.h"
 
-class FxmeCabinetAudioProcessor  : public juce::AudioProcessor
+class FxmeCabAudioProcessor  : public juce::AudioProcessor
 {
 public:
     static constexpr const char* parameterPrefix = "Main";
 
-    FxmeCabinetAudioProcessor();
-    ~FxmeCabinetAudioProcessor() override;
+    FxmeCabAudioProcessor();
+    ~FxmeCabAudioProcessor() override;
 
     void prepareToPlay (double sampleRate, int samplesPerBlock) override;
     void releaseResources() override;
@@ -47,7 +47,7 @@ public:
     void setStateInformation (const void* data, int sizeInBytes) override;
 
     juce::AudioProcessorValueTreeState& getApvts() { return apvts; }
-    Cabinet& getCabinet() { return cabinet; }
+    Cab& getCab() { return cab; }
 
     /** Discover every .wav resource embedded by juce_add_binary_data and
         return the matching display names + resource symbol names. */
@@ -58,7 +58,7 @@ private:
     static juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
 
     juce::AudioProcessorValueTreeState apvts;
-    Cabinet cabinet;
+    Cab cab;
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (FxmeCabinetAudioProcessor)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (FxmeCabAudioProcessor)
 };
