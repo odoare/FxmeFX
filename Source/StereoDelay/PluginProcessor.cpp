@@ -7,7 +7,9 @@
 */
 
 #include "PluginProcessor.h"
-#include "PluginEditor.h"
+#ifndef FXME_PD_BUILD
+ #include "PluginEditor.h"
+#endif
 
 FxmeStereoDelayAudioProcessor::FxmeStereoDelayAudioProcessor()
 #ifndef JucePlugin_PreferredChannelConfigurations
@@ -85,11 +87,16 @@ void FxmeStereoDelayAudioProcessor::processBlock (juce::AudioBuffer<float>& buff
     stereoDelay.process (buffer);
 }
 
+#ifdef FXME_PD_BUILD
+bool FxmeStereoDelayAudioProcessor::hasEditor() const { return false; }
+juce::AudioProcessorEditor* FxmeStereoDelayAudioProcessor::createEditor() { return nullptr; }
+#else
 bool FxmeStereoDelayAudioProcessor::hasEditor() const { return true; }
 juce::AudioProcessorEditor* FxmeStereoDelayAudioProcessor::createEditor()
 {
     return new FxmeStereoDelayAudioProcessorEditor (*this);
 }
+#endif
 
 void FxmeStereoDelayAudioProcessor::getStateInformation (juce::MemoryBlock& destData)
 {

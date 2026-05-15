@@ -7,7 +7,9 @@
 */
 
 #include "PluginProcessor.h"
-#include "PluginEditor.h"
+#ifndef FXME_PD_BUILD
+ #include "PluginEditor.h"
+#endif
 
 namespace
 {
@@ -115,11 +117,16 @@ void FxmeConvolReverbAudioProcessor::processBlock (juce::AudioBuffer<float>& buf
     reverb.process (buffer);
 }
 
+#ifdef FXME_PD_BUILD
+bool FxmeConvolReverbAudioProcessor::hasEditor() const { return false; }
+juce::AudioProcessorEditor* FxmeConvolReverbAudioProcessor::createEditor() { return nullptr; }
+#else
 bool FxmeConvolReverbAudioProcessor::hasEditor() const { return true; }
 juce::AudioProcessorEditor* FxmeConvolReverbAudioProcessor::createEditor()
 {
     return new FxmeConvolReverbAudioProcessorEditor (*this);
 }
+#endif
 
 void FxmeConvolReverbAudioProcessor::getStateInformation (juce::MemoryBlock& destData)
 {

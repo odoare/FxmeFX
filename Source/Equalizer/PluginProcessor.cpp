@@ -7,7 +7,9 @@
 */
 
 #include "PluginProcessor.h"
-#include "PluginEditor.h"
+#ifndef FXME_PD_BUILD
+ #include "PluginEditor.h"
+#endif
 
 FxmeEqualizerAudioProcessor::FxmeEqualizerAudioProcessor()
 #ifndef JucePlugin_PreferredChannelConfigurations
@@ -78,11 +80,16 @@ void FxmeEqualizerAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer
     equalizer.process (buffer);
 }
 
+#ifdef FXME_PD_BUILD
+bool FxmeEqualizerAudioProcessor::hasEditor() const { return false; }
+juce::AudioProcessorEditor* FxmeEqualizerAudioProcessor::createEditor() { return nullptr; }
+#else
 bool FxmeEqualizerAudioProcessor::hasEditor() const { return true; }
 juce::AudioProcessorEditor* FxmeEqualizerAudioProcessor::createEditor()
 {
     return new FxmeEqualizerAudioProcessorEditor (*this);
 }
+#endif
 
 void FxmeEqualizerAudioProcessor::getStateInformation (juce::MemoryBlock& destData)
 {

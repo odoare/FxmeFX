@@ -1,6 +1,8 @@
 # CMake build trees
 build/
 **/build/
+**/build-pd/
+
 
 # Projucer-generated build trees
 Builds/

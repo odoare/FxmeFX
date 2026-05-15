@@ -88,3 +88,19 @@ target_link_libraries(FxmeTube
         juce::juce_recommended_lto_flags
         juce::juce_recommended_warning_flags
 )
+
+# ── Pure Data external ────────────────────────────────────────────────────────
+# Tube's BinaryData target only holds GUI images, so the Pd build does not
+# link it.
+include(${CMAKE_CURRENT_LIST_DIR}/../PdCommon/PdExternal.cmake)
+fxme_add_pd_external(FxmeTube_pd
+    LIBNAME   fxmetube~
+    SOURCES
+        PdMain.cpp
+        PluginProcessor.cpp
+        Tube.cpp
+    INCLUDES
+        ${CMAKE_CURRENT_SOURCE_DIR}
+    DEFINES
+        JucePlugin_Name="FxmeTube"
+)

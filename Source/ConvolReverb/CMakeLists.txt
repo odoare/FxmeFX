@@ -98,3 +98,24 @@ target_link_libraries(FxmeConvolReverb
         juce::juce_recommended_lto_flags
         juce::juce_recommended_warning_flags
 )
+
+# ── Pure Data external ────────────────────────────────────────────────────────
+# Reuses FxmeConvolReverbBinaryData. The Pd build hides the "External IR
+# file" slot — see the FXME_PD_BUILD branch in ConvolReverb::addParameters.
+include(${CMAKE_CURRENT_LIST_DIR}/../PdCommon/PdExternal.cmake)
+fxme_add_pd_external(FxmeConvolReverb_pd
+    LIBNAME   fxmeconvolreverb~
+    SOURCES
+        PdMain.cpp
+        PluginProcessor.cpp
+        ConvolReverb.cpp
+        ../../WDL/WDL/convoengine.cpp
+        ../../WDL/WDL/fft.c
+        ../../WDL/WDL/resample.cpp
+    INCLUDES
+        ${CMAKE_CURRENT_SOURCE_DIR}
+    DEFINES
+        JucePlugin_Name="FxmeConvolReverb"
+    LINK_LIBRARIES
+        FxmeConvolReverbBinaryData
+)

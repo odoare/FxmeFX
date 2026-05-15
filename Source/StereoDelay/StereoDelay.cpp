@@ -83,6 +83,7 @@ void StereoDelay::setOn (bool shouldBeOn)
 
 void StereoDelay::addParameters(std::vector<std::unique_ptr<juce::RangedAudioParameter>>& params, const juce::String& prefix)
 {
+    params.push_back(std::make_unique<juce::AudioParameterBool>(prefix + "_Del_On", prefix + " Del On", true));
     params.push_back(std::make_unique<juce::AudioParameterFloat>(prefix + "_Del_DelayL", prefix + " Del Delay L", 0.0f, 2.0f, 0.5f));
     params.push_back(std::make_unique<juce::AudioParameterFloat>(prefix + "_Del_DelayR", prefix + " Del Delay R", 0.0f, 2.0f, 0.75f));
     params.push_back(std::make_unique<juce::AudioParameterFloat>(prefix + "_Del_FdbkL", prefix + " Del Feedback L", -60.0f, 6.0f, -6.0f));
@@ -93,7 +94,6 @@ void StereoDelay::addParameters(std::vector<std::unique_ptr<juce::RangedAudioPar
     params.push_back(std::make_unique<juce::AudioParameterFloat>(prefix + "_Del_FilterQ", prefix + " Del Filter Q", 0.1f, 10.0f, 0.707f));
     params.push_back(std::make_unique<juce::AudioParameterFloat>(prefix + "_Del_DryGain", prefix + " Del Dry Gain", -60.0f, 6.0f, 0.0f));
     params.push_back(std::make_unique<juce::AudioParameterFloat>(prefix + "_Del_WetGain", prefix + " Del Wet Gain", -60.0f, 6.0f, -6.0f));
-    params.push_back(std::make_unique<juce::AudioParameterBool>(prefix + "_Del_On", prefix + " Del On", true));
 }
 
 void StereoDelay::assignParameters(juce::AudioProcessorValueTreeState& apvts, const juce::String& prefix)

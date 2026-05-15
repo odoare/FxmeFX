@@ -60,8 +60,22 @@ jobs:
             echo "::endgroup::"
           done
 
+      - name: Build Pure Data externals
+        run: |
+          for plugin in Compressor Equalizer Tube Transient StereoDelay ConvolReverb Cab Oct; do
+            echo "::group::Build Fxme${plugin} (Pd)"
+            cmake --build FxmeFX/build --config Release --target "Fxme${plugin}_pd" --parallel 2
+            echo "::endgroup::"
+          done
+
       - name: Upload VST3 artefacts
         uses: actions/upload-artifact@v4
         with:
           name: FxmeFX-VST3-Linux-x86_64
           path: FxmeFX/build/Source/*/Fxme*_artefacts/Release/VST3/
+
+      - name: Upload Pd externals
+        uses: actions/upload-artifact@v4
+        with:
+          name: FxmeFX-Pd-Linux-x86_64
+          path: FxmeFX/build/Source/*/*.pd_linux

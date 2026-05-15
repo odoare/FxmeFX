@@ -74,3 +74,17 @@ target_link_libraries(FxmeStereoDelay
         juce::juce_recommended_lto_flags
         juce::juce_recommended_warning_flags
 )
+
+# ── Pure Data external ────────────────────────────────────────────────────────
+include(${CMAKE_CURRENT_LIST_DIR}/../PdCommon/PdExternal.cmake)
+fxme_add_pd_external(FxmeStereoDelay_pd
+    LIBNAME   fxmestereodelay~
+    SOURCES
+        PdMain.cpp
+        PluginProcessor.cpp
+        StereoDelay.cpp
+    INCLUDES
+        ${CMAKE_CURRENT_SOURCE_DIR}
+    DEFINES
+        JucePlugin_Name="FxmeStereoDelay"
+)

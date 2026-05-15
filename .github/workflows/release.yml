@@ -51,18 +51,39 @@ jobs:
             echo "::endgroup::"
           done
 
+      - name: Build Pure Data externals
+        run: |
+          for plugin in Compressor Equalizer Tube Transient StereoDelay ConvolReverb Cab Oct; do
+            echo "::group::Build Fxme${plugin} (Pd)"
+            cmake --build FxmeFX/build --config Release --target "Fxme${plugin}_pd" --parallel 2
+            echo "::endgroup::"
+          done
+
       - name: Package
         shell: bash
         run: |
-          mkdir -p stage/VST3
+          mkdir -p stage/VST3 stage/Pd
           cp -r FxmeFX/build/Source/*/Fxme*_artefacts/Release/VST3/*.vst3 stage/VST3/
+          # Pd externals (fxme*~.pd_linux) — flat list, no per-plugin subdir.
+          if compgen -G "FxmeFX/build/Source/*/*.pd_linux" > /dev/null; then
+            cp FxmeFX/build/Source/*/*.pd_linux stage/Pd/
+          fi
           cd stage
           zip -r "${{ github.workspace }}/FxmeFX-VST3-Linux-x86_64.zip" VST3/
+          if [ -d Pd ] && [ -n "$(ls -A Pd)" ]; then
+            zip -r "${{ github.workspace }}/FxmeFX-Pd-Linux-x86_64.zip" Pd/
+          fi
 
       - uses: actions/upload-artifact@v4
         with:
-          name: linux-x86_64
+          name: linux-x86_64-vst3
           path: FxmeFX-VST3-Linux-x86_64.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-x86_64-pd
+          path: FxmeFX-Pd-Linux-x86_64.zip
+          if-no-files-found: ignore
 
 
   # ── Windows x86_64 ────────────────────────────────────────────────────────
@@ -105,19 +126,42 @@ jobs:
             Write-Host "::endgroup::"
           }
 
+      - name: Build Pure Data externals
+        shell: pwsh
+        run: |
+          foreach ($plugin in 'Compressor','Equalizer','Tube','Transient','StereoDelay','ConvolReverb','Cab','Oct') {
+            Write-Host "::group::Build Fxme$plugin (Pd)"
+            cmake --build FxmeFX/build --config Release --target "Fxme${plugin}_pd" --parallel 2
+            if ($LASTEXITCODE -ne 0) { throw "Build of Fxme${plugin}_pd failed" }
+            Write-Host "::endgroup::"
+          }
+
       - name: Package
         shell: bash
         run: |
-          mkdir -p stage/VST3
+          mkdir -p stage/VST3 stage/Pd
           # JUCE places .vst3 bundles as directories on Windows under VST3/
           cp -r FxmeFX/build/Source/*/Fxme*_artefacts/Release/VST3/*.vst3 stage/VST3/
+          # Pd externals build as plain .dll under <plugin>/Release/.
+          if compgen -G "FxmeFX/build/Source/*/Release/fxme*.dll" > /dev/null; then
+            cp FxmeFX/build/Source/*/Release/fxme*.dll stage/Pd/
+          fi
           cd stage
           7z a "${{ github.workspace }}/FxmeFX-VST3-Windows-x86_64.zip" VST3
+          if [ -d Pd ] && [ -n "$(ls -A Pd)" ]; then
+            7z a "${{ github.workspace }}/FxmeFX-Pd-Windows-x86_64.zip" Pd
+          fi
 
       - uses: actions/upload-artifact@v4
         with:
-          name: windows-x86_64
+          name: windows-x86_64-vst3
           path: FxmeFX-VST3-Windows-x86_64.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-x86_64-pd
+          path: FxmeFX-Pd-Windows-x86_64.zip
+          if-no-files-found: ignore
 
   # ── macOS universal (arm64 + x86_64) ──────────────────────────────────────
   build-macos:
@@ -157,6 +201,14 @@ jobs:
             echo "::endgroup::"
           done
 
+      - name: Build Pure Data externals
+        run: |
+          for plugin in Compressor Equalizer Tube Transient StereoDelay ConvolReverb Cab Oct; do
+            echo "::group::Build Fxme${plugin} (Pd)"
+            cmake --build FxmeFX/build --config Release --target "Fxme${plugin}_pd" --parallel 2
+            echo "::endgroup::"
+          done
+
       - name: Verify a universal binary
         run: |
           lipo -info "FxmeFX/build/Source/Compressor/FxmeCompressor_artefacts/Release/VST3/FxmeCompressor.vst3/Contents/MacOS/FxmeCompressor"
@@ -164,12 +216,18 @@ jobs:
       - name: Package raw zips
         shell: bash
         run: |
-          mkdir -p stage/VST3 stage/AU
+          mkdir -p stage/VST3 stage/AU stage/Pd
           cp -r FxmeFX/build/Source/*/Fxme*_artefacts/Release/VST3/*.vst3 stage/VST3/
           cp -r FxmeFX/build/Source/*/Fxme*_artefacts/Release/AU/*.component stage/AU/
+          if compgen -G "FxmeFX/build/Source/*/*.pd_darwin" > /dev/null; then
+            cp FxmeFX/build/Source/*/*.pd_darwin stage/Pd/
+          fi
           cd stage
           zip -r "${{ github.workspace }}/FxmeFX-VST3-macOS-universal.zip" VST3/
           zip -r "${{ github.workspace }}/FxmeFX-AU-macOS-universal.zip"  AU/
+          if [ -d Pd ] && [ -n "$(ls -A Pd)" ]; then
+            zip -r "${{ github.workspace }}/FxmeFX-Pd-macOS-universal.zip" Pd/
+          fi
 
       - uses: actions/upload-artifact@v4
         with:
@@ -180,6 +238,12 @@ jobs:
         with:
           name: macos-au
           path: FxmeFX-AU-macOS-universal.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos-pd
+          path: FxmeFX-Pd-macOS-universal.zip
+          if-no-files-found: ignore
 
   # ── Publish GitHub Release ────────────────────────────────────────────────
   release:

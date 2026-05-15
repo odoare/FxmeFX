@@ -9,6 +9,7 @@
 #pragma once
 
 #include <JuceHeader.h>
+#include <BinaryData.h>
 #include "../../WDL/WDL/convoengine.h"
 #include <atomic>
 #include <vector>

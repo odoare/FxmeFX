@@ -74,3 +74,17 @@ target_link_libraries(FxmeEqualizer
         juce::juce_recommended_lto_flags
         juce::juce_recommended_warning_flags
 )
+
+# ── Pure Data external ────────────────────────────────────────────────────────
+include(${CMAKE_CURRENT_LIST_DIR}/../PdCommon/PdExternal.cmake)
+fxme_add_pd_external(FxmeEqualizer_pd
+    LIBNAME   fxmeequalizer~
+    SOURCES
+        PdMain.cpp
+        PluginProcessor.cpp
+        Equalizer.cpp
+    INCLUDES
+        ${CMAKE_CURRENT_SOURCE_DIR}
+    DEFINES
+        JucePlugin_Name="FxmeEqualizer"
+)

@@ -159,12 +159,17 @@ void ConvolReverb::assignParameters (juce::AudioProcessorValueTreeState& apvts, 
 void ConvolReverb::addParameters (std::vector<std::unique_ptr<juce::RangedAudioParameter>>& params, const juce::String& prefix, int numIRs)
 {
     // IR selection: built-ins occupy 1..numIRs and the External slot is at
-    // numIRs + 1, so the param max is numIRs + 1.
+    // numIRs + 1, so the param max is numIRs + 1. The Pd build has no file
+    // picker so the External slot is hidden — the range stops at numIRs.
     int builtinMax = (numIRs > 0) ? numIRs : 1;
+   #ifdef FXME_PD_BUILD
+    int maxVal = builtinMax;
+   #else
     int maxVal = builtinMax + 1; // +1 for the External slot
+   #endif
+    params.push_back (std::make_unique<juce::AudioParameterBool> (juce::ParameterID { prefix + "_Rev_On", 1 }, prefix + " Rev On", true));
     params.push_back (std::make_unique<juce::AudioParameterInt> (juce::ParameterID { prefix + "_Rev_IR", 1 }, prefix + " Rev IR", 1, maxVal, 1));
     params.push_back (std::make_unique<juce::AudioParameterFloat> (juce::ParameterID { prefix + "_Rev_Length", 1 }, prefix + " Rev Length", 0.0f, 1.0f, 1.0f));
-    params.push_back (std::make_unique<juce::AudioParameterBool> (juce::ParameterID { prefix + "_Rev_On", 1 }, prefix + " Rev On", true));
     
     juce::StringArray shapes;
     shapes.add ("Fast Exp");

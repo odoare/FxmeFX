@@ -77,3 +77,19 @@ target_link_libraries(FxmeTransient
         juce::juce_recommended_lto_flags
         juce::juce_recommended_warning_flags
 )
+
+# ── Pure Data external ────────────────────────────────────────────────────────
+include(${CMAKE_CURRENT_LIST_DIR}/../PdCommon/PdExternal.cmake)
+fxme_add_pd_external(FxmeTransient_pd
+    LIBNAME   fxmetransient~
+    SOURCES
+        PdMain.cpp
+        PluginProcessor.cpp
+        Transient.cpp
+        ../VuMeter/VuMeter.cpp
+    INCLUDES
+        ${CMAKE_CURRENT_SOURCE_DIR}
+        ${CMAKE_CURRENT_SOURCE_DIR}/../VuMeter
+    DEFINES
+        JucePlugin_Name="FxmeTransient"
+)

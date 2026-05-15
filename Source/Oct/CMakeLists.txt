@@ -74,3 +74,17 @@ target_link_libraries(FxmeOct
         juce::juce_recommended_lto_flags
         juce::juce_recommended_warning_flags
 )
+
+# ── Pure Data external ────────────────────────────────────────────────────────
+include(${CMAKE_CURRENT_LIST_DIR}/../PdCommon/PdExternal.cmake)
+fxme_add_pd_external(FxmeOct_pd
+    LIBNAME   fxmeoct~
+    SOURCES
+        PdMain.cpp
+        PluginProcessor.cpp
+        Oct.cpp
+    INCLUDES
+        ${CMAKE_CURRENT_SOURCE_DIR}
+    DEFINES
+        JucePlugin_Name="FxmeOct"
+)

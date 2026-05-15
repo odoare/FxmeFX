@@ -7,7 +7,9 @@
 */
 
 #include "PluginProcessor.h"
-#include "PluginEditor.h"
+#ifndef FXME_PD_BUILD
+ #include "PluginEditor.h"
+#endif
 
 FxmeCompressorAudioProcessor::FxmeCompressorAudioProcessor()
 #ifndef JucePlugin_PreferredChannelConfigurations
@@ -149,12 +151,20 @@ void FxmeCompressorAudioProcessor::processBlock (juce::AudioBuffer<float>& buffe
 
 bool FxmeCompressorAudioProcessor::hasEditor() const
 {
+   #ifdef FXME_PD_BUILD
+    return false;
+   #else
     return true;
+   #endif
 }
 
 juce::AudioProcessorEditor* FxmeCompressorAudioProcessor::createEditor()
 {
+   #ifdef FXME_PD_BUILD
+    return nullptr;
+   #else
     return new FxmeCompressorAudioProcessorEditor (*this);
+   #endif
 }
 
 void FxmeCompressorAudioProcessor::getStateInformation (juce::MemoryBlock& destData)

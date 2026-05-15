@@ -81,3 +81,22 @@ target_link_libraries(FxmeCompressor
         juce::juce_recommended_lto_flags
         juce::juce_recommended_warning_flags
 )
+
+# ── Pure Data external ────────────────────────────────────────────────────────
+# Shares the DSP source (PluginProcessor + Compressor + VuMeter) with the VST3
+# target; the only divergence is PdMain.cpp (Pd entry points) and the
+# FXME_PD_BUILD compile flag, which neuters the editor in PluginProcessor.
+include(${CMAKE_CURRENT_LIST_DIR}/../PdCommon/PdExternal.cmake)
+fxme_add_pd_external(FxmeCompressor_pd
+    LIBNAME   fxmecompressor~
+    SOURCES
+        PdMain.cpp
+        PluginProcessor.cpp
+        Compressor.cpp
+        ../VuMeter/VuMeter.cpp
+    INCLUDES
+        ${CMAKE_CURRENT_SOURCE_DIR}
+        ${CMAKE_CURRENT_SOURCE_DIR}/../VuMeter
+    DEFINES
+        JucePlugin_Name="FxmeCompressor"
+)

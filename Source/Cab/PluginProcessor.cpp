@@ -7,7 +7,9 @@
 */
 
 #include "PluginProcessor.h"
-#include "PluginEditor.h"
+#ifndef FXME_PD_BUILD
+ #include "PluginEditor.h"
+#endif
 
 void FxmeCabAudioProcessor::getBuiltInIRList (juce::StringArray& names, juce::StringArray& resources)
 {
@@ -108,11 +110,16 @@ void FxmeCabAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce
     cab.process (buffer);
 }
 
+#ifdef FXME_PD_BUILD
+bool FxmeCabAudioProcessor::hasEditor() const { return false; }
+juce::AudioProcessorEditor* FxmeCabAudioProcessor::createEditor() { return nullptr; }
+#else
 bool FxmeCabAudioProcessor::hasEditor() const { return true; }
 juce::AudioProcessorEditor* FxmeCabAudioProcessor::createEditor()
 {
     return new FxmeCabAudioProcessorEditor (*this);
 }
+#endif
 
 void FxmeCabAudioProcessor::getStateInformation (juce::MemoryBlock& destData)
 {

@@ -113,3 +113,24 @@ target_link_libraries(FxmeCab
         juce::juce_recommended_lto_flags
         juce::juce_recommended_warning_flags
 )
+
+# ── Pure Data external ────────────────────────────────────────────────────────
+# Reuses the same FxmeCabBinaryData target as the VST build, so the Pd
+# external ships the full cabinet IR collection without any file picker.
+include(${CMAKE_CURRENT_LIST_DIR}/../PdCommon/PdExternal.cmake)
+fxme_add_pd_external(FxmeCab_pd
+    LIBNAME   fxmecab~
+    SOURCES
+        PdMain.cpp
+        PluginProcessor.cpp
+        Cab.cpp
+        ../../WDL/WDL/convoengine.cpp
+        ../../WDL/WDL/fft.c
+        ../../WDL/WDL/resample.cpp
+    INCLUDES
+        ${CMAKE_CURRENT_SOURCE_DIR}
+    DEFINES
+        JucePlugin_Name="FxmeCab"
+    LINK_LIBRARIES
+        FxmeCabBinaryData
+)

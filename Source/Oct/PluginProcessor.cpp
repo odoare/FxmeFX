@@ -7,7 +7,9 @@
 */
 
 #include "PluginProcessor.h"
-#include "PluginEditor.h"
+#ifndef FXME_PD_BUILD
+ #include "PluginEditor.h"
+#endif
 
 FxmeOctAudioProcessor::FxmeOctAudioProcessor()
 #ifndef JucePlugin_PreferredChannelConfigurations
@@ -78,11 +80,16 @@ void FxmeOctAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce
     oct.process (buffer);
 }
 
+#ifdef FXME_PD_BUILD
+bool FxmeOctAudioProcessor::hasEditor() const { return false; }
+juce::AudioProcessorEditor* FxmeOctAudioProcessor::createEditor() { return nullptr; }
+#else
 bool FxmeOctAudioProcessor::hasEditor() const { return true; }
 juce::AudioProcessorEditor* FxmeOctAudioProcessor::createEditor()
 {
     return new FxmeOctAudioProcessorEditor (*this);
 }
+#endif
 
 void FxmeOctAudioProcessor::getStateInformation (juce::MemoryBlock& destData)
 {

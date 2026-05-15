@@ -48,6 +48,14 @@ jobs:
             echo "::endgroup::"
           done
 
+      - name: Build Pure Data externals
+        run: |
+          for plugin in Compressor Equalizer Tube Transient StereoDelay ConvolReverb Cab Oct; do
+            echo "::group::Build Fxme${plugin} (Pd)"
+            cmake --build FxmeFX/build --config Release --target "Fxme${plugin}_pd" --parallel 2
+            echo "::endgroup::"
+          done
+
       - name: Verify a universal binary
         run: |
           lipo -info "FxmeFX/build/Source/Compressor/FxmeCompressor_artefacts/Release/VST3/FxmeCompressor.vst3/Contents/MacOS/FxmeCompressor"
@@ -63,3 +71,9 @@ jobs:
         with:
           name: FxmeFX-AU-macOS-universal
           path: FxmeFX/build/Source/*/Fxme*_artefacts/Release/AU/
+
+      - name: Upload Pd externals
+        uses: actions/upload-artifact@v4
+        with:
+          name: FxmeFX-Pd-macOS-universal
+          path: FxmeFX/build/Source/*/*.pd_darwin
