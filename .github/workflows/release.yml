@@ -113,8 +113,23 @@ jobs:
           mkdir -p JUCE/usermodules
           mv _fxme_tmp/module/FxmeJuceTools JUCE/usermodules/FxmeJuceTools
 
+      # Pd-vanilla's bin/pd.lib is the import library MSVC needs to resolve
+      # the m_pd.h ABI. See PdExternal.cmake for details.
+      - name: Fetch Pd-vanilla (for pd.lib)
+        shell: pwsh
+        run: |
+          $pdVersion = "0.56-2"
+          $pdZip = "pd-$pdVersion.msw.zip"
+          $url = "https://msp.ucsd.edu/Software/$pdZip"
+          Invoke-WebRequest -Uri $url -OutFile $pdZip
+          Expand-Archive -Path $pdZip -DestinationPath pd-msw
+          $pdLib = (Get-ChildItem -Path pd-msw -Recurse -Filter pd.lib | Select-Object -First 1).FullName
+          if (-not $pdLib) { throw "pd.lib not found inside $pdZip" }
+          echo "FXME_PD_LIB=$pdLib" >> $env:GITHUB_ENV
+
       - name: Configure
-        run: cmake -B FxmeFX/build -S FxmeFX -G "Visual Studio 17 2022"
+        run: cmake -B FxmeFX/build -S FxmeFX -G "Visual Studio 17 2022" "-DFXME_PD_LIB=$env:FXME_PD_LIB"
+        shell: pwsh
 
       - name: Build (one plugin at a time)
         shell: pwsh

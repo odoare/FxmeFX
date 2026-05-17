@@ -265,6 +265,21 @@ cmake -S Source/Compressor -B Source/Compressor/build -DCMAKE_BUILD_TYPE=Release
 cmake --build Source/Compressor/build --parallel
 ```
 
+### Pure Data externals on Windows
+
+On Linux and macOS the Pd externals link with undefined symbols and Pd
+resolves the `m_pd.h` ABI at load time. MSVC won't do that — its linker
+needs an import library. Point CMake at `bin/pd.lib` from a Pd-vanilla
+Windows install:
+
+```pwsh
+cmake -B build -S . -G "Visual Studio 17 2022" `
+    "-DFXME_PD_LIB=C:/Program Files/Pd/bin/pd.lib"
+cmake --build build --config Release --target FxmeCompressor_pd
+```
+
+CI fetches Pd-vanilla automatically; only local Windows builds need this.
+
 ## Releases
 
 Pushing a version tag like `v0.1.0` triggers

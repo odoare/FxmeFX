@@ -1,206 +1,223 @@
-Developer Guide: Converting a JUCE AudioProcessor to a Native Pure Data External
-1. Architectural Overview
+# Converting a FxmeFX plugin to a Pure Data external
 
-A standard JUCE VST consists of an AudioProcessor (DSP) and an AudioProcessorEditor (GUI). For a Pure Data external, the GUI layer is discarded entirely.
+This is the recipe actually used in this repo. The reusable scaffolding lives
+in [`Source/PdCommon/`](../Source/PdCommon/); each plugin just adds one source
+file and one CMake block.
 
-The Pure Data C API will serve as a wrapper around your headless JUCE AudioProcessor. The external will dynamically query your JUCE plugin for its parameters, generate a dedicated physical float inlet for each one, and stream the audio data directly through JUCE's processBlock.
+## Architecture
 
-                  ┌─────────────────────────────────────────┐
-                  │            Pure Data Patch              │
-                  └────────────────────┬────────────────────┘
-                                       │
-         ┌─────────────────────────────┼─────────────────────────────┐
-         ▼                             ▼                             ▼
-   [ Audio In L ]               [ Param 1 Inlet ]             [ Param 2 Inlet ]
-         │                             │                             │
-         │ (Pd Audio Buffer)           │ (Updates t_float)           │ (Updates t_float)
-         ▼                             ▼                             ▼
-   ┌─────────────┐               ┌─────────────┐               ┌─────────────┐
-   │  pd_input   │               │   param[0]  │               │   param[1]  │
-   └─────┬───────┘               └──────┬──────┘               └──────┬──────┘
-         │                              │                             │
-         │ Wrapper converts to          └──────────────┬──────────────┘
-         │ juce::AudioBuffer                           │ Updates JUCE
-         ▼                                             ▼ Parameters
-   ┌─────────────────────────────────────────────────────────────────────────┐
-   │                     JUCE AudioProcessor Engine                          │
-   │   - processBlock(juce_buffer, midi)                                     │
-   └───────────────────────────────────┬─────────────────────────────────────┘
-                                       │
-                                       ▼ (Pd Audio Buffer)
-                                 [ Audio Out L ]
+A FxmeFX plugin is a `juce::AudioProcessor` (DSP + `AudioProcessorValueTreeState`)
+plus a `juce::AudioProcessorEditor` (GUI). The Pd external **reuses the same
+`AudioProcessor` unchanged** and discards the editor entirely. The Pd patch
+sees:
 
-2. Prerequisites & Workspace Setup
+```
+inlet 0  (signal)   audio in L     ──┐
+inlet 1  (signal)   audio in R     ──┤
+inlet 2  (float)    param 0        ──┤
+   …                                 │      ┌─────────────────────────────────┐
+inlet N+1 (float)   param N-1      ──┴────► │  fxme_pd::Host<ProcessorType>   │
+                                            │  ↳ processBlock(buffer, midi)   │
+outlet 0 (signal)   audio out L    ◄────────│                                 │
+outlet 1 (signal)   audio out R    ◄────────└─────────────────────────────────┘
+```
 
-    Locate m_pd.h: Grab this from your local Pure Data installation directory (usually under PureData/src/) or directly from the pure-data GitHub repository. Place it in your project's include path.
+The N parameter inlets are derived from `processor->getParameters()` at
+construction time, in declaration order, **denormalised** (a `t_float` slot
+per parameter is wired straight to a `floatinlet_new`, and the host re-
+normalises before calling `setValueNotifyingHost` once per audio block).
 
-    Isolate JUCE Files: Ensure your compiler has access to your existing JUCE source modules (juce_audio_basics, juce_audio_processors, etc.).
+## What lives in `Source/PdCommon/`
 
-    Compiler Flag: Ensure your compiler is building a shared dynamic library and is compiling with C++17 or C++20 enabled (required by modern JUCE).
+| File | Purpose |
+| --- | --- |
+| [`m_pd.h`](../Source/PdCommon/m_pd.h) | Pure Data C ABI header (vendored, version-pinned). |
+| [`JuceHeaderShim/JuceHeader.h`](../Source/PdCommon/JuceHeaderShim/JuceHeader.h) | Drop-in `<JuceHeader.h>` for non-`juce_add_plugin` targets. Only includes the modules the Pd build actually links — no `juce_audio_devices`, no `juce_audio_plugin_client`. |
+| [`PdJuceHost.h`](../Source/PdCommon/PdJuceHost.h) | The reusable runtime: `fxme_pd::JuceLifetime` (ref-counted `ScopedJuceInitialiser_GUI`), `fxme_pd::Host<ProcessorType>` (wraps the AudioProcessor, owns the t_float parameter slots, flushes them into JUCE once per block), and the `FXME_PD_DEFINE_EXTERNAL` macro that emits the Pd boilerplate (`_new` / `_free` / `_dsp` / `_perform` / `_tilde_setup`). |
+| [`PdExternal.cmake`](../Source/PdCommon/PdExternal.cmake) | Provides `fxme_add_pd_external(target LIBNAME … SOURCES … INCLUDES … DEFINES … LINK_LIBRARIES …)`. Adds a CMake `MODULE` library, sets the correct extension (`.pd_linux` / `.pd_darwin` / `.dll`), strips the `lib` prefix, defines `FXME_PD_BUILD=1` plus generic `JucePlugin_*` macros, links the JUCE modules required for headless `AudioProcessor` hosting, and on macOS sets `-undefined dynamic_lookup` so the `pd_…` symbols are resolved by the host at load time. |
 
-3. Step-by-Step Implementation Instructions
-Step 1: Strip the GUI
+The host (template `fxme_pd::Host<ProcessorType>`) does three things:
 
-In your original JUCE source code, locate your AudioProcessor implementation file (PluginProcessor.cpp). Ensure the following methods are stripped down or neutralized:
+1. Constructs the JUCE processor inside a ref-counted `ScopedJuceInitialiser_GUI`.
+2. Builds a `std::vector<t_float>` with one slot per `RangedAudioParameter`,
+   pre-loaded with `convertFrom0to1(getDefaultValue())`. Pd's
+   `floatinlet_new` writes into those slots directly.
+3. On each audio block, walks the slots and — for any that changed — calls
+   `setValueNotifyingHost(convertTo0to1(slot))` before invoking
+   `processBlock`.
 
-    hasEditor() must return false.
+The `FXME_PD_DEFINE_EXTERNAL(ClassName, ProcessorType)` macro emits a fixed
+two-in / two-out stereo signal external. The Pd binary is named
+`<ClassName>~.pd_<platform>` and Pd calls `<ClassName>_tilde_setup()` on load.
 
-    createEditor() must return nullptr.
+## Per-plugin recipe
 
-Step 2: Define the Pure Data Object Structure
+Adding PD support to a plugin is three steps. Estimate: **~15 minutes**.
 
-In your C++ wrapper file, define the object structure. It must hold a pointer to your JUCE class, a block storage array for your parameter values, and pointers to the dynamically generated inlets.
-C++
+### 1. Add `PdMain.cpp`
 
-extern "C" {
-    #include "m_pd.h"
+A single-line entry-point file next to `PluginProcessor.cpp`:
+
+```cpp
+// Source/<Plugin>/PdMain.cpp
+#include "../PdCommon/PdJuceHost.h"
+#include "PluginProcessor.h"
+
+#include <cstring>
+
+FXME_PD_DEFINE_EXTERNAL (fxmecompressor, FxmeCompressorAudioProcessor)
+//                       ^ Pd class name  ^ JUCE AudioProcessor type
+//                       (no tilde — the macro appends it)
+```
+
+The Pd class name is conventionally `fxme<name>` (lower-case, no underscores).
+Pd patches will refer to the object as `fxmecompressor~`.
+
+### 2. Guard `PluginProcessor.cpp` against the editor
+
+Two minimal edits — both already in every existing plugin, copy the pattern:
+
+```cpp
+#include "PluginProcessor.h"
+#ifndef FXME_PD_BUILD
+ #include "PluginEditor.h"           // <-- guard 1
+#endif
+
+…
+
+#ifdef FXME_PD_BUILD                  // <-- guard 2
+bool FxmeXxxAudioProcessor::hasEditor() const { return false; }
+juce::AudioProcessorEditor* FxmeXxxAudioProcessor::createEditor() { return nullptr; }
+#else
+bool FxmeXxxAudioProcessor::hasEditor() const { return true; }
+juce::AudioProcessorEditor* FxmeXxxAudioProcessor::createEditor()
+{
+    return new FxmeXxxAudioProcessorEditor (*this);
 }
-#include "PluginProcessor.h" // Your JUCE AudioProcessor header
+#endif
+```
 
-static t_class *juce_pd_class;
+Nothing else in `PluginProcessor.cpp` needs to change. **The DSP class
+(`Compressor`, `Equalizer`, …) and `AudioProcessorValueTreeState` setup are
+identical between the VST3 and PD builds** — that's the whole point.
 
-struct t_juce_pd {
-    t_object  x_obj;             // Standard Pd object handle
-    t_sample  f;                 // Dummy variable for signal objects
-    
-    // JUCE Engine Pointer
-    YourJuceAudioProcessor* processor; 
-    
-    // Parameter Tracking
-    int       num_params;
-    t_float* param_values;      // Internal array where Pd inlets write values
-};
+### 3. Append a PD block to the plugin's `CMakeLists.txt`
 
-Step 3: Dynamic Parameter and Inlet Allocation (_new Constructor)
+After the existing `juce_add_plugin(…) / target_link_libraries(…)` block, add:
 
-When a user instantiates your object in a Pd patch, the constructor queries JUCE to find out how many parameters exist. It then dynamically allocates an array of floats and creates a dedicated inlet for each parameter.
-C++
+```cmake
+# ── Pure Data external ────────────────────────────────────────────────────────
+include(${CMAKE_CURRENT_LIST_DIR}/../PdCommon/PdExternal.cmake)
+fxme_add_pd_external(FxmeCompressor_pd
+    LIBNAME   fxmecompressor~                # final binary file name
+    SOURCES
+        PdMain.cpp
+        PluginProcessor.cpp                  # reused as-is, FXME_PD_BUILD branches strip the editor
+        Compressor.cpp                       # the DSP class
+        ../VuMeter/VuMeter.cpp               # anything else the DSP path touches
+    INCLUDES
+        ${CMAKE_CURRENT_SOURCE_DIR}
+        ${CMAKE_CURRENT_SOURCE_DIR}/../VuMeter
+    DEFINES
+        JucePlugin_Name="FxmeCompressor"     # the only JucePlugin_* macro that varies per plugin
+    # LINK_LIBRARIES FxmeXxxBinaryData       # if the plugin embeds binary data (e.g. ConvolReverb, Cab)
+)
+```
 
-void *juce_pd_new(void) {
-    t_juce_pd *x = (t_juce_pd *)pd_new(juce_pd_class);
-    
-    // 1. Instantiate the JUCE Processor
-    juce::initialiseJUCE_NonGUI(); 
-    x->processor = new YourJuceAudioProcessor();
-    
-    // 2. Query JUCE Parameters
-    const auto& parameters = x->processor->getParameters();
-    x->num_params = parameters.size();
-    
-    // 3. Allocate memory to store incoming values from inlets
-    x->param_values = (t_float *)getbytes(x->num_params * sizeof(t_float));
-    
-    // 4. Create Standard Audio Inlets / Outlets
-    // (Note: First signal inlet is created automatically by dsp_new)
-    dsp_new(&x->x_obj, 1); 
-    outlet_new(&x->x_obj, &s_signal); // Audio Outlet Left
-    
-    // 5. DYNAMICALLY CREATE PARAMETER INLETS
-    // We map each inlet directly to its corresponding slot in our array
-    for (int i = 0; i < x->num_params; ++i) {
-        // Initialize with the default JUCE parameter value
-        x->param_values[i] = parameters[i]->getDefaultValue();
-        
-        // This automatically redirects incoming floats on this inlet to &x->param_values[i]
-        floatinlet_new(&x->x_obj, &x->param_values[i]);
-    }
+Notes:
 
-    return (void *)x;
-}
+- **Do not list `CMakeLists.txt`-local `*Component.cpp` files** — the editor
+  components and FxmeJuceTools helpers are never compiled into the PD external.
+- **Binary-data targets pass through `LINK_LIBRARIES`**. The PD CMake reuses
+  the same `juce_add_binary_data(…)` target the VST build already created
+  (e.g. `FxmeConvolReverbBinaryData`, `FxmeCabBinaryData`).
+- **No need to change the parameter list for PD** unless the plugin has
+  parameters that don't make sense without a UI (the canonical case is
+  ConvolReverb's "External IR file" slot — see
+  [`ConvolReverb::addParameters`](../Source/ConvolReverb/ConvolReverb.cpp),
+  which uses `#ifdef FXME_PD_BUILD` to shrink the parameter range).
 
-Step 4: Map the Audio Graph (_dsp Method)
+## Build & test
 
-This function tells Pure Data where to find your audio signal vectors and registers your real-time processing loop.
-C++
+```bash
+# A single plugin's PD external (fast):
+cmake -S Source/Compressor -B Source/Compressor/build-pd -DCMAKE_BUILD_TYPE=Release
+cmake --build Source/Compressor/build-pd --target FxmeCompressor_pd --parallel 4
 
-void juce_pd_dsp(t_juce_pd *x, t_signal **sp) {
-    // Pass current Sample Rate and Block Size to JUCE
-    double sample_rate = sp[0]->s_sr;
-    int block_size = sp[0]->s_n;
-    
-    x->processor->setRateAndBufferSizeDetails(sample_rate, block_size);
-    x->processor->prepareToPlay(sample_rate, block_size);
+# Produces:
+#   Source/Compressor/build-pd/fxmecompressor~.pd_linux   (or .pd_darwin / .dll)
 
-    // Register perform routine: pass object, block size, input vector, output vector
-    dsp_add(juce_pd_perform, 4, x, sp[0]->s_n, sp[0]->s_vec, sp[1]->s_vec);
-}
+# From the project root, all PD externals at once:
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build --target FxmeCompressor_pd FxmeEqualizer_pd … --parallel 4
+```
 
-Step 5: The Real-Time Audio Loop (_perform Method)
+`build-pd/` is in [`.gitignore`](../.gitignore).
 
-Inside the high-priority audio thread, the wrapper updates the JUCE parameters from the float array before asking JUCE to process the audio buffer.
-C++
+In Pure Data, drop the produced file into a patch's directory (or
+`Pd/extra/`) and instantiate `[fxmecompressor~]`. Inlet count:
+**2 signal + N float**, where N is the number of `RangedAudioParameter`s the
+processor exposes. Pd's right-click → "Help" works once you add a help
+patch — that's outside this guide.
 
-t_int *juce_pd_perform(t_int *w) {
-    t_juce_pd *x = (t_juce_pd *)(w[1]);
-    int block_size = (int)(w[2]);
-    t_sample *in   = (t_sample *)(w[3]);
-    t_sample *out  = (t_sample *)(w[4]);
-    
-    if (x->processor == nullptr) return (w + 5);
+## Gotchas (lessons learned the slow way)
 
-    // 1. Flush updated float values from inlets into JUCE parameters
-    const auto& parameters = x->processor->getParameters();
-    for (int i = 0; i < x->num_params; ++i) {
-        parameters[i]->setValueNotifyingHost(x->param_values[i]);
-    }
+1. **`JuceHeaderShim` is a separate include path from the normal Projucer-
+   style `JuceLibraryCode/`.** PD builds use the shim because we explicitly
+   *don't* want `juce_audio_plugin_client` (it injects a `createPluginFilter`
+   entry point that conflicts with our Pd entry) and the device modules
+   (they pull in ALSA / Core Audio / WASAPI for no reason). Don't try to
+   share a JuceHeader.h between the VST and PD builds.
 
-    // 2. Prepare Zero-Copy Audio Buffer Wrapper for JUCE
-    float* channels[] = { out };
-    std::memcpy(out, in, block_size * sizeof(float)); // Copy input to output for in-place processing
-    juce::AudioBuffer<float> buffer(channels, 1, block_size);
+2. **`juce::AudioProcessorValueTreeState` transitively depends on
+   `juce_gui_*`.** That is why `PdExternal.cmake` still links the JUCE GUI
+   modules even though `hasEditor()` is false. On Linux this means a PD
+   external loads X11/freetype/fontconfig at `dlopen` time — none of them
+   are instantiated, they're just present in the link graph. Don't try to
+   prune them; APVTS will not compile without them.
 
-    // 3. Execute JUCE DSP Engine
-    juce::MidiBuffer midi;
-    x->processor->processBlock(buffer, midi);
+3. **Pd loads externals lazily, instances come and go.** That's why
+   `JuceLifetime` is ref-counted. Don't hoist `ScopedJuceInitialiser_GUI`
+   to a file-scope static — it'll either run too early (before Pd has set
+   up its threads) or never tear down.
 
-    return (w + 5);
-}
+4. **`floatinlet_new` writes denormalised values.** The Pd patch sees the
+   parameter in its natural units (dB, Hz, ratio, …), not 0..1. The host
+   converts before forwarding to JUCE. This is the right choice
+   ergonomically (`[400(` to `[oct_detect_inlet]` "just works") but the
+   `fxme_pd::Host::flushParameters` path is the only place the conversion
+   happens — don't bypass it.
 
-Step 6: Memory Cleanup (_free Destructor)
+5. **The `LIBNAME` includes the tilde.** Pd's loader matches by file name,
+   not by symbol. Get this wrong and Pd silently fails to find the class —
+   no error, the object just appears as a red box.
 
-Failing to release JUCE from memory will cause Pure Data to crash on patch closure. Clean up your dynamic memory allocations properly.
-C++
+6. **`-undefined dynamic_lookup` is required on macOS.** Pd's ABI symbols
+   (`pd_new`, `outlet_new`, `dsp_add`, …) are resolved against the host
+   process at load time. On Linux this is the default GNU ld behaviour;
+   on macOS you have to ask for it explicitly. PdExternal.cmake does this
+   already — don't override it.
 
-void juce_pd_free(t_juce_pd *x) {
-    dsp_free(&x->x_obj);
-    
-    if (x->processor != nullptr) {
-        x->processor->releaseResources();
-        delete x->processor;
-    }
-    
-    if (x->param_values != nullptr) {
-        freebytes(x->param_values, x->num_params * sizeof(t_float));
-    }
-    
-    juce::shutdownJUCE();
-}
+7. **Plugin-specific `#ifdef FXME_PD_BUILD` branches belong in the DSP class
+   or `addParameters`, not in `PdMain.cpp`.** `PdMain.cpp` is a single macro
+   call by design — keep it that way.
 
-Step 7: Main Setup Entry Hook
+## Adding a new plugin: checklist
 
-This function runs the exact moment Pure Data loads your external library bin file.
-C++
+Once the infrastructure above exists, adding PD support to a new effect is:
 
-extern "C" void your_plugin_name_setup(void) {
-    juce_pd_class = class_new(gensym("your_plugin_name~"),
-                              (t_newmethod)juce_pd_new,
-                              (t_method)juce_pd_free,
-                              sizeof(t_juce_pd),
-                              CLASS_DEFAULT, 
-                              A_DEFFLOAT, 0);
+- [ ] Create `Source/<Plugin>/PdMain.cpp` (one macro call).
+- [ ] Add `#ifndef FXME_PD_BUILD` around the `PluginEditor.h` include and
+      wrap `hasEditor()` / `createEditor()` in `Source/<Plugin>/PluginProcessor.cpp`.
+- [ ] Append the `fxme_add_pd_external(…)` block to
+      `Source/<Plugin>/CMakeLists.txt`.
+- [ ] Pick a Pd class name (lower-case, no underscores; conventionally
+      `fxme<name>`).
+- [ ] List any binary-data targets the DSP depends on in `LINK_LIBRARIES`.
+- [ ] Build the `Fxme<Plugin>_pd` target and load the resulting
+      `fxme<name>~.pd_<platform>` into a test patch.
 
-    class_addmethod(juce_pd_class, (t_method)juce_pd_dsp, gensym("dsp"), A_CANT, 0);
-    CLASS_MAINSIGNALIN(juce_pd_class, t_juce_pd, f);
-}
-
-4. Compilation Order of Operations
-
-When configuring your build script (via Make or CMake):
-
-    Compile JUCE source modules as static objects (.o / .obj).
-
-    Compile your AudioProcessor classes while defining the macro JUCE_AUDIOPROCESSOR_NO_GUI=1.
-
-    Compile your Pd wrapper code referencing m_pd.h.
-
-    Link everything together into a single binary named your_plugin_name~.pd_linux (Linux), your_plugin_name~.pd_darwin (macOS), or your_plugin_name~.dll (Windows).
+That's the whole conversion. The first time we did this took a couple of
+hours of design work to land on the
+`Host` / `JuceLifetime` / `FXME_PD_DEFINE_EXTERNAL` split; subsequent
+plugins should be ~15 minutes each.

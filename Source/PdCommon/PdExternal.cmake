@@ -92,13 +92,30 @@ function(fxme_add_pd_external target)
 
     # Pd externals are loaded by Pd via dlopen; the m_pd.h ABI symbols
     # (pd_new, outlet_new, dsp_add, ...) are resolved at load time against
-    # the host process, so they must remain undefined in our shared module.
+    # the host process.
+    #
+    # Linux/macOS: GNU ld / ld64 leaves them undefined in our shared module
+    # and Pd resolves them at load time.
+    #
+    # Windows MSVC: m_pd.h declares those symbols with __declspec(dllimport),
+    # so the linker insists on an import library at link time. The Pd Windows
+    # distribution ships one (bin/pd.lib). Pass it via -DFXME_PD_LIB=<path>;
+    # CI fetches Pd-vanilla and points to it.
     if(UNIX AND NOT APPLE)
         set_target_properties(${target} PROPERTIES POSITION_INDEPENDENT_CODE ON)
-        # GNU ld allows undefined symbols in shared modules by default; we
-        # only need to make sure nothing higher up flips it to --no-undefined.
     elseif(APPLE)
         target_link_options(${target} PRIVATE "-undefined" "dynamic_lookup")
+    elseif(WIN32)
+        if(NOT FXME_PD_LIB)
+            message(FATAL_ERROR
+                "Building a Pd external on Windows requires FXME_PD_LIB to "
+                "point at pd.lib from the Pd-vanilla Windows distribution. "
+                "Configure with -DFXME_PD_LIB=C:/path/to/pd/bin/pd.lib")
+        endif()
+        if(NOT EXISTS "${FXME_PD_LIB}")
+            message(FATAL_ERROR "FXME_PD_LIB does not exist: ${FXME_PD_LIB}")
+        endif()
+        target_link_libraries(${target} PRIVATE "${FXME_PD_LIB}")
     endif()
 
 endfunction()
