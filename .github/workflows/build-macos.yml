@@ -1,10 +1,9 @@
 name: Build macOS Universal
 
+# Manual-only: run on demand from the Actions tab. Automatic builds on every
+# commit are intentionally disabled — release artefacts are produced by
+# release.yml on vx.y.z tags.
 on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
   workflow_dispatch:
 
 jobs:
