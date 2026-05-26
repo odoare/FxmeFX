@@ -24,6 +24,19 @@ drum kits).
 All plugins build as **VST3**, **AU** (macOS) and a **Standalone** application,
 and also as headless **Pure Data externals** — see the dedicated section below.
 
+## Screenshots
+
+| | |
+| :---: | :---: |
+| **FxmeCompressor** | **FxmeEqualizer** |
+| ![FxmeCompressor](doc/FxmeCompressor.png) | ![FxmeEqualizer](doc/FxmeEqualizer.png) |
+| **FxmeTube** | **FxmeTransient** |
+| ![FxmeTube](doc/FxmeTube.png) | ![FxmeTransient](doc/FxmeTransient.png) |
+| **FxmeStereoDelay** | **FxmeConvolReverb** |
+| ![FxmeStereoDelay](doc/FxmeStereoDelay.png) | ![FxmeConvolReverb](doc/FxmeConvolReverb.png) |
+| **FxmeCab** | **FxmeOct** |
+| ![FxmeCab](doc/FxmeCab.png) | ![FxmeOct](doc/FxmeOct.png) |
+
 ## Pure Data externals
 
 Each plugin also ships as a Pd signal external that reuses the exact same DSP

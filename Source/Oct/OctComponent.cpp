@@ -94,7 +94,7 @@ void OctComponent::resized()
     detectRow.flexDirection = juce::FlexBox::Direction::row;
     fMain.flexDirection     = juce::FlexBox::Direction::column;
 
-    top.items.add (fi (onButton).withFlex (0.2f));
+    top.items.add (fi (onButton).withFlex (0.15f));
     top.items.add (fi (titleLabel).withFlex (1.0f));
 
     mixRow.items.add (fi (drySlider) .withFlex (1.0f));
@@ -104,7 +104,7 @@ void OctComponent::resized()
     detectRow.items.add (fi (detectSlider).withFlex (1.0f));
     detectRow.items.add (fi (toneSlider)  .withFlex (1.0f));
 
-    fMain.items.add (fi (top)      .withFlex (0.12f).withMargin (juce::FlexItem::Margin (5.f, 0.f, 8.f, 0.f)));
+    fMain.items.add (fi (top)      .withFlex (0.15f).withMargin (juce::FlexItem::Margin (5.f, 0.f, 8.f, 0.f)));
     fMain.items.add (fi (mixRow)   .withFlex (1.0f));
     fMain.items.add (fi (detectRow).withFlex (1.0f).withMargin (juce::FlexItem::Margin (4.f, 0.f, 0.f, 0.f)));
 

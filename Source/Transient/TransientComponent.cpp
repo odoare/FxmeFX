@@ -21,7 +21,7 @@ TransientComponent::TransientComponent (Transient& t, juce::AudioProcessorValueT
     addAndMakeVisible (onButton);
     onButton.setButtonText ("On");
     onButton.setLookAndFeel (&fxmeLookAndFeel);
-    onButton.setColour (juce::ToggleButton::tickColourId, juce::Colours::orange);
+    onButton.setColour (juce::ToggleButton::tickColourId, juce::Colours::red);
     onAtt = std::make_unique<ButtonAttachment> (apvts, prefix + "_Trans_On", onButton);
 
     addAndMakeVisible (titleLabel);
@@ -47,7 +47,7 @@ TransientComponent::TransientComponent (Transient& t, juce::AudioProcessorValueT
     gainSlider   .setAttachment (new juce::AudioProcessorValueTreeState::SliderAttachment (apvts, prefix + "_Trans_Gain",    gainSlider));
 
     addAndMakeVisible (gainMeter);
-    gainMeter.setMeterColor (juce::Colours::orange);
+    gainMeter.setMeterColor (juce::Colours::red);
     // Modification spans roughly ±18 dB; show that range with 0 dB as "no change".
     gainMeter.setRange (-18.0f, 18.0f);
     gainMeter.setZeroLevel (0.0f);
@@ -60,7 +60,7 @@ TransientComponent::~TransientComponent()
 
 void TransientComponent::setupSlider (fxme::FxmeSlider& slider, juce::Label& label, const juce::String& text, double min, double max, double def)
 {
-    juce::Colour color = juce::Colours::orange;
+    juce::Colour color = juce::Colours::red;
 
     addAndMakeVisible (label);
     label.setText (text, juce::NotificationType::dontSendNotification);
@@ -80,7 +80,7 @@ void TransientComponent::setupSlider (fxme::FxmeSlider& slider, juce::Label& lab
 
 void TransientComponent::setupBarSlider (fxme::FxmeSlider& slider, juce::Label& label, const juce::String& text, double min, double max, double def)
 {
-    juce::Colour color = juce::Colours::orange;
+    juce::Colour color = juce::Colours::red;
 
     addAndMakeVisible (slider);
     slider.setSliderStyle (juce::Slider::LinearBarVertical);
