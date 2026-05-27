@@ -17,3 +17,6 @@ Builds/
 # macOS / Windows
 .DS_Store
 Thumbs.db
+
+*.code-workspace
+
