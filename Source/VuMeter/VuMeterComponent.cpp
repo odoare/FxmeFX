@@ -26,18 +26,36 @@ void VuMeterComponent::paint (juce::Graphics& g)
 
     float displayValue = juce::jlimit (minValue, maxValue, value);
     float proportion = juce::jmap (displayValue, minValue, maxValue, 0.0f, 1.0f);
-    int height = juce::roundToInt (proportion * getHeight());
 
     g.setColour (meterColor);
-    g.fillRect (0, getHeight() - height, getWidth(), height);
 
-    // Zero Level
-    if (zeroLevel > minValue && zeroLevel < maxValue)
+    if (horizontal)
     {
-        float zeroProp = juce::jmap (zeroLevel, minValue, maxValue, 0.0f, 1.0f);
-        int zeroY = juce::roundToInt ((1.0f - zeroProp) * getHeight());
-        g.setColour (juce::Colours::white);
-        g.drawLine (0, (float) zeroY, (float) getWidth(), (float) zeroY, 1.0f);
+        int width = juce::roundToInt (proportion * getWidth());
+        g.fillRect (0, 0, width, getHeight());
+
+        // Zero Level (vertical mark).
+        if (zeroLevel > minValue && zeroLevel < maxValue)
+        {
+            float zeroProp = juce::jmap (zeroLevel, minValue, maxValue, 0.0f, 1.0f);
+            int zeroX = juce::roundToInt (zeroProp * getWidth());
+            g.setColour (juce::Colours::white);
+            g.drawLine ((float) zeroX, 0.0f, (float) zeroX, (float) getHeight(), 1.0f);
+        }
+    }
+    else
+    {
+        int height = juce::roundToInt (proportion * getHeight());
+        g.fillRect (0, getHeight() - height, getWidth(), height);
+
+        // Zero Level (horizontal mark).
+        if (zeroLevel > minValue && zeroLevel < maxValue)
+        {
+            float zeroProp = juce::jmap (zeroLevel, minValue, maxValue, 0.0f, 1.0f);
+            int zeroY = juce::roundToInt ((1.0f - zeroProp) * getHeight());
+            g.setColour (juce::Colours::white);
+            g.drawLine (0, (float) zeroY, (float) getWidth(), (float) zeroY, 1.0f);
+        }
     }
 }
 
@@ -64,6 +82,11 @@ void VuMeterComponent::setRange (float newMin, float newMax)
 void VuMeterComponent::setZeroLevel (float newZeroLevel)
 {
     zeroLevel = newZeroLevel;
+}
+
+void VuMeterComponent::setHorizontal (bool shouldBeHorizontal)
+{
+    horizontal = shouldBeHorizontal;
 }
 
 void VuMeterComponent::timerCallback()

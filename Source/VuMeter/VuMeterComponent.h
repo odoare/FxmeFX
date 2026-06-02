@@ -54,12 +54,20 @@ public:
      */
     void setZeroLevel (float newZeroLevel);
 
+    /**
+     * @brief Selects the bar orientation.
+     * @param shouldBeHorizontal If true the bar fills left-to-right; otherwise
+     *        bottom-to-top (the default).
+     */
+    void setHorizontal (bool shouldBeHorizontal);
+
 private:
     float value = -100.0f;
     juce::Colour meterColor = juce::Colours::green;
     float minValue = -60.0f;
     float maxValue = 0.0f;
     float zeroLevel = -100.0f; // -Inf
-    
+    bool horizontal = false;
+
     void timerCallback() override;
 };
