@@ -50,6 +50,12 @@ public:
     void assignParameters (juce::AudioProcessorValueTreeState& apvts, const juce::String& prefix);
     static void addParameters (std::vector<std::unique_ptr<juce::RangedAudioParameter>>& params, const juce::String& prefix, int numIRs = 0);
 
+    // Poll APVTS parameters and reload the IR / update the modified buffer when
+    // anything has changed.  Called from process() on the audio thread, but also
+    // safe to call from the GUI timer when the component needs an up-to-date IR
+    // snapshot for drawing (the GUI-side instance has its own lock).
+    void checkParameters();
+
 private:
     // WDL Engine
     WDL_ImpulseBuffer impulseBuffer;
@@ -102,7 +108,6 @@ private:
     void loadIRFromReader (juce::AudioFormatReader& reader);
     void updateModifiedIR(); // Applies length/shape to originalIR and loads into wdlReverb
     void loadImpulseToEngine (const juce::AudioBuffer<float>& buffer);
-    void checkParameters();
     void updateGains();
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ConvolReverb)

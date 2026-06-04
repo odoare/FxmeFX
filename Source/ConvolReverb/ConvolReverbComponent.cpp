@@ -348,6 +348,7 @@ void ConvolReverbComponent::timerCallback()
 {
     if (graphNeedsUpdate.exchange(false))
     {
+        reverb.checkParameters();
         irPlot.updateGraph();
         irPlot.repaint();
     }

@@ -147,7 +147,10 @@ CabComponent::~CabComponent() = default;
 void CabComponent::timerCallback()
 {
     if (graphNeedsUpdate.exchange (false))
+    {
+        cab.checkParameters();
         irPlot.updateGraph();
+    }
 }
 
 void CabComponent::paint (juce::Graphics& g)
