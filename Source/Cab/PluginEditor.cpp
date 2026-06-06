@@ -17,7 +17,7 @@ FxmeCabAudioProcessorEditor::FxmeCabAudioProcessorEditor (FxmeCabAudioProcessor&
     addAndMakeVisible (cabComponent);
     setResizable (true, true);
     setResizeLimits (480, 320, 1800, 1300);
-    setSize (640, 420);
+    setSize (kPreferredWidth, kPreferredHeight);
 }
 
 FxmeCabAudioProcessorEditor::~FxmeCabAudioProcessorEditor() = default;

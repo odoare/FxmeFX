@@ -17,7 +17,7 @@ FxmeOctAudioProcessorEditor::FxmeOctAudioProcessorEditor (FxmeOctAudioProcessor&
     addAndMakeVisible (octComponent);
     setResizable (true, true);
     setResizeLimits (400, 280, 1600, 1200);
-    setSize (560, 360);
+    setSize (kPreferredWidth, kPreferredHeight);
 }
 
 FxmeOctAudioProcessorEditor::~FxmeOctAudioProcessorEditor() = default;

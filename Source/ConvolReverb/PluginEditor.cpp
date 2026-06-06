@@ -17,7 +17,7 @@ FxmeConvolReverbAudioProcessorEditor::FxmeConvolReverbAudioProcessorEditor (Fxme
     addAndMakeVisible (reverbComponent);
     setResizable (true, true);
     setResizeLimits (500, 350, 1800, 1300);
-    setSize (600, 400);
+    setSize (kPreferredWidth, kPreferredHeight);
 }
 
 FxmeConvolReverbAudioProcessorEditor::~FxmeConvolReverbAudioProcessorEditor() = default;

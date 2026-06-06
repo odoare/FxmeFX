@@ -15,6 +15,9 @@
 class FxmeEqualizerAudioProcessorEditor  : public juce::AudioProcessorEditor
 {
 public:
+    static constexpr int kPreferredWidth  = 600;
+    static constexpr int kPreferredHeight = 700;
+
     FxmeEqualizerAudioProcessorEditor (FxmeEqualizerAudioProcessor&);
     ~FxmeEqualizerAudioProcessorEditor() override;
 

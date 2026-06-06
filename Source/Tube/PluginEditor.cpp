@@ -17,7 +17,7 @@ FxmeTubeAudioProcessorEditor::FxmeTubeAudioProcessorEditor (FxmeTubeAudioProcess
     addAndMakeVisible (tubeComponent);
     setResizable (true, true);
     setResizeLimits (400, 300, 1600, 1200);
-    setSize (600, 300);
+    setSize (kPreferredWidth, kPreferredHeight);
 }
 
 FxmeTubeAudioProcessorEditor::~FxmeTubeAudioProcessorEditor() = default;

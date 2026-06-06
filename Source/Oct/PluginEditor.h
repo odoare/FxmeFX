@@ -15,6 +15,9 @@
 class FxmeOctAudioProcessorEditor  : public juce::AudioProcessorEditor
 {
 public:
+    static constexpr int kPreferredWidth  = 520;
+    static constexpr int kPreferredHeight = 320;
+
     FxmeOctAudioProcessorEditor (FxmeOctAudioProcessor&);
     ~FxmeOctAudioProcessorEditor() override;
 
