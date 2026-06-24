@@ -7,7 +7,7 @@
 */
 
 #include "ConvolReverb.h"
-#include "../../WDL/WDL/resample.h"
+#include <resample.h>
 
 ConvolReverb::ConvolReverb()
 {

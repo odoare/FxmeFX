@@ -209,22 +209,22 @@ FxmeFX/
 │   ├── Cab/
 │   │   └── IR/                 # built-in cabinet impulse responses (embedded as binary data)
 │   ├── Oct/                    # Boss-style frequency-division octaver
-│   └── VuMeter/                # shared VU-meter DSP + component
-├── WDL/                        # WDL submodule (FFT, convolution engine, resampler)
+│   └── VuMeter/                # re-export shims for fxme::VuMeter / fxme::VuMeterComponent
+├── lib/
+│   └── FxmeTools/              # submodule: shared GUI/DSP + nested WDL submodule
 └── .github/workflows/          # CI: per-OS builds + tag-driven release
 ```
 
 ## Prerequisites
 
-JUCE and the FxmeJuceTools user-module are expected as **siblings of this
-repository** (CI mirrors the same layout):
+JUCE is expected as a **sibling of this repository** (CI mirrors the same
+layout); all other shared code (GUI controls, look-and-feel, DSP, and the WDL
+convolution engine) ships in the **FxmeTools** submodule under `lib/FxmeTools`:
 
 ```
 <workspace>/
-├── FxmeFX/                                  # this repo
+├── FxmeFX/                                  # this repo (lib/FxmeTools submodule inside)
 ├── JUCE/                                    # https://github.com/juce-framework/JUCE
-│   └── usermodules/
-│       └── FxmeJuceTools/                   # https://github.com/odoare/FxmeJuceTools (its module/ subdir)
 └── ...
 ```
 
@@ -232,11 +232,9 @@ Quick setup:
 
 ```bash
 git clone https://github.com/juce-framework/JUCE.git ../JUCE
-git clone https://github.com/odoare/FxmeJuceTools.git /tmp/_fxme
-mkdir -p ../JUCE/usermodules
-mv /tmp/_fxme/module/FxmeJuceTools ../JUCE/usermodules/FxmeJuceTools
 
-git submodule update --init --recursive          # pulls in WDL
+# Pulls in FxmeTools and its nested WDL submodule.
+git submodule update --init --recursive
 ```
 
 ### Linux system dependencies
@@ -313,7 +311,7 @@ FxmeFX is released under the **GNU Lesser General Public License, version 3**
 
 Vendored / external code keeps its own terms:
 
-- [WDL](WDL/) - zlib-style license (see `WDL/WDL/LICENSE.md`).
+- [FxmeTools](https://github.com/odoare/FxmeTools) - LGPL-3.0-or-later; bundles
+  [WDL](lib/FxmeTools/WDL/) (zlib-style license) as a nested submodule.
 - [JUCE](https://juce.com/) - used per its end-user license; the GPL build is
   the one exercised here.
-- [FxmeJuceTools](https://github.com/odoare/FxmeJuceTools) - MIT.

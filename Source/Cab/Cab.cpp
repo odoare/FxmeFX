@@ -7,7 +7,7 @@
 */
 
 #include "Cab.h"
-#include "../../WDL/WDL/resample.h"
+#include <resample.h>
 
 Cab::Cab()
 {

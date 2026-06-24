@@ -32,17 +32,6 @@ jobs:
           ref: 8.0.12
           path: JUCE
 
-      - name: Checkout FxmeJuceTools
-        uses: actions/checkout@v4
-        with:
-          repository: odoare/FxmeJuceTools
-          path: _fxme_tmp
-
-      - name: Install FxmeJuceTools module
-        run: |
-          mkdir -p JUCE/usermodules
-          mv _fxme_tmp/module/FxmeJuceTools JUCE/usermodules/FxmeJuceTools
-
       - name: Configure
         run: cmake -B FxmeFX/build -S FxmeFX -DCMAKE_BUILD_TYPE=Release
 
@@ -53,7 +42,7 @@ jobs:
         # them one-at-a-time keeps peak memory bounded by a single plugin's
         # build.
         run: |
-          for plugin in Compressor Equalizer Tube Transient StereoDelay ConvolReverb Cab Oct; do
+          for plugin in Compressor Equalizer Tube Transient StereoDelay ConvolReverb Cab Oct Limiter; do
             echo "::group::Build Fxme${plugin}"
             cmake --build FxmeFX/build --config Release --target "Fxme${plugin}_All" --parallel 2
             echo "::endgroup::"
@@ -61,7 +50,7 @@ jobs:
 
       - name: Build Pure Data externals
         run: |
-          for plugin in Compressor Equalizer Tube Transient StereoDelay ConvolReverb Cab Oct; do
+          for plugin in Compressor Equalizer Tube Transient StereoDelay ConvolReverb Cab Oct Limiter; do
             echo "::group::Build Fxme${plugin} (Pd)"
             cmake --build FxmeFX/build --config Release --target "Fxme${plugin}_pd" --parallel 2
             echo "::endgroup::"

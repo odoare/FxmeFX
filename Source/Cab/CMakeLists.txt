@@ -12,7 +12,7 @@ if(NOT COMMAND juce_add_plugin)
     endif()
 
     add_subdirectory(../../../JUCE JUCE)
-    juce_add_module(../../../JUCE/usermodules/FxmeJuceTools)
+    include(${CMAKE_CURRENT_SOURCE_DIR}/../../lib/FxmeTools/cmake/FxmeTools.cmake)
 endif()
 
 juce_add_plugin(FxmeCab
@@ -71,10 +71,8 @@ target_sources(FxmeCab PRIVATE
     PluginEditor.cpp
     Cab.cpp
     CabComponent.cpp
-    # WDL convolution + FFT + resampling
-    ../../WDL/WDL/convoengine.cpp
-    ../../WDL/WDL/fft.c
-    ../../WDL/WDL/resample.cpp
+    # WDL convolution + FFT + resampling are compiled in by fxmetools_attach()
+    # below (sourced from FxmeTools' WDL submodule).
 )
 
 target_include_directories(FxmeCab PRIVATE
@@ -94,7 +92,6 @@ target_compile_definitions(FxmeCab
 target_link_libraries(FxmeCab
     PRIVATE
         FxmeCabBinaryData
-        FxmeJuceTools
         juce::juce_audio_basics
         juce::juce_audio_devices
         juce::juce_audio_formats
@@ -114,6 +111,10 @@ target_link_libraries(FxmeCab
         juce::juce_recommended_warning_flags
 )
 
+# Links the FxmeTools module and compiles the WDL convolution engine
+# (convoengine.cpp/fft.c/resample.cpp) used via <convoengine.h>/<resample.h>.
+fxmetools_attach(FxmeCab)
+
 # ── Pure Data external ────────────────────────────────────────────────────────
 # Reuses the same FxmeCabBinaryData target as the VST build, so the Pd
 # external ships the full cabinet IR collection without any file picker.
@@ -124,11 +125,12 @@ fxme_add_pd_external(FxmeCab_pd
         PdMain.cpp
         PluginProcessor.cpp
         Cab.cpp
-        ../../WDL/WDL/convoengine.cpp
-        ../../WDL/WDL/fft.c
-        ../../WDL/WDL/resample.cpp
+        ../../lib/FxmeTools/WDL/WDL/convoengine.cpp
+        ../../lib/FxmeTools/WDL/WDL/fft.c
+        ../../lib/FxmeTools/WDL/WDL/resample.cpp
     INCLUDES
         ${CMAKE_CURRENT_SOURCE_DIR}
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../lib/FxmeTools/WDL/WDL
     DEFINES
         JucePlugin_Name="FxmeCab"
     LINK_LIBRARIES

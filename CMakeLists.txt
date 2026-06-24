@@ -10,11 +10,14 @@ if(APPLE)
     set(CMAKE_OSX_ARCHITECTURES "arm64;x86_64" CACHE STRING "Target architectures")
 endif()
 
-# JUCE and the FxmeJuceTools user-module are expected as siblings of this repo:
-#   ../JUCE/                              (juce-framework/JUCE checkout)
-#   ../JUCE/usermodules/FxmeJuceTools/    (odoare/FxmeJuceTools, module/ moved in)
+# JUCE is expected as a sibling of this repo:
+#   ../JUCE/   (juce-framework/JUCE checkout)
 add_subdirectory(../JUCE JUCE)
-juce_add_module(../JUCE/usermodules/FxmeJuceTools)
+
+# FxmeTools (shared GUI controls, look-and-feel, DSP, and the WDL convolution
+# engine) ships as a submodule under lib/FxmeTools. Including its .cmake here
+# registers the `FxmeTools` JUCE module and the fxmetools_attach() helper.
+include(${CMAKE_CURRENT_SOURCE_DIR}/lib/FxmeTools/cmake/FxmeTools.cmake)
 
 # ── Plugin selection ──────────────────────────────────────────────────────────
 # Build every plugin by default. To build only one:
@@ -30,6 +33,7 @@ set(_all_plugins
     ConvolReverb
     Cab
     Oct
+    Limiter
 )
 
 if(PLUGIN STREQUAL "")

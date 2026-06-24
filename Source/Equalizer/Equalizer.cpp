@@ -60,14 +60,6 @@ void Equalizer::updateCoefficients()
             calcByType (ch.band[i], bandCache[i]);
 }
 
-float Equalizer::Biquad::process (float in)
-{
-    float out = b0 * in + z1;
-    z1 = b1 * in + z2 - a1 * out;
-    z2 = b2 * in - a2 * out;
-    return out;
-}
-
 void Equalizer::process (juce::AudioBuffer<float>& buffer)
 {
     if (! on) return;
@@ -86,7 +78,7 @@ void Equalizer::process (juce::AudioBuffer<float>& buffer)
         {
             float s = data[i];
             for (auto& b : strip.band)
-                s = b.process (s);
+                s = b.processSample (s);
             s *= postGain;
             data[i] = s;
         }
@@ -165,110 +157,17 @@ void Equalizer::checkParameters()
 }
 
 // ---------------------------------------------------------------------------
-// Coefficient dispatch
+// Coefficient dispatch — RBJ cookbook coefficients come from fxme::BiquadCoeffs
+// (shelves use slope S = 1, matching the previous in-class implementation).
 // ---------------------------------------------------------------------------
-void Equalizer::calcByType (Biquad& bq, const BandCache& bc)
+void Equalizer::calcByType (fxme::Biquad& bq, const BandCache& bc)
 {
     switch (bc.type)
     {
-        case BandType::Lowpass:   calcLowpass   (bq, bc.f, bc.q);       break;
-        case BandType::Highpass:  calcHighpass  (bq, bc.f, bc.q);       break;
-        case BandType::Peak:      calcPeaking   (bq, bc.f, bc.q, bc.g); break;
-        case BandType::Lowshelf:  calcLowShelf  (bq, bc.f, bc.g);       break;
-        case BandType::Highshelf: calcHighShelf (bq, bc.f, bc.g);       break;
+        case BandType::Lowpass:   bq.c = fxme::BiquadCoeffs::lowpass   (currentSampleRate, bc.f, bc.q);       break;
+        case BandType::Highpass:  bq.c = fxme::BiquadCoeffs::highpass  (currentSampleRate, bc.f, bc.q);       break;
+        case BandType::Peak:      bq.c = fxme::BiquadCoeffs::peaking   (currentSampleRate, bc.f, bc.q, bc.g); break;
+        case BandType::Lowshelf:  bq.c = fxme::BiquadCoeffs::lowShelf  (currentSampleRate, bc.f, bc.g);       break;
+        case BandType::Highshelf: bq.c = fxme::BiquadCoeffs::highShelf (currentSampleRate, bc.f, bc.g);       break;
     }
-}
-
-// RBJ Cookbook formulas.
-void Equalizer::calcLowpass (Biquad& bq, float f, float q)
-{
-    float w0 = 2.0f * juce::MathConstants<float>::pi * f / (float) currentSampleRate;
-    float cos_w0 = std::cos (w0);
-    float sin_w0 = std::sin (w0);
-    float alpha  = sin_w0 / (2.0f * q);
-
-    float b0 = (1.0f - cos_w0) * 0.5f;
-    float b1 =  1.0f - cos_w0;
-    float b2 = (1.0f - cos_w0) * 0.5f;
-    float a0 = 1.0f + alpha;
-    float a1 = -2.0f * cos_w0;
-    float a2 = 1.0f - alpha;
-
-    bq.b0 = b0 / a0; bq.b1 = b1 / a0; bq.b2 = b2 / a0;
-    bq.a1 = a1 / a0; bq.a2 = a2 / a0;
-}
-
-void Equalizer::calcHighpass (Biquad& bq, float f, float q)
-{
-    float w0 = 2.0f * juce::MathConstants<float>::pi * f / (float) currentSampleRate;
-    float cos_w0 = std::cos (w0);
-    float sin_w0 = std::sin (w0);
-    float alpha  = sin_w0 / (2.0f * q);
-
-    float b0 =  (1.0f + cos_w0) * 0.5f;
-    float b1 = -(1.0f + cos_w0);
-    float b2 =  (1.0f + cos_w0) * 0.5f;
-    float a0 = 1.0f + alpha;
-    float a1 = -2.0f * cos_w0;
-    float a2 = 1.0f - alpha;
-
-    bq.b0 = b0 / a0; bq.b1 = b1 / a0; bq.b2 = b2 / a0;
-    bq.a1 = a1 / a0; bq.a2 = a2 / a0;
-}
-
-void Equalizer::calcPeaking (Biquad& bq, float f, float q, float g)
-{
-    float A = std::pow (10.0f, g / 40.0f);
-    float w0 = 2.0f * juce::MathConstants<float>::pi * f / (float) currentSampleRate;
-    float cos_w0 = std::cos (w0);
-    float sin_w0 = std::sin (w0);
-    float alpha = sin_w0 / (2.0f * q);
-
-    float b0 = 1.0f + alpha * A;
-    float b1 = -2.0f * cos_w0;
-    float b2 = 1.0f - alpha * A;
-    float a0 = 1.0f + alpha / A;
-    float a1 = -2.0f * cos_w0;
-    float a2 = 1.0f - alpha / A;
-
-    bq.b0 = b0 / a0; bq.b1 = b1 / a0; bq.b2 = b2 / a0;
-    bq.a1 = a1 / a0; bq.a2 = a2 / a0;
-}
-
-void Equalizer::calcLowShelf (Biquad& bq, float f, float g)
-{
-    float A = std::pow (10.0f, g / 40.0f);
-    float w0 = 2.0f * juce::MathConstants<float>::pi * f / (float) currentSampleRate;
-    float cos_w0 = std::cos (w0);
-    float sin_w0 = std::sin (w0);
-    float alpha = sin_w0 / 2.0f * std::sqrt ((A + 1.0f / A) * (1.0f / 1.0f - 1.0f) + 2.0f); // S = 1
-
-    float b0 =    A * ((A + 1.0f) - (A - 1.0f) * cos_w0 + 2.0f * std::sqrt (A) * alpha);
-    float b1 = 2.0f * A * ((A - 1.0f) - (A + 1.0f) * cos_w0);
-    float b2 =    A * ((A + 1.0f) - (A - 1.0f) * cos_w0 - 2.0f * std::sqrt (A) * alpha);
-    float a0 =        (A + 1.0f) + (A - 1.0f) * cos_w0 + 2.0f * std::sqrt (A) * alpha;
-    float a1 = -2.0f * ((A - 1.0f) + (A + 1.0f) * cos_w0);
-    float a2 =        (A + 1.0f) + (A - 1.0f) * cos_w0 - 2.0f * std::sqrt (A) * alpha;
-
-    bq.b0 = b0 / a0; bq.b1 = b1 / a0; bq.b2 = b2 / a0;
-    bq.a1 = a1 / a0; bq.a2 = a2 / a0;
-}
-
-void Equalizer::calcHighShelf (Biquad& bq, float f, float g)
-{
-    float A = std::pow (10.0f, g / 40.0f);
-    float w0 = 2.0f * juce::MathConstants<float>::pi * f / (float) currentSampleRate;
-    float cos_w0 = std::cos (w0);
-    float sin_w0 = std::sin (w0);
-    float alpha = sin_w0 / 2.0f * std::sqrt ((A + 1.0f / A) * (1.0f / 1.0f - 1.0f) + 2.0f); // S = 1
-
-    float b0 =    A * ((A + 1.0f) + (A - 1.0f) * cos_w0 + 2.0f * std::sqrt (A) * alpha);
-    float b1 = -2.0f * A * ((A - 1.0f) + (A + 1.0f) * cos_w0);
-    float b2 =    A * ((A + 1.0f) + (A - 1.0f) * cos_w0 - 2.0f * std::sqrt (A) * alpha);
-    float a0 =        (A + 1.0f) - (A - 1.0f) * cos_w0 + 2.0f * std::sqrt (A) * alpha;
-    float a1 = 2.0f * ((A - 1.0f) - (A + 1.0f) * cos_w0);
-    float a2 =        (A + 1.0f) - (A - 1.0f) * cos_w0 - 2.0f * std::sqrt (A) * alpha;
-
-    bq.b0 = b0 / a0; bq.b1 = b1 / a0; bq.b2 = b2 / a0;
-    bq.a1 = a1 / a0; bq.a2 = a2 / a0;
 }

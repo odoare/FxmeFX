@@ -9,6 +9,7 @@
 #pragma once
 
 #include <JuceHeader.h>
+#include <FxmeTools/dsp/Biquad.h>   // fxme::Biquad / fxme::BiquadCoeffs
 #include <array>
 #include <vector>
 #include <atomic>
@@ -65,17 +66,9 @@ public:
     static juce::StringArray getBandTypeNames();
 
 private:
-    struct Biquad
-    {
-        float b0 = 1.0f, b1 = 0.0f, b2 = 0.0f, a1 = 0.0f, a2 = 0.0f;
-        float z1 = 0.0f, z2 = 0.0f;
-        void  reset() { z1 = 0.0f; z2 = 0.0f; }
-        float process (float in);
-    };
-
     struct ChannelStrip
     {
-        std::array<Biquad, NumBands> band;
+        std::array<fxme::Biquad, NumBands> band;
     };
 
     struct BandCache
@@ -115,10 +108,5 @@ private:
     float lastPostGain = -100.0f;
 
     void updateCoefficients();
-    void calcByType   (Biquad& bq, const BandCache& bc);
-    void calcLowpass  (Biquad& bq, float f, float q);
-    void calcHighpass (Biquad& bq, float f, float q);
-    void calcPeaking  (Biquad& bq, float f, float q, float g);
-    void calcLowShelf (Biquad& bq, float f, float g);
-    void calcHighShelf(Biquad& bq, float f, float g);
+    void calcByType (fxme::Biquad& bq, const BandCache& bc);
 };

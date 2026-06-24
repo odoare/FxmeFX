@@ -12,7 +12,7 @@ if(NOT COMMAND juce_add_plugin)
     endif()
 
     add_subdirectory(../../../JUCE JUCE)
-    juce_add_module(../../../JUCE/usermodules/FxmeJuceTools)
+    include(${CMAKE_CURRENT_SOURCE_DIR}/../../lib/FxmeTools/cmake/FxmeTools.cmake)
 endif()
 
 juce_add_plugin(FxmeTransient
@@ -37,12 +37,12 @@ target_sources(FxmeTransient PRIVATE
     PluginEditor.cpp
     Transient.cpp
     TransientComponent.cpp
-    ../VuMeter/VuMeter.cpp
-    ../VuMeter/VuMeterComponent.cpp
 )
 
 target_include_directories(FxmeTransient PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
+    # VuMeter/VuMeterComponent now live in FxmeTools; ../VuMeter holds thin
+    # re-export shims kept for source/API compatibility.
     ${CMAKE_CURRENT_SOURCE_DIR}/../VuMeter
 )
 
@@ -58,7 +58,7 @@ target_compile_definitions(FxmeTransient
 
 target_link_libraries(FxmeTransient
     PRIVATE
-        FxmeJuceTools
+        FxmeTools
         juce::juce_audio_basics
         juce::juce_audio_devices
         juce::juce_audio_formats
@@ -86,10 +86,12 @@ fxme_add_pd_external(FxmeTransient_pd
         PdMain.cpp
         PluginProcessor.cpp
         Transient.cpp
-        ../VuMeter/VuMeter.cpp
     INCLUDES
         ${CMAKE_CURRENT_SOURCE_DIR}
+        # ../VuMeter holds the re-export shim; lib/FxmeTools makes the
+        # header-only <FxmeTools/dsp/VuMeter.h> resolve in the Pd build.
         ${CMAKE_CURRENT_SOURCE_DIR}/../VuMeter
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../lib/FxmeTools
     DEFINES
         JucePlugin_Name="FxmeTransient"
 )

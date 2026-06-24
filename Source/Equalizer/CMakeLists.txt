@@ -12,7 +12,7 @@ if(NOT COMMAND juce_add_plugin)
     endif()
 
     add_subdirectory(../../../JUCE JUCE)
-    juce_add_module(../../../JUCE/usermodules/FxmeJuceTools)
+    include(${CMAKE_CURRENT_SOURCE_DIR}/../../lib/FxmeTools/cmake/FxmeTools.cmake)
 endif()
 
 juce_add_plugin(FxmeEqualizer
@@ -55,7 +55,7 @@ target_compile_definitions(FxmeEqualizer
 
 target_link_libraries(FxmeEqualizer
     PRIVATE
-        FxmeJuceTools
+        FxmeTools
         juce::juce_audio_basics
         juce::juce_audio_devices
         juce::juce_audio_formats
@@ -85,6 +85,8 @@ fxme_add_pd_external(FxmeEqualizer_pd
         Equalizer.cpp
     INCLUDES
         ${CMAKE_CURRENT_SOURCE_DIR}
+        # Equalizer.cpp/.h use header-only <FxmeTools/dsp/Biquad.h>.
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../lib/FxmeTools
     DEFINES
         JucePlugin_Name="FxmeEqualizer"
 )

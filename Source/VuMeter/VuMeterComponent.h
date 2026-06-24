@@ -2,72 +2,17 @@
   ==============================================================================
 
     VuMeterComponent.h
-    Created: 2 Feb 2026 9:21:06am
-    Author:  doare
+
+    The VuMeterComponent now lives in FxmeTools (fxme::VuMeterComponent). This
+    header is a thin re-export kept so existing includes ("VuMeterComponent.h")
+    and the global `VuMeterComponent` type name remain valid — FxmeFX's public
+    API is unchanged.
 
   ==============================================================================
 */
 
 #pragma once
 
-#include <JuceHeader.h>
-#include "VuMeter.h"
+#include <FxmeTools/components/VuMeterComponent.h>
 
-/**
- * @class VuMeterComponent
- * @brief A component that displays a VU meter.
- */
-class VuMeterComponent : public juce::Component,
-                          public juce::Timer
-{
-public:
-    /** Constructor. */
-    VuMeterComponent();
-    /** Destructor. */
-    ~VuMeterComponent() override;
-
-    void paint (juce::Graphics&) override;
-    void resized() override;
-
-    /**
-     * @brief Sets the current value to display.
-     * @param newValue The value in dB.
-     */
-    void setValue (float newValue);
-
-    /**
-     * @brief Sets the color of the meter bar.
-     * @param newColor The new color.
-     */
-    void setMeterColor (juce::Colour newColor);
-
-    /**
-     * @brief Sets the display range of the meter.
-     * @param newMin Minimum value in dB.
-     * @param newMax Maximum value in dB.
-     */
-    void setRange (float newMin, float newMax);
-
-    /**
-     * @brief Sets the zero level mark.
-     * @param newZeroLevel The zero level in dB.
-     */
-    void setZeroLevel (float newZeroLevel);
-
-    /**
-     * @brief Selects the bar orientation.
-     * @param shouldBeHorizontal If true the bar fills left-to-right; otherwise
-     *        bottom-to-top (the default).
-     */
-    void setHorizontal (bool shouldBeHorizontal);
-
-private:
-    float value = -100.0f;
-    juce::Colour meterColor = juce::Colours::green;
-    float minValue = -60.0f;
-    float maxValue = 0.0f;
-    float zeroLevel = -100.0f; // -Inf
-    bool horizontal = false;
-
-    void timerCallback() override;
-};
+using VuMeterComponent = fxme::VuMeterComponent;

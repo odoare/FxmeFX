@@ -66,8 +66,10 @@ function(fxme_add_pd_external target)
     # Linux at load time). That is the documented cost of headless-hosting a
     # JUCE plugin: nothing is instantiated GUI-wise (hasEditor() == false in
     # PD builds), the modules are just present for link.
-    # We omit juce_audio_plugin_client (we are not a plugin) and
-    # FxmeJuceTools (GUI-only helpers, not referenced by the DSP path).
+    # We omit juce_audio_plugin_client (we are not a plugin) and the FxmeTools
+    # JUCE module (its GUI controls are not referenced by the DSP path; any
+    # header-only DSP helper needed, e.g. <FxmeTools/dsp/VuMeter.h>, is pulled
+    # in via the lib/FxmeTools include dir passed in INCLUDES).
     target_link_libraries(${target} PRIVATE
         juce::juce_audio_basics
         juce::juce_audio_formats

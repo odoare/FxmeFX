@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.22)
 
 # When building this plugin standalone, set up the project and pull in JUCE +
-# FxmeJuceTools. When included via the root FxmeFX CMakeLists.txt, the parent
+# FxmeTools. When included via the root FxmeFX CMakeLists.txt, the parent
 # has already done that — skip to keep targets unique.
 if(NOT COMMAND juce_add_plugin)
     project(FxmeCompressor VERSION 0.1.0)
@@ -15,7 +15,7 @@ if(NOT COMMAND juce_add_plugin)
     endif()
 
     add_subdirectory(../../../JUCE JUCE)
-    juce_add_module(../../../JUCE/usermodules/FxmeJuceTools)
+    include(${CMAKE_CURRENT_SOURCE_DIR}/../../lib/FxmeTools/cmake/FxmeTools.cmake)
 endif()
 
 juce_add_plugin(FxmeCompressor
@@ -40,12 +40,12 @@ target_sources(FxmeCompressor PRIVATE
     PluginEditor.cpp
     Compressor.cpp
     CompressorComponent.cpp
-    ../VuMeter/VuMeter.cpp
-    ../VuMeter/VuMeterComponent.cpp
 )
 
 target_include_directories(FxmeCompressor PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
+    # VuMeter/VuMeterComponent now live in FxmeTools; ../VuMeter holds thin
+    # re-export shims kept for source/API compatibility.
     ${CMAKE_CURRENT_SOURCE_DIR}/../VuMeter
 )
 
@@ -62,7 +62,7 @@ target_compile_definitions(FxmeCompressor
 
 target_link_libraries(FxmeCompressor
     PRIVATE
-        FxmeJuceTools
+        FxmeTools
         juce::juce_audio_basics
         juce::juce_audio_devices
         juce::juce_audio_formats
@@ -93,10 +93,12 @@ fxme_add_pd_external(FxmeCompressor_pd
         PdMain.cpp
         PluginProcessor.cpp
         Compressor.cpp
-        ../VuMeter/VuMeter.cpp
     INCLUDES
         ${CMAKE_CURRENT_SOURCE_DIR}
+        # ../VuMeter holds the re-export shim; lib/FxmeTools makes the
+        # header-only <FxmeTools/dsp/VuMeter.h> resolve in the Pd build.
         ${CMAKE_CURRENT_SOURCE_DIR}/../VuMeter
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../lib/FxmeTools
     DEFINES
         JucePlugin_Name="FxmeCompressor"
 )

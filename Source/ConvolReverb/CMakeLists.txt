@@ -12,7 +12,7 @@ if(NOT COMMAND juce_add_plugin)
     endif()
 
     add_subdirectory(../../../JUCE JUCE)
-    juce_add_module(../../../JUCE/usermodules/FxmeJuceTools)
+    include(${CMAKE_CURRENT_SOURCE_DIR}/../../lib/FxmeTools/cmake/FxmeTools.cmake)
 endif()
 
 juce_add_plugin(FxmeConvolReverb
@@ -56,10 +56,8 @@ target_sources(FxmeConvolReverb PRIVATE
     PluginEditor.cpp
     ConvolReverb.cpp
     ConvolReverbComponent.cpp
-    # WDL convolution + FFT + resampling
-    ../../WDL/WDL/convoengine.cpp
-    ../../WDL/WDL/fft.c
-    ../../WDL/WDL/resample.cpp
+    # WDL convolution + FFT + resampling are compiled in by fxmetools_attach()
+    # below (sourced from FxmeTools' WDL submodule).
 )
 
 target_include_directories(FxmeConvolReverb PRIVATE
@@ -79,7 +77,6 @@ target_compile_definitions(FxmeConvolReverb
 target_link_libraries(FxmeConvolReverb
     PRIVATE
         FxmeConvolReverbBinaryData
-        FxmeJuceTools
         juce::juce_audio_basics
         juce::juce_audio_devices
         juce::juce_audio_formats
@@ -99,6 +96,10 @@ target_link_libraries(FxmeConvolReverb
         juce::juce_recommended_warning_flags
 )
 
+# Links the FxmeTools module and compiles the WDL convolution engine
+# (convoengine.cpp/fft.c/resample.cpp) used via <convoengine.h>/<resample.h>.
+fxmetools_attach(FxmeConvolReverb)
+
 # ── Pure Data external ────────────────────────────────────────────────────────
 # Reuses FxmeConvolReverbBinaryData. The Pd build hides the "External IR
 # file" slot — see the FXME_PD_BUILD branch in ConvolReverb::addParameters.
@@ -109,11 +110,12 @@ fxme_add_pd_external(FxmeConvolReverb_pd
         PdMain.cpp
         PluginProcessor.cpp
         ConvolReverb.cpp
-        ../../WDL/WDL/convoengine.cpp
-        ../../WDL/WDL/fft.c
-        ../../WDL/WDL/resample.cpp
+        ../../lib/FxmeTools/WDL/WDL/convoengine.cpp
+        ../../lib/FxmeTools/WDL/WDL/fft.c
+        ../../lib/FxmeTools/WDL/WDL/resample.cpp
     INCLUDES
         ${CMAKE_CURRENT_SOURCE_DIR}
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../lib/FxmeTools/WDL/WDL
     DEFINES
         JucePlugin_Name="FxmeConvolReverb"
     LINK_LIBRARIES

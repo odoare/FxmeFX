@@ -12,7 +12,7 @@ if(NOT COMMAND juce_add_plugin)
     endif()
 
     add_subdirectory(../../../JUCE JUCE)
-    juce_add_module(../../../JUCE/usermodules/FxmeJuceTools)
+    include(${CMAKE_CURRENT_SOURCE_DIR}/../../lib/FxmeTools/cmake/FxmeTools.cmake)
 endif()
 
 juce_add_plugin(FxmeOct
@@ -55,7 +55,7 @@ target_compile_definitions(FxmeOct
 
 target_link_libraries(FxmeOct
     PRIVATE
-        FxmeJuceTools
+        FxmeTools
         juce::juce_audio_basics
         juce::juce_audio_devices
         juce::juce_audio_formats
