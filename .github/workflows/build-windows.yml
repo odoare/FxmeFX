@@ -8,7 +8,10 @@ on:
 
 jobs:
   build:
-    runs-on: windows-latest
+    # Pin to windows-2022: on the newer windows-latest (windows-2025) image the
+    # bundled CMake fails to detect the VS 2022 instance ("could not find any
+    # instance of Visual Studio") for the "Visual Studio 17 2022" generator.
+    runs-on: windows-2022
 
     steps:
       - name: Checkout FxmeFX

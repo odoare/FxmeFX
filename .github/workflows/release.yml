@@ -76,7 +76,10 @@ jobs:
 
   # ── Windows x86_64 ────────────────────────────────────────────────────────
   build-windows:
-    runs-on: windows-latest
+    # Pin to windows-2022: on windows-latest (windows-2025) the bundled CMake
+    # fails to detect the VS 2022 instance for the "Visual Studio 17 2022"
+    # generator.
+    runs-on: windows-2022
     steps:
       - uses: actions/checkout@v4
         with:
