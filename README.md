@@ -20,6 +20,7 @@ drum kits).
 | FxmeConvolReverb | `CREV`      | Convolution reverb (WDL engine) with six embedded impulse responses, length / shape / start-offset shaping, plus an "External…" slot for loading a user IR. |
 | FxmeCab          | `CABN`      | Stereo cabinet/IR loader. Two independent mono-IR slots (one per output channel), 19 embedded cabinet IRs, output gain. |
 | FxmeOct          | `OCTV`      | Boss OC-2-style monophonic octaver. Schmitt-trigger zero-crossing + ÷2 / ÷4 flip-flops, envelope-tracked square synthesis, dry / -1 oct / -2 oct mix, detection LPF and tone LPF. Zero latency, stable on bass. |
+| FxmeLimiter      | `LIMT`      | Look-ahead brickwall limiter / maximizer. A short look-ahead lets the gain envelope duck before a peak arrives; Drive pushes the signal into the ceiling, and a final hard clamp guarantees the output never exceeds it. Drive / Ceiling / Release controls and a gain-reduction meter. |
 
 All plugins build as **VST3**, **AU** (macOS) and a **Standalone** application,
 and also as headless **Pure Data externals** — see the dedicated section below.
@@ -191,6 +192,20 @@ fundamental you expect to track (≈80–120 Hz on a 5-string low B,
 | 6 | Detect cutoff (Hz)  | 60 … 1500   (skewed, ~log scale)   | 400   |
 | 7 | Tone cutoff (Hz)    | 300 … 10000 (skewed, ~log scale)   | 2000  |
 
+### `fxmelimiter~`
+
+Look-ahead brickwall limiter / maximizer. **Drive** pushes the signal into the
+ceiling (the maximizer behaviour); **Ceiling** is the absolute output limit; a
+fixed ~2 ms look-ahead anticipates peaks and a final hard clamp guarantees the
+ceiling is never exceeded.
+
+| Inlet | Parameter | Range | Default |
+|------:|-----------|-------|--------:|
+| 2 | On            | 0 / 1                       | 0    |
+| 3 | Drive (dB)    | 0 … 24                      | 0    |
+| 4 | Ceiling (dB)  | -24 … 0                     | -0.3 |
+| 5 | Release (ms)  | 1 … 500   (skewed)          | 50   |
+
 ## Repository layout
 
 ```
@@ -209,6 +224,7 @@ FxmeFX/
 │   ├── Cab/
 │   │   └── IR/                 # built-in cabinet impulse responses (embedded as binary data)
 │   ├── Oct/                    # Boss-style frequency-division octaver
+│   ├── Limiter/                # look-ahead brickwall limiter / maximizer
 │   └── VuMeter/                # re-export shims for fxme::VuMeter / fxme::VuMeterComponent
 ├── lib/
 │   └── FxmeTools/              # submodule: shared GUI/DSP + nested WDL submodule
@@ -264,7 +280,7 @@ cmake --build build --parallel
 ```
 
 `PLUGIN` accepts: `Compressor`, `Equalizer`, `Tube`, `Transient`,
-`StereoDelay`, `ConvolReverb`, `Cab`, `Oct`.
+`StereoDelay`, `ConvolReverb`, `Cab`, `Oct`, `Limiter`.
 
 ### A single plugin standalone
 
