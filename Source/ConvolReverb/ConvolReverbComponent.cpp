@@ -232,12 +232,12 @@ ConvolReverbComponent::ConvolReverbComponent (ConvolReverb& r, juce::AudioProces
 
     irAtt = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (apvts, prefix + "_Rev_IR", irBox);
 
-    // If the saved External path points at a missing file, revert silently to the
-    // first built-in IR (matches the chosen fallback semantics).
+    // If the External slot is selected but there is neither an embedded IR nor
+    // a resolvable legacy path, revert silently to the first built-in IR
+    // (matches the chosen fallback semantics).
     if (irBox.getSelectedId() == externalSlotId)
     {
-        const auto savedPath = reverb.getExternalIRPath();
-        if (savedPath.isEmpty() || ! juce::File (savedPath).existsAsFile())
+        if (! reverb.hasExternalIR())
         {
             reverb.setExternalIRPath ({});
             if (auto* p = apvts.getParameter (prefix + "_Rev_IR"))
@@ -289,9 +289,9 @@ void ConvolReverbComponent::refreshExternalItemText()
     if (externalSlotId == 0)
         return;
 
-    const auto path = reverb.getExternalIRPath();
-    if (path.isNotEmpty() && juce::File (path).existsAsFile())
-        irBox.changeItemText (externalSlotId, "Ext: " + juce::File (path).getFileNameWithoutExtension());
+    const auto name = reverb.getExternalIRName();
+    if (name.isNotEmpty())
+        irBox.changeItemText (externalSlotId, "Ext: " + name);
     else
         irBox.changeItemText (externalSlotId, "External\xe2\x80\xa6");
 }
@@ -320,21 +320,24 @@ void ConvolReverbComponent::openExternalIRChooser()
     chooser->launchAsync (flags, [this] (const juce::FileChooser& fc)
     {
         const auto results = fc.getResults();
-        if (results.isEmpty())
+
+        // Embed the picked file into the state (FLAC+Base64) so presets and
+        // sessions carry the IR itself. Treat an unreadable file like a cancel.
+        const bool loaded = ! results.isEmpty() && reverb.setExternalIRFile (results[0]);
+
+        if (! loaded)
         {
-            // User cancelled — revert combo to whatever the parameter currently holds.
+            // Revert combo to whatever the parameter currently holds.
             if (auto* raw = apvts.getRawParameterValue (prefix + "_Rev_IR"))
             {
                 int paramId = (int) *raw;
-                if (paramId == externalSlotId && reverb.getExternalIRPath().isEmpty())
+                if (paramId == externalSlotId && ! reverb.hasExternalIR())
                     paramId = 1;
                 irBox.setSelectedId (paramId, juce::sendNotificationSync);
             }
             return;
         }
 
-        const auto file = results[0];
-        reverb.setExternalIRPath (file.getFullPathName());
         refreshExternalItemText();
         graphNeedsUpdate = true;
 

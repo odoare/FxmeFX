@@ -14,7 +14,7 @@
 #include <atomic>
 #include <vector>
 
-class ConvolReverb
+class ConvolReverb : private juce::ValueTree::Listener
 {
 public:
     ConvolReverb();
@@ -38,13 +38,21 @@ public:
     int getCurrentShapeType() const { return currentShapeType; }
 
     // External IR file support — the slot lives at index getExternalIndex(),
-    // one past the last built-in. The path is persisted in the APVTS state
-    // tree (not as a parameter, since hosts can't automate strings).
-    void setExternalIRPath (const juce::String& path);
+    // one past the last built-in. The IR audio itself is embedded in the APVTS
+    // state as FLAC+Base64 (fxme::EmbeddedAudio), so presets and host sessions
+    // are self-contained; the file path is also kept (not as a parameter,
+    // since hosts can't automate strings) for display and as a legacy
+    // fallback for states saved before embedding existed.
+    bool setExternalIRFile (const juce::File& file);   // embeds + selects the file; false if unreadable
+    void setExternalIRPath (const juce::String& path); // legacy path only; "" clears the embedded IR too
     juce::String getExternalIRPath() const;
+    bool hasExternalIR() const;               // embedded data present, or legacy path resolves
+    juce::String getExternalIRName() const;   // display name (no extension), or empty
     int getExternalIndex() const noexcept { return (int) irResources.size(); }
     static juce::Identifier externalPathPropertyId (const juce::String& prefix)
         { return juce::Identifier (prefix + "_Rev_ExtPath"); }
+    static juce::String externalIRSlotId (const juce::String& prefix)
+        { return prefix + "_Rev_ExtIR"; }
 
     // APVTS integration
     void assignParameters (juce::AudioProcessorValueTreeState& apvts, const juce::String& prefix);
@@ -102,6 +110,16 @@ private:
     juce::AudioProcessorValueTreeState* apvtsRef = nullptr;
     juce::Identifier extPathId;
     juce::String externalPath;
+    juce::String extSlotId;   // fxme::EmbeddedAudio slot of this instance's external IR
+
+    // Set when the state tree is replaced (preset/session load) or the
+    // external IR data changes, so checkParameters() reloads the external IR
+    // even though the IR-selection parameter value itself didn't move.
+    std::atomic<bool> externalStateChanged { false };
+    void valueTreeRedirected (juce::ValueTree&) override;
+    void valueTreePropertyChanged (juce::ValueTree&, const juce::Identifier&) override;
+    void valueTreeChildAdded (juce::ValueTree&, juce::ValueTree&) override;
+    void valueTreeChildRemoved (juce::ValueTree&, juce::ValueTree&, int) override;
 
     void loadResource (const juce::String& resourceName);
     void loadExternalIR(); // Loads the external IR file from externalPath

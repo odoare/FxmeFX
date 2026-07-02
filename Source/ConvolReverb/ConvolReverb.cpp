@@ -16,6 +16,8 @@ ConvolReverb::ConvolReverb()
 
 ConvolReverb::~ConvolReverb()
 {
+    if (apvtsRef != nullptr)
+        apvtsRef->state.removeListener (this);
 }
 
 void ConvolReverb::prepare (double sampleRate, int samplesPerBlock)
@@ -153,7 +155,9 @@ void ConvolReverb::assignParameters (juce::AudioProcessorValueTreeState& apvts, 
 
     apvtsRef = &apvts;
     extPathId = externalPathPropertyId (prefix);
+    extSlotId = externalIRSlotId (prefix);
     externalPath = apvts.state.getProperty (extPathId, "").toString();
+    apvts.state.addListener (this);   // survives replaceState (listener is redirected)
 }
 
 void ConvolReverb::addParameters (std::vector<std::unique_ptr<juce::RangedAudioParameter>>& params, const juce::String& prefix, int numIRs)
@@ -253,9 +257,20 @@ void ConvolReverb::loadIRFromReader (juce::AudioFormatReader& reader)
 
 void ConvolReverb::loadExternalIR()
 {
-    // Refresh path from APVTS state in case it was restored after assignParameters.
     if (apvtsRef != nullptr)
+    {
+        // Preferred source: the IR embedded in the state (self-contained
+        // presets/sessions). The reader owns a copy of the decoded bytes.
+        if (auto reader = fxme::EmbeddedAudio::createReader (apvtsRef->state, extSlotId))
+        {
+            loadIRFromReader (*reader);
+            return;
+        }
+
+        // Legacy fallback: refresh the saved path from the state (it may have
+        // been restored after assignParameters) and read the file from disk.
         externalPath = apvtsRef->state.getProperty (extPathId, externalPath).toString();
+    }
 
     juce::File f (externalPath);
     if (externalPath.isEmpty() || ! f.existsAsFile())
@@ -281,10 +296,27 @@ void ConvolReverb::loadExternalIR()
         originalIR.clear();
 }
 
+bool ConvolReverb::setExternalIRFile (const juce::File& file)
+{
+    if (apvtsRef == nullptr
+        || ! fxme::EmbeddedAudio::embedFile (apvtsRef->state, extSlotId, file))
+        return false;
+
+    // Keep the legacy path property for display and older builds; this also
+    // reloads the IR if the External slot is currently selected.
+    setExternalIRPath (file.getFullPathName());
+    externalStateChanged = false;   // the reload just happened
+    return true;
+}
+
 void ConvolReverb::setExternalIRPath (const juce::String& path)
 {
     if (apvtsRef != nullptr)
+    {
         apvtsRef->state.setProperty (extPathId, path, nullptr);
+        if (path.isEmpty())   // clearing the external IR discards the embedded data too
+            fxme::EmbeddedAudio::removeEmbedded (apvtsRef->state, extSlotId);
+    }
 
     juce::ScopedLock sl (lock);
     externalPath = path;
@@ -301,6 +333,59 @@ juce::String ConvolReverb::getExternalIRPath() const
     if (apvtsRef != nullptr)
         return apvtsRef->state.getProperty (extPathId, externalPath).toString();
     return externalPath;
+}
+
+bool ConvolReverb::hasExternalIR() const
+{
+    if (apvtsRef != nullptr && fxme::EmbeddedAudio::hasEmbedded (apvtsRef->state, extSlotId))
+        return true;
+
+    const auto path = getExternalIRPath();
+    return path.isNotEmpty() && juce::File (path).existsAsFile();
+}
+
+juce::String ConvolReverb::getExternalIRName() const
+{
+    if (apvtsRef != nullptr)
+    {
+        const auto name = fxme::EmbeddedAudio::getEmbeddedName (apvtsRef->state, extSlotId);
+        if (name.isNotEmpty())
+            return name.contains (".") ? name.upToLastOccurrenceOf (".", false, false) : name;
+    }
+
+    const auto path = getExternalIRPath();
+    if (path.isNotEmpty() && juce::File (path).existsAsFile())
+        return juce::File (path).getFileNameWithoutExtension();
+    return {};
+}
+
+void ConvolReverb::valueTreeRedirected (juce::ValueTree&)
+{
+    externalStateChanged = true;
+}
+
+void ConvolReverb::valueTreePropertyChanged (juce::ValueTree& tree, const juce::Identifier& property)
+{
+    if (property == extPathId
+        || (tree.hasType (fxme::EmbeddedAudio::entryType)
+            && tree[fxme::EmbeddedAudio::slotProperty].toString() == extSlotId))
+        externalStateChanged = true;
+}
+
+void ConvolReverb::valueTreeChildAdded (juce::ValueTree&, juce::ValueTree& child)
+{
+    if (child.hasType (fxme::EmbeddedAudio::containerType)
+        || (child.hasType (fxme::EmbeddedAudio::entryType)
+            && child[fxme::EmbeddedAudio::slotProperty].toString() == extSlotId))
+        externalStateChanged = true;
+}
+
+void ConvolReverb::valueTreeChildRemoved (juce::ValueTree&, juce::ValueTree& child, int)
+{
+    if (child.hasType (fxme::EmbeddedAudio::containerType)
+        || (child.hasType (fxme::EmbeddedAudio::entryType)
+            && child[fxme::EmbeddedAudio::slotProperty].toString() == extSlotId))
+        externalStateChanged = true;
 }
 
 juce::AudioBuffer<float> ConvolReverb::getModifiedIR() const
@@ -436,6 +521,21 @@ void ConvolReverb::loadImpulseToEngine (const juce::AudioBuffer<float>& buffer)
 
 void ConvolReverb::checkParameters()
 {
+    // The state tree was replaced (preset/session load) or the external IR
+    // data changed: if the External slot is and stays selected, the selection
+    // parameter doesn't move, so force a reload of the (possibly different)
+    // embedded IR here.
+    if (externalStateChanged.exchange (false))
+    {
+        const int paramIndex = irParam ? (int) *irParam - 1 : -1;
+        if (paramIndex == getExternalIndex() && currentIndex == paramIndex)
+        {
+            juce::ScopedLock sl (lock);
+            loadExternalIR();
+            updateModifiedIR();
+        }
+    }
+
     if (irParam && (int)*irParam != lastIR)
     {
         // Parameter is 1-based (to match ComboBox IDs), selectImpulse is 0-based.
