@@ -23,7 +23,7 @@ juce_add_plugin(FxmeLimiter
     COMPANY_WEBSITE             "www.fx-mechanics.com"
     PLUGIN_MANUFACTURER_CODE    FXME
     PLUGIN_CODE                 LIMT
-    FORMATS                     VST3 AU Standalone
+    FORMATS                     VST3 AU
     PRODUCT_NAME                "FxmeLimiter"
     DESCRIPTION                 "FX-Mechanics look-ahead limiter / maximizer"
     IS_SYNTH                    FALSE

@@ -20,7 +20,7 @@ juce_add_plugin(FxmeCab
     COMPANY_WEBSITE             "www.fx-mechanics.com"
     PLUGIN_MANUFACTURER_CODE    FXME
     PLUGIN_CODE                 CABN
-    FORMATS                     VST3 AU Standalone
+    FORMATS                     VST3 AU
     PRODUCT_NAME                "FxmeCab"
     DESCRIPTION                 "FX-Mechanics Cab IR loader"
     IS_SYNTH                    FALSE

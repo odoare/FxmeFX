@@ -20,7 +20,7 @@ juce_add_plugin(FxmeConvolReverb
     COMPANY_WEBSITE             "www.fx-mechanics.com"
     PLUGIN_MANUFACTURER_CODE    FXME
     PLUGIN_CODE                 CREV
-    FORMATS                     VST3 AU Standalone
+    FORMATS                     VST3 AU
     PRODUCT_NAME                "FxmeConvolReverb"
     DESCRIPTION                 "FX-Mechanics Convolution Reverb"
     IS_SYNTH                    FALSE

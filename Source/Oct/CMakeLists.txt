@@ -20,7 +20,7 @@ juce_add_plugin(FxmeOct
     COMPANY_WEBSITE             "www.fx-mechanics.com"
     PLUGIN_MANUFACTURER_CODE    FXME
     PLUGIN_CODE                 OCTV
-    FORMATS                     VST3 AU Standalone
+    FORMATS                     VST3 AU
     PRODUCT_NAME                "FxmeOct"
     DESCRIPTION                 "FX-Mechanics Octaver"
     IS_SYNTH                    FALSE

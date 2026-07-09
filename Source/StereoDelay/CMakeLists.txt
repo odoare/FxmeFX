@@ -20,7 +20,7 @@ juce_add_plugin(FxmeStereoDelay
     COMPANY_WEBSITE             "www.fx-mechanics.com"
     PLUGIN_MANUFACTURER_CODE    FXME
     PLUGIN_CODE                 SDEL
-    FORMATS                     VST3 AU Standalone
+    FORMATS                     VST3 AU
     PRODUCT_NAME                "FxmeStereoDelay"
     DESCRIPTION                 "FX-Mechanics Stereo Delay"
     IS_SYNTH                    FALSE

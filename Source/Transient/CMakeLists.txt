@@ -20,7 +20,7 @@ juce_add_plugin(FxmeTransient
     COMPANY_WEBSITE             "www.fx-mechanics.com"
     PLUGIN_MANUFACTURER_CODE    FXME
     PLUGIN_CODE                 TRNS
-    FORMATS                     VST3 AU Standalone
+    FORMATS                     VST3 AU
     PRODUCT_NAME                "FxmeTransient"
     DESCRIPTION                 "FX-Mechanics Transient Designer"
     IS_SYNTH                    FALSE

@@ -33,7 +33,7 @@ juce_add_plugin(FxmeTube
     COMPANY_WEBSITE             "www.fx-mechanics.com"
     PLUGIN_MANUFACTURER_CODE    FXME
     PLUGIN_CODE                 TUBE
-    FORMATS                     VST3 AU Standalone
+    FORMATS                     VST3 AU
     PRODUCT_NAME                "FxmeTube"
     DESCRIPTION                 "FX-Mechanics Tube saturation"
     IS_SYNTH                    FALSE

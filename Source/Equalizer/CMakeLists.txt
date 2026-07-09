@@ -20,7 +20,7 @@ juce_add_plugin(FxmeEqualizer
     COMPANY_WEBSITE             "www.fx-mechanics.com"
     PLUGIN_MANUFACTURER_CODE    FXME
     PLUGIN_CODE                 EQUL
-    FORMATS                     VST3 AU Standalone
+    FORMATS                     VST3 AU
     PRODUCT_NAME                "FxmeEqualizer"
     DESCRIPTION                 "FX-Mechanics 5-band Equalizer"
     IS_SYNTH                    FALSE

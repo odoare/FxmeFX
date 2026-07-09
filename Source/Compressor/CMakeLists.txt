@@ -23,7 +23,7 @@ juce_add_plugin(FxmeCompressor
     COMPANY_WEBSITE             "www.fx-mechanics.com"
     PLUGIN_MANUFACTURER_CODE    FXME
     PLUGIN_CODE                 COMP
-    FORMATS                     VST3 AU Standalone
+    FORMATS                     VST3 AU
     PRODUCT_NAME                "FxmeCompressor"
     DESCRIPTION                 "FX-Mechanics Compressor"
     IS_SYNTH                    FALSE
