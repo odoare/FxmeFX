@@ -7,6 +7,7 @@
 */
 
 #include "LimiterComponent.h"
+#include "../Common/TopBar.h"
 
 void LimiterComponent::setSliderColours (juce::Slider& s, juce::Colour c)
 {
@@ -64,15 +65,7 @@ void LimiterComponent::setupSlider (fxme::FxmeSlider& slider, const juce::String
 
 void LimiterComponent::paint (juce::Graphics& g)
 {
-    auto diagonale = (getLocalBounds().getTopLeft() - getLocalBounds().getBottomRight()).toFloat();
-    auto length = diagonale.getDistanceFromOrigin();
-    auto perpendicular = diagonale.rotatedAboutOrigin (juce::degreesToRadians (270.0f)) / length;
-    auto height = float (getWidth() * getHeight()) / length;
-    auto base = juce::Colours::orange.darker (4.f);
-    juce::ColourGradient grad (base.darker().darker().darker(), perpendicular * height,
-                               base, perpendicular * -height, false);
-    g.setGradientFill (grad);
-    g.fillAll();
+    fxmefx::paintComponentBackground (g, getLocalBounds().toFloat(), juce::Colours::orange);
 }
 
 void LimiterComponent::resized()

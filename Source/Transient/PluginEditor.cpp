@@ -12,11 +12,13 @@
 FxmeTransientAudioProcessorEditor::FxmeTransientAudioProcessorEditor (FxmeTransientAudioProcessor& p)
     : AudioProcessorEditor (&p),
       audioProcessor (p),
+      topBar (JucePlugin_Name, "FX-Mechanics Transient Designer", juce::Colours::red),
       transientComponent (p.getTransient(), p.getApvts(), FxmeTransientAudioProcessor::parameterPrefix)
 {
+    addAndMakeVisible (topBar);
     addAndMakeVisible (transientComponent);
     setResizable (true, true);
-    setResizeLimits (400, 300, 1600, 1200);
+    setResizeLimits (400, 300 + fxmefx::kTopBarHeight, 1600, 1200);
     setSize (kPreferredWidth, kPreferredHeight);
 }
 
@@ -24,10 +26,12 @@ FxmeTransientAudioProcessorEditor::~FxmeTransientAudioProcessorEditor() = defaul
 
 void FxmeTransientAudioProcessorEditor::paint (juce::Graphics& g)
 {
-    g.fillAll (juce::Colours::black);
+    fxmefx::paintTintedBackground (g, getLocalBounds().toFloat(), juce::Colours::red);
 }
 
 void FxmeTransientAudioProcessorEditor::resized()
 {
-    transientComponent.setBounds (getLocalBounds());
+    auto area = getLocalBounds();
+    topBar.setBounds (area.removeFromTop (fxmefx::kTopBarHeight));
+    transientComponent.setBounds (area);
 }

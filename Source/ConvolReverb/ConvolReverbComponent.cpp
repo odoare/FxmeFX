@@ -7,6 +7,7 @@
 */
 
 #include "ConvolReverbComponent.h"
+#include "../Common/TopBar.h"
 
 void ConvolReverbComponent::setSliderColours (juce::Slider& s, juce::Colour c)
 {
@@ -359,16 +360,7 @@ void ConvolReverbComponent::timerCallback()
 
 void ConvolReverbComponent::paint (juce::Graphics& g)
 {
-    auto diagonale = (getLocalBounds().getTopLeft() - getLocalBounds().getBottomRight()).toFloat();
-    auto length = diagonale.getDistanceFromOrigin();
-    auto perpendicular = diagonale.rotatedAboutOrigin (juce::degreesToRadians (270.0f)) / length;
-    auto height = float (getWidth() * getHeight()) / length;
-    //auto bluegreengrey = juce::Colour::fromFloatRGBA (0.15f, 0.15f, 0.25f, 1.0f);
-    auto bluegreengrey = juce::Colours::yellow.darker(3.f);
-    juce::ColourGradient grad (bluegreengrey.darker().darker().darker(), perpendicular * height,
-                           bluegreengrey, perpendicular * -height, false);
-    g.setGradientFill(grad);
-    g.fillAll();
+    fxmefx::paintComponentBackground (g, getLocalBounds().toFloat(), juce::Colours::yellowgreen);
 }
 
 void ConvolReverbComponent::resized()

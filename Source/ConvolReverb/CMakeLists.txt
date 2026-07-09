@@ -74,9 +74,12 @@ target_compile_definitions(FxmeConvolReverb
         JUCE_USE_CURL=0
 )
 
+include(${CMAKE_CURRENT_SOURCE_DIR}/../Common/CommonAssets.cmake)
+
 target_link_libraries(FxmeConvolReverb
     PRIVATE
         FxmeConvolReverbBinaryData
+        FxmeCommonBinaryData
         juce::juce_audio_basics
         juce::juce_audio_devices
         juce::juce_audio_formats

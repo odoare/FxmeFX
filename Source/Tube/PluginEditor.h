@@ -11,12 +11,13 @@
 #include <JuceHeader.h>
 #include "PluginProcessor.h"
 #include "TubeComponent.h"
+#include "../Common/TopBar.h"
 
 class FxmeTubeAudioProcessorEditor  : public juce::AudioProcessorEditor
 {
 public:
     static constexpr int kPreferredWidth  = 640;
-    static constexpr int kPreferredHeight = 300;
+    static constexpr int kPreferredHeight = 300 + fxmefx::kTopBarHeight;
 
     FxmeTubeAudioProcessorEditor (FxmeTubeAudioProcessor&);
     ~FxmeTubeAudioProcessorEditor() override;
@@ -26,6 +27,7 @@ public:
 
 private:
     FxmeTubeAudioProcessor& audioProcessor;
+    fxmefx::TopBar topBar;
     TubeComponent tubeComponent;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (FxmeTubeAudioProcessorEditor)

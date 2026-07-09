@@ -7,6 +7,7 @@
 */
 
 #include "EqualizerComponent.h"
+#include "../Common/TopBar.h"
 
 #include <complex>
 
@@ -510,15 +511,7 @@ EqualizerComponent::~EqualizerComponent()
 
 void EqualizerComponent::paint (juce::Graphics& g)
 {
-    auto diagonale = (getLocalBounds().getTopLeft() - getLocalBounds().getBottomRight()).toFloat();
-    auto length = diagonale.getDistanceFromOrigin();
-    auto perpendicular = diagonale.rotatedAboutOrigin (juce::degreesToRadians (270.0f)) / length;
-    auto height = float (getWidth() * getHeight()) / length;
-    auto bluegreengrey = juce::Colours::cyan.darker (3.f);
-    juce::ColourGradient grad (bluegreengrey.darker().darker().darker(), perpendicular * height,
-                               bluegreengrey, perpendicular * -height, false);
-    g.setGradientFill (grad);
-    g.fillAll();
+    fxmefx::paintComponentBackground (g, getLocalBounds().toFloat(), juce::Colours::cyan);
 }
 
 void EqualizerComponent::resized()

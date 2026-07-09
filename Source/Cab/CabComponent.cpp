@@ -7,6 +7,7 @@
 */
 
 #include "CabComponent.h"
+#include "../Common/TopBar.h"
 
 namespace
 {
@@ -155,15 +156,7 @@ void CabComponent::timerCallback()
 
 void CabComponent::paint (juce::Graphics& g)
 {
-    auto diagonale     = (getLocalBounds().getTopLeft() - getLocalBounds().getBottomRight()).toFloat();
-    auto length        = diagonale.getDistanceFromOrigin();
-    auto perpendicular = diagonale.rotatedAboutOrigin (juce::degreesToRadians (270.0f)) / length;
-    auto height        = float (getWidth() * getHeight()) / length;
-    auto base          = cabTint.darker (4.f);
-    juce::ColourGradient grad (base.darker().darker(),  perpendicular *  height,
-                               base,                    perpendicular * -height, false);
-    g.setGradientFill (grad);
-    g.fillAll();
+    fxmefx::paintComponentBackground (g, getLocalBounds().toFloat(), cabTint);
 }
 
 void CabComponent::resized()

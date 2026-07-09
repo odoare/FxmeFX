@@ -12,11 +12,13 @@
 FxmeOctAudioProcessorEditor::FxmeOctAudioProcessorEditor (FxmeOctAudioProcessor& p)
     : AudioProcessorEditor (&p),
       audioProcessor (p),
+      topBar (JucePlugin_Name, "FX-Mechanics Octaver", juce::Colour::fromRGB (140, 100, 220)),
       octComponent (p.getOct(), p.getApvts(), FxmeOctAudioProcessor::parameterPrefix)
 {
+    addAndMakeVisible (topBar);
     addAndMakeVisible (octComponent);
     setResizable (true, true);
-    setResizeLimits (400, 280, 1600, 1200);
+    setResizeLimits (400, 280 + fxmefx::kTopBarHeight, 1600, 1200);
     setSize (kPreferredWidth, kPreferredHeight);
 }
 
@@ -24,10 +26,12 @@ FxmeOctAudioProcessorEditor::~FxmeOctAudioProcessorEditor() = default;
 
 void FxmeOctAudioProcessorEditor::paint (juce::Graphics& g)
 {
-    g.fillAll (juce::Colours::black);
+    fxmefx::paintTintedBackground (g, getLocalBounds().toFloat(), juce::Colour::fromRGB (140, 100, 220));
 }
 
 void FxmeOctAudioProcessorEditor::resized()
 {
-    octComponent.setBounds (getLocalBounds());
+    auto area = getLocalBounds();
+    topBar.setBounds (area.removeFromTop (fxmefx::kTopBarHeight));
+    octComponent.setBounds (area);
 }

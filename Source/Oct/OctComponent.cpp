@@ -7,6 +7,7 @@
 */
 
 #include "OctComponent.h"
+#include "../Common/TopBar.h"
 
 namespace
 {
@@ -72,15 +73,7 @@ OctComponent::~OctComponent() = default;
 
 void OctComponent::paint (juce::Graphics& g)
 {
-    auto diagonale     = (getLocalBounds().getTopLeft() - getLocalBounds().getBottomRight()).toFloat();
-    auto length        = diagonale.getDistanceFromOrigin();
-    auto perpendicular = diagonale.rotatedAboutOrigin (juce::degreesToRadians (270.0f)) / length;
-    auto height        = float (getWidth() * getHeight()) / length;
-    auto base          = octTint.darker (3.0f);
-    juce::ColourGradient grad (base.darker().darker(),  perpendicular *  height,
-                               base,                     perpendicular * -height, false);
-    g.setGradientFill (grad);
-    g.fillAll();
+    fxmefx::paintComponentBackground (g, getLocalBounds().toFloat(), octTint);
 }
 
 void OctComponent::resized()

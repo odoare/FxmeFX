@@ -56,8 +56,11 @@ target_compile_definitions(FxmeTransient
         JUCE_USE_CURL=0
 )
 
+include(${CMAKE_CURRENT_SOURCE_DIR}/../Common/CommonAssets.cmake)
+
 target_link_libraries(FxmeTransient
     PRIVATE
+        FxmeCommonBinaryData
         FxmeTools
         juce::juce_audio_basics
         juce::juce_audio_devices

@@ -11,12 +11,13 @@
 #include <JuceHeader.h>
 #include "PluginProcessor.h"
 #include "ConvolReverbComponent.h"
+#include "../Common/TopBar.h"
 
 class FxmeConvolReverbAudioProcessorEditor  : public juce::AudioProcessorEditor
 {
 public:
     static constexpr int kPreferredWidth  = 600;
-    static constexpr int kPreferredHeight = 400;
+    static constexpr int kPreferredHeight = 400 + fxmefx::kTopBarHeight;
 
     FxmeConvolReverbAudioProcessorEditor (FxmeConvolReverbAudioProcessor&);
     ~FxmeConvolReverbAudioProcessorEditor() override;
@@ -26,6 +27,7 @@ public:
 
 private:
     FxmeConvolReverbAudioProcessor& audioProcessor;
+    fxmefx::TopBar topBar;
     ConvolReverbComponent reverbComponent;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (FxmeConvolReverbAudioProcessorEditor)
