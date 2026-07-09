@@ -137,7 +137,7 @@ void TransientComponent::resized()
 void TransientComponent::timerCallback()
 {
     if (transientFx.isOn())
-        gainMeter.setMeterColor (juce::Colours::orange);
+        gainMeter.setMeterColor (juce::Colours::red);
     else
         gainMeter.setMeterColor (juce::Colours::grey);
 

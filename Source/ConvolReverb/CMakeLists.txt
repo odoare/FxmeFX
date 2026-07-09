@@ -113,8 +113,10 @@ fxme_add_pd_external(FxmeConvolReverb_pd
         ../../lib/FxmeTools/WDL/WDL/convoengine.cpp
         ../../lib/FxmeTools/WDL/WDL/fft.c
         ../../lib/FxmeTools/WDL/WDL/resample.cpp
+        ../../lib/FxmeTools/FxmeTools/presets/EmbeddedAudio.cpp
     INCLUDES
         ${CMAKE_CURRENT_SOURCE_DIR}
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../lib/FxmeTools
         ${CMAKE_CURRENT_SOURCE_DIR}/../../lib/FxmeTools/WDL/WDL
     DEFINES
         JucePlugin_Name="FxmeConvolReverb"

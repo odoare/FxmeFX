@@ -7,6 +7,7 @@
 */
 
 #include "ConvolReverb.h"
+#include <FxmeTools/presets/EmbeddedAudio.h>
 #include <resample.h>
 
 ConvolReverb::ConvolReverb()
