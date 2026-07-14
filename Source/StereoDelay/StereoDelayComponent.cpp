@@ -122,7 +122,7 @@ void StereoDelayComponent::resized()
     fSliders1.flexDirection = juce::FlexBox::Direction::row;
     fSliders2.flexDirection = juce::FlexBox::Direction::row;
 
-    fTop.items.add(fi(onButton).withFlex(0.15f));
+    fTop.items.add(fi(onButton).withWidth(fxmefx::kOnButtonWidth));
     fTop.items.add(fi(titleLabel).withFlex(1.f));
     fTop.items.add(fi(bpmLabel).withFlex(0.3f));
 
@@ -147,7 +147,9 @@ void StereoDelayComponent::resized()
     fSliders2.items.add(fi(b8).withFlex(0.25f).withMargin(juce::FlexItem::Margin(0.f, 5.f, 0.f, 5.f)));
     fSliders2.items.add(fi(b9).withFlex(0.25f).withMargin(juce::FlexItem::Margin(0.f, 5.f, 0.f, 5.f)));
 
-    fMain.items.add(fi(fTop).withFlex(0.28f));
+    fMain.items.add(fi(fTop).withHeight(fxmefx::kHeaderRowHeight)
+                            .withMinHeight(fxmefx::kHeaderRowHeight)
+                            .withMargin(juce::FlexItem::Margin(5.f, 0.f, 8.f, 0.f)));
     fMain.items.add(fi(fSliders1).withFlex(0.85f));
     fMain.items.add(fi(fSliders2).withFlex(0.85f));
     

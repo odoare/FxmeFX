@@ -132,7 +132,12 @@ void FxmeCabAudioProcessor::setStateInformation (const void* data, int sizeInByt
 {
     if (auto xml = getXmlFromBinary (data, sizeInBytes))
         if (xml->hasTagName (apvts.state.getType()))
+        {
+            // Presets from the single-gain version carry _Cab_Gain; map it
+            // onto the per-channel gains before handing the tree to the APVTS.
+            Cab::migrateLegacyState (*xml, parameterPrefix);
             apvts.replaceState (juce::ValueTree::fromXml (*xml));
+        }
 }
 
 juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()

@@ -29,9 +29,9 @@ TubeComponent::TubeComponent (Tube& t, juce::AudioProcessorValueTreeState& state
         int size = 0;
         const char* data = nullptr;
         if (onButton.getToggleState())
-            data = BinaryData::getNamedResource("tube_png", size);
+            data = BinaryData::getNamedResource("tube2_png", size);
         else
-            data = BinaryData::getNamedResource("tube_bw_png", size);
+            data = BinaryData::getNamedResource("tube2_bw_png", size);
 
         if (data)
             tubeImage.setImage(juce::ImageCache::getFromMemory(data, size));
@@ -116,24 +116,42 @@ void TubeComponent::paint (juce::Graphics& g)
 void TubeComponent::resized()
 {
     auto area = getLocalBounds().reduced (5.f);
-    using fi = juce::FlexItem;    
-    juce::FlexBox f1, f2, fMain;
+    using fi = juce::FlexItem;
+    juce::FlexBox f1, f2, knobRow1, knobRow2, knobs, fMain;
     f1.flexDirection =  juce::FlexBox::Direction::row;
     f2.flexDirection = juce::FlexBox::Direction::row;
+    knobRow1.flexDirection = juce::FlexBox::Direction::row;
+    knobRow2.flexDirection = juce::FlexBox::Direction::row;
+    knobs.flexDirection = juce::FlexBox::Direction::column;
     fMain.flexDirection = juce::FlexBox::Direction::column;
 
-    f1.items.add(fi(onButton).withFlex(0.2f));
+    f1.items.add(fi(onButton).withWidth(fxmefx::kOnButtonWidth));
     f1.items.add(fi(titleLabel).withFlex(1.f));
     f1.items.add(fi(modelBox).withFlex(0.5f));
-    f2.items.add(fi(tubeImage).withFlex(1.f).withMargin(juce::FlexItem::Margin(5.f, 5.f, 5.f, 0.f)));
-    f2.items.add(fi(driveSlider).withFlex(1.f).withMargin(juce::FlexItem::Margin(5.f, 5.f, 5.f, 5.f)));
-    f2.items.add(fi(biasSlider).withFlex(1.f).withMargin(juce::FlexItem::Margin(5.f, 5.f, 5.f, 5.f)));
-    f2.items.add(fi(toneSlider).withFlex(1.f).withMargin(juce::FlexItem::Margin(5.f, 5.f, 5.f, 5.f)));
-    f2.items.add(fi(sagSlider).withFlex(1.f).withMargin(juce::FlexItem::Margin(5.f, 5.f, 5.f, 5.f)));
-    f2.items.add(fi(outSlider).withFlex(0.3f).withMargin(juce::FlexItem::Margin(5.f, 0.f, 5.f, 5.f)));
 
-    fMain.items.add(fi(f1).withFlex(0.2f).withMargin(juce::FlexItem::Margin(5.f, 0.f, 10.f, 0)));
-    fMain.items.add(fi(f2).withFlex(0.9f));
+    // The tube artwork spans the full content height at its native aspect
+    // ratio; the header (plus its vertical margins) is what it can't have.
+    const float contentHeight = juce::jmax (0.0f, (float) area.getHeight()
+                                                  - fxmefx::kHeaderRowHeight - 15.0f);
+    float imageWidth = 0.0f;
+    if (auto img = tubeImage.getImage(); img.isValid() && img.getHeight() > 0)
+        imageWidth = contentHeight * (float) img.getWidth() / (float) img.getHeight();
+
+    knobRow1.items.add(fi(driveSlider).withFlex(1.f).withMargin(juce::FlexItem::Margin(5.f)));
+    knobRow1.items.add(fi(toneSlider).withFlex(1.f).withMargin(juce::FlexItem::Margin(5.f)));
+    knobRow2.items.add(fi(biasSlider).withFlex(1.f).withMargin(juce::FlexItem::Margin(5.f)));
+    knobRow2.items.add(fi(sagSlider).withFlex(1.f).withMargin(juce::FlexItem::Margin(5.f)));
+    knobs.items.add(fi(knobRow1).withFlex(1.f));
+    knobs.items.add(fi(knobRow2).withFlex(1.f));
+
+    f2.items.add(fi(tubeImage).withWidth(imageWidth));
+    f2.items.add(fi(knobs).withFlex(1.f));
+    f2.items.add(fi(outSlider).withWidth(60.f).withMargin(juce::FlexItem::Margin(0.f, 0.f, 0.f, 5.f)));
+
+    fMain.items.add(fi(f1).withHeight(fxmefx::kHeaderRowHeight)
+                          .withMinHeight(fxmefx::kHeaderRowHeight)
+                          .withMargin(juce::FlexItem::Margin(5.f, 0.f, 10.f, 0)));
+    fMain.items.add(fi(f2).withFlex(1.f));
 
     fMain.performLayout(area);
 }

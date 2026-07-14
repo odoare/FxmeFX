@@ -25,6 +25,11 @@ namespace fxmefx
 
 constexpr int kTopBarHeight = 44;
 
+// Shared sizing for the effect Components' own first row (on/off button,
+// title, optional extra control) so every plugin's header lines up the same.
+constexpr float kHeaderRowHeight = 40.0f;
+constexpr float kOnButtonWidth   = 60.0f;
+
 // Near-black background with just a whisper of the plugin's accent colour —
 // same restrained, dark feel as Spread's backdrop.
 inline void paintTintedBackground (juce::Graphics& g, juce::Rectangle<float> bounds, juce::Colour accent)

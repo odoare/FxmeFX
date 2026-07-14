@@ -77,7 +77,7 @@ void LimiterComponent::resized()
     knobs.flexDirection  = juce::FlexBox::Direction::row;
     fMain.flexDirection  = juce::FlexBox::Direction::column;
 
-    header.items.add (fi (onButton).withFlex (0.3f));
+    header.items.add (fi (onButton).withWidth (fxmefx::kOnButtonWidth));
     header.items.add (fi (titleLabel).withFlex (1.0f));
 
     knobs.items.add (fi (driveSlider).withFlex (1.f));
@@ -85,7 +85,9 @@ void LimiterComponent::resized()
     knobs.items.add (fi (releaseSlider).withFlex (1.f));
     knobs.items.add (fi (grMeter).withFlex (0.25f).withMargin (juce::FlexItem::Margin (0.f, 8.f, 0.f, 8.f)));
 
-    fMain.items.add (fi (header).withFlex (0.15f).withMargin (juce::FlexItem::Margin (5.f, 0.f, 10.f, 0.f)));
+    fMain.items.add (fi (header).withHeight (fxmefx::kHeaderRowHeight)
+                                .withMinHeight (fxmefx::kHeaderRowHeight)
+                                .withMargin (juce::FlexItem::Margin (5.f, 0.f, 10.f, 0.f)));
     fMain.items.add (fi (knobs).withFlex (1.f));
 
     fMain.performLayout (area);

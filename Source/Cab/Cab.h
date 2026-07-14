@@ -57,6 +57,12 @@ public:
                                const juce::String& prefix,
                                int numIRs = 0);
 
+    /** Rewrite a saved APVTS state made with the single-gain version of this
+        effect: the legacy prefix + "_Cab_Gain" value is copied into the new
+        per-channel prefix + "_Cab_GainL" / "_Cab_GainR" parameters. Call it on
+        the XML in setStateInformation() before replaceState(). */
+    static void migrateLegacyState (juce::XmlElement& state, const juce::String& prefix);
+
 private:
     // WDL engine — single engine driven by a 2-channel impulse buffer where
     // ch 0 = left IR and ch 1 = right IR. The engine then convolves each
@@ -75,19 +81,19 @@ private:
     std::array<juce::AudioBuffer<float>, NumSlots> monoIR;
     std::array<int, NumSlots> currentIndex { -1, -1 };
 
-    float gaindB      = 0.0f;
-    float gainLinear  = 1.0f;
-    bool  on          = true;
+    std::array<float, NumSlots> gaindB     { 0.0f, 0.0f };
+    std::array<float, NumSlots> gainLinear { 1.0f, 1.0f };
+    bool on = true;
 
-    std::atomic<float>* onParam   = nullptr;
-    std::atomic<float>* irLParam  = nullptr;
-    std::atomic<float>* irRParam  = nullptr;
-    std::atomic<float>* gainParam = nullptr;
+    std::atomic<float>* onParam  = nullptr;
+    std::atomic<float>* irLParam = nullptr;
+    std::atomic<float>* irRParam = nullptr;
+    std::array<std::atomic<float>*, NumSlots> gainParam { nullptr, nullptr };
 
-    float lastOn   = -1.0f;
-    int   lastIRL  = -1;
-    int   lastIRR  = -1;
-    float lastGain = -1000.0f;
+    float lastOn  = -1.0f;
+    int   lastIRL = -1;
+    int   lastIRR = -1;
+    std::array<float, NumSlots> lastGain { -1000.0f, -1000.0f };
 
     void loadResource (int channel, const juce::String& resourceName);
     void loadIRFromReader (int channel, juce::AudioFormatReader& reader);

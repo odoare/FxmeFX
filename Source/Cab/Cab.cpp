@@ -65,8 +65,9 @@ void Cab::process (juce::AudioBuffer<float>& buffer)
     {
         auto* dst = buffer.getWritePointer (c);
         const auto* wet = out[c];
+        const float g = gainLinear[(size_t) c];
         for (int i = 0; i < toCopy; ++i)
-            dst[i] = (float) wet[i] * gainLinear;
+            dst[i] = (float) wet[i] * g;
         // If the engine doesn't yet have output for the trailing samples,
         // emit silence rather than the dry input — a cabinet emulation is
         // 100% wet and any dry leakage would defeat the modelling.
@@ -128,10 +129,11 @@ juce::AudioBuffer<float> Cab::getIR (int channel) const
 
 void Cab::assignParameters (juce::AudioProcessorValueTreeState& apvts, const juce::String& prefix)
 {
-    onParam   = apvts.getRawParameterValue (prefix + "_Cab_On");
-    irLParam  = apvts.getRawParameterValue (prefix + "_Cab_IRL");
-    irRParam  = apvts.getRawParameterValue (prefix + "_Cab_IRR");
-    gainParam = apvts.getRawParameterValue (prefix + "_Cab_Gain");
+    onParam      = apvts.getRawParameterValue (prefix + "_Cab_On");
+    irLParam     = apvts.getRawParameterValue (prefix + "_Cab_IRL");
+    irRParam     = apvts.getRawParameterValue (prefix + "_Cab_IRR");
+    gainParam[0] = apvts.getRawParameterValue (prefix + "_Cab_GainL");
+    gainParam[1] = apvts.getRawParameterValue (prefix + "_Cab_GainR");
 }
 
 void Cab::addParameters (std::vector<std::unique_ptr<juce::RangedAudioParameter>>& params,
@@ -146,8 +148,46 @@ void Cab::addParameters (std::vector<std::unique_ptr<juce::RangedAudioParameter>
         juce::ParameterID { prefix + "_Cab_IRL",  1 }, prefix + " Cab IR L", 1, maxIR, 1));
     params.push_back (std::make_unique<juce::AudioParameterInt> (
         juce::ParameterID { prefix + "_Cab_IRR",  1 }, prefix + " Cab IR R", 1, maxIR, juce::jmin (2, maxIR)));
+    // versionHint 2: these replaced the single _Cab_Gain of version 1.
     params.push_back (std::make_unique<juce::AudioParameterFloat> (
-        juce::ParameterID { prefix + "_Cab_Gain", 1 }, prefix + " Cab Gain", -24.0f, 24.0f, 0.0f));
+        juce::ParameterID { prefix + "_Cab_GainL", 2 }, prefix + " Cab Gain L", -24.0f, 24.0f, 0.0f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat> (
+        juce::ParameterID { prefix + "_Cab_GainR", 2 }, prefix + " Cab Gain R", -24.0f, 24.0f, 0.0f));
+}
+
+void Cab::migrateLegacyState (juce::XmlElement& state, const juce::String& prefix)
+{
+    const auto legacyId = prefix + "_Cab_Gain";
+    const auto leftId   = prefix + "_Cab_GainL";
+    const auto rightId  = prefix + "_Cab_GainR";
+
+    juce::XmlElement* legacy = nullptr;
+    bool hasPerChannel = false;
+
+    for (auto* param : state.getChildWithTagNameIterator ("PARAM"))
+    {
+        const auto id = param->getStringAttribute ("id");
+        if (id == legacyId)
+            legacy = param;
+        else if (id == leftId || id == rightId)
+            hasPerChannel = true;
+    }
+
+    if (legacy == nullptr)
+        return;
+
+    if (! hasPerChannel)
+    {
+        const double value = legacy->getDoubleAttribute ("value", 0.0);
+        for (const auto& id : { leftId, rightId })
+        {
+            auto* param = state.createNewChildElement ("PARAM");
+            param->setAttribute ("id", id);
+            param->setAttribute ("value", value);
+        }
+    }
+
+    state.removeChildElement (legacy, true);
 }
 
 void Cab::loadResource (int channel, const juce::String& resourceName)
@@ -288,15 +328,19 @@ void Cab::checkParameters()
         lastIRR = (int) *irRParam;
     }
 
-    if (gainParam && *gainParam != lastGain)
+    for (size_t c = 0; c < (size_t) NumSlots; ++c)
     {
-        gaindB = *gainParam;
-        lastGain = gaindB;
-        updateGain();
+        if (gainParam[c] && *gainParam[c] != lastGain[c])
+        {
+            gaindB[c] = *gainParam[c];
+            lastGain[c] = gaindB[c];
+            updateGain();
+        }
     }
 }
 
 void Cab::updateGain()
 {
-    gainLinear = juce::Decibels::decibelsToGain (gaindB);
+    for (size_t c = 0; c < (size_t) NumSlots; ++c)
+        gainLinear[c] = juce::Decibels::decibelsToGain (gaindB[c]);
 }

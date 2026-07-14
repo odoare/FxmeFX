@@ -118,7 +118,7 @@ void CompressorComponent::resized()
     f5.flexDirection = juce::FlexBox::Direction::row;
     fMain.flexDirection = juce::FlexBox::Direction::column;
 
-    f1.items.add(fi(onButton).withFlex(0.2f));
+    f1.items.add(fi(onButton).withWidth(fxmefx::kOnButtonWidth));
     f1.items.add(fi(titleLabel).withFlex(1.0f));
     f1.items.add(fi(relModeBox).withFlex(0.7f).withMargin(juce::FlexItem::Margin(0.f, 4.f, 0.f, 4.f)));
     f2.items.add(fi(attackSlider).withFlex(1.f));
@@ -134,7 +134,9 @@ void CompressorComponent::resized()
     f5.items.add(fi(grMeter).withFlex(0.15f).withMargin(juce::FlexItem::Margin(0.f, 10.f, 0.f, 0)));
     f5.items.add(fi(gainSlider).withFlex(0.15f));
 
-    fMain.items.add(fi(f1).withFlex(0.11f).withMargin(juce::FlexItem::Margin(5.f, 0.f, 10.f, 0)));
+    fMain.items.add(fi(f1).withHeight(fxmefx::kHeaderRowHeight)
+                          .withMinHeight(fxmefx::kHeaderRowHeight)
+                          .withMargin(juce::FlexItem::Margin(5.f, 0.f, 10.f, 0)));
     fMain.items.add(fi(f5).withFlex(1.f));
 
     fMain.performLayout(area);

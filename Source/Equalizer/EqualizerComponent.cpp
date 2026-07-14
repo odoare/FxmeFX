@@ -524,7 +524,7 @@ void EqualizerComponent::resized()
 
     juce::FlexBox ftop;
     ftop.flexDirection = juce::FlexBox::Direction::row;
-    ftop.items.add (fi (onButton).withFlex (0.2f));
+    ftop.items.add (fi (onButton).withWidth (fxmefx::kOnButtonWidth));
     ftop.items.add (fi (titleLabel).withFlex (1.5f));
 
     juce::FlexBox fmiddle;
@@ -551,7 +551,9 @@ void EqualizerComponent::resized()
     fbottom.flexDirection = juce::FlexBox::Direction::row;
     fbottom.items.add (fi (responseGraph).withFlex (1.f));
 
-    fmain.items.add (fi (ftop).withFlex (0.13f).withMargin (juce::FlexItem::Margin (5.f, 0.f, 10.f, 0.f)));
+    fmain.items.add (fi (ftop).withHeight (fxmefx::kHeaderRowHeight)
+                              .withMinHeight (fxmefx::kHeaderRowHeight)
+                              .withMargin (juce::FlexItem::Margin (5.f, 0.f, 10.f, 0.f)));
     fmain.items.add (fi (fmiddle).withFlex (1.f));
     fmain.items.add (fi (fbottom).withFlex (0.85f).withMargin (juce::FlexItem::Margin (10.f, 0.f, 0.f, 0.f)));
 

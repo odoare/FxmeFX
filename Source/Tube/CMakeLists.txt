@@ -18,8 +18,8 @@ endif()
 # Tube faceplate images embedded as binary data (the component switches between
 # the colour and bypass artwork via BinaryData::getNamedResource).
 juce_add_binary_data(FxmeTubeBinaryData SOURCES
-    img/tube.png
-    img/tube_bw.png
+    img/tube2.png
+    img/tube2_bw.png
 )
 
 set_target_properties(FxmeTubeBinaryData PROPERTIES

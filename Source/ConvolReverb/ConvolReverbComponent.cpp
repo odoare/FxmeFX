@@ -379,7 +379,7 @@ void ConvolReverbComponent::resized()
     fGains.flexDirection = juce::FlexBox::Direction::column;
     fBoxes.flexDirection = juce::FlexBox::Direction::column;
 
-    fTop.items.add(fi(onButton).withFlex(0.2f));
+    fTop.items.add(fi(onButton).withWidth(fxmefx::kOnButtonWidth));
     fTop.items.add(fi(titleLabel).withFlex(1.5f));
 
     fBoxes.items.add(fi(irLabel).withFlex(0.5f));
@@ -398,7 +398,9 @@ void ConvolReverbComponent::resized()
     fSliders.items.add(fi(fWet).withFlex(.25f).withMargin(juce::FlexItem::Margin(0.f, 10.f, 0.f, 5.f)));
     
 
-    fMain.items.add(fi(fTop).withFlex(0.12f));
+    fMain.items.add(fi(fTop).withHeight(fxmefx::kHeaderRowHeight)
+                            .withMinHeight(fxmefx::kHeaderRowHeight)
+                            .withMargin(juce::FlexItem::Margin(5.f, 0.f, 8.f, 0.f)));
     fMain.items.add(fi(fSliders).withFlex(0.35f));
     // Graph will take the remaining space
     fMain.items.add(fi(irPlot).withFlex(0.55f));

@@ -11,18 +11,21 @@
 #include <JuceHeader.h>
 #include "Cab.h"
 
-/** Compact two-channel impulse-response thumbnail. */
+/** Compact impulse-response thumbnail for one channel/slot. */
 class CabIRPlot : public juce::Component
 {
 public:
-    explicit CabIRPlot (Cab& c) : cab (c) {}
+    CabIRPlot (Cab& c, int channelToShow, juce::Colour colour)
+        : cab (c), channel (channelToShow), tint (colour) {}
 
     void paint (juce::Graphics& g) override;
     void updateGraph();
 
 private:
     Cab& cab;
-    juce::Path leftPath, rightPath;
+    int channel;
+    juce::Colour tint;
+    juce::Path path;
 };
 
 class CabComponent : public juce::Component, public juce::Timer
@@ -47,10 +50,10 @@ private:
     juce::Label    irLLabel, irRLabel;
     juce::ComboBox irLBox, irRBox;
 
-    fxme::FxmeSlider gainSlider;
-    juce::Label      gainLabel;
+    fxme::FxmeSlider gainLSlider, gainRSlider;
+    juce::Label      gainLLabel, gainRLabel;
 
-    CabIRPlot irPlot;
+    CabIRPlot irLPlot, irRPlot;
     std::atomic<bool> graphNeedsUpdate { true };
 
     using SliderAttachment   = juce::AudioProcessorValueTreeState::SliderAttachment;
@@ -62,8 +65,8 @@ private:
 
     fxme::FxmeLookAndFeel fxmeLookAndFeel;
 
-    void setupBarSlider (fxme::FxmeSlider& slider, juce::Label& label,
-                         const juce::String& text, double min, double max, double def);
+    void setupGainSlider (fxme::FxmeSlider& slider, juce::Label& label,
+                          const juce::String& text);
     void setSliderColours (juce::Slider& s, juce::Colour c);
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (CabComponent)
