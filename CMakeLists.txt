@@ -34,6 +34,7 @@ set(_all_plugins
     Cab
     Oct
     Limiter
+    Freeze
 )
 
 if(PLUGIN STREQUAL "")
