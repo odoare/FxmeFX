@@ -34,7 +34,7 @@ FxmeEqualizerAudioProcessor::~FxmeEqualizerAudioProcessor() = default;
 juce::AudioProcessorValueTreeState::ParameterLayout FxmeEqualizerAudioProcessor::createParameterLayout()
 {
     std::vector<std::unique_ptr<juce::RangedAudioParameter>> params;
-    Equalizer::addParameters (params, parameterPrefix);
+    Equalizer::addParameters (params, parameterPrefix, kNumBands);
     return { params.begin(), params.end() };
 }
 

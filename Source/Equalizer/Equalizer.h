@@ -9,7 +9,8 @@
 #pragma once
 
 #include <JuceHeader.h>
-#include <FxmeTools/dsp/Biquad.h>   // fxme::Biquad / fxme::BiquadCoeffs
+#include <FxmeTools/dsp/Biquad.h>       // fxme::Biquad / fxme::BiquadCoeffs
+#include <FxmeTools/dsp/SpectrumTap.h>  // fxme::SpectrumTap
 #include <array>
 #include <vector>
 #include <atomic>
@@ -26,7 +27,13 @@
 class Equalizer
 {
 public:
-    static constexpr int NumBands = 5;
+    /** Compile-time capacity: the largest band count any instance may request.
+        Fixed-size arrays are sized to this; only the first getNumBands() entries
+        are used. */
+    static constexpr int MaxBands = 8;
+    /** Default band count. Kept at the historical value so existing projects
+        that construct an Equalizer without arguments are unchanged. */
+    static constexpr int DefaultNumBands = 5;
 
     enum class BandType
     {
@@ -39,14 +46,23 @@ public:
 
     struct BandConfig
     {
-        const char* suffix;     // APVTS ID suffix (kept for preset back-compat)
-        float       minFreq;
-        float       maxFreq;
-        float       defFreq;
-        BandType    defType;
+        juce::String suffix;    // APVTS ID suffix (kept for preset back-compat)
+        float        minFreq;
+        float        maxFreq;
+        float        defFreq;
+        BandType     defType;
     };
 
-    Equalizer();
+    /** @param numBandsToUse  number of active bands, in [2, MaxBands]. Defaults
+                              to the historical value (DefaultNumBands).
+        @param enableSpectrum when true, the input/output spectrum taps are fed
+                              during process() so the editor can display live
+                              spectra. Off by default so components embedded in
+                              other projects keep their previous behaviour. */
+    explicit Equalizer (int numBandsToUse = DefaultNumBands, bool enableSpectrum = false);
+
+    /** Number of active bands for this instance (set at construction). */
+    int getNumBands() const noexcept               { return numBands; }
 
     void prepare (double sampleRate, int numChannels);
     void process (juce::AudioBuffer<float>& buffer);
@@ -54,21 +70,31 @@ public:
     void setOn (bool shouldBeOn);
     bool isOn() const;
 
+    /** True when this instance feeds its spectrum taps (set at construction). */
+    bool hasSpectrum() const noexcept              { return spectrumEnabled; }
+    /** Mono-sum spectrum taps (pre- and post-EQ). Valid only when hasSpectrum(). */
+    fxme::SpectrumTap& getInputTap()  noexcept     { return inputTap;  }
+    fxme::SpectrumTap& getOutputTap() noexcept     { return outputTap; }
+    double getSampleRate() const noexcept          { return currentSampleRate; }
+
     void assignParameters (juce::AudioProcessorValueTreeState& apvts, const juce::String& prefix);
     void checkParameters();
 
     static void addParameters (std::vector<std::unique_ptr<juce::RangedAudioParameter>>& params,
-                               const juce::String& prefix);
+                               const juce::String& prefix,
+                               int numBands = DefaultNumBands);
 
-    /** Per-band configuration (legacy suffix, freq range, defaults). */
-    static const BandConfig& getBandConfig (int bandIndex) noexcept;
+    /** Per-band configuration (suffix, freq range, defaults) for a layout of
+        `numBands` bands. Band 0 is a low shelf, the last a high shelf, the rest
+        peaks. The 5-band layout reproduces the historical defaults exactly. */
+    static BandConfig getBandConfig (int bandIndex, int numBands) noexcept;
     /** Display names for the band-type choice parameter, in BandType enum order. */
     static juce::StringArray getBandTypeNames();
 
 private:
     struct ChannelStrip
     {
-        std::array<fxme::Biquad, NumBands> band;
+        std::array<fxme::Biquad, MaxBands> band;
     };
 
     struct BandCache
@@ -97,13 +123,18 @@ private:
     };
 
     std::vector<ChannelStrip> channels;
+    int    numBands = DefaultNumBands;
     double currentSampleRate = 44100.0;
     bool   on = true;
     float  postGain = 1.0f;
 
-    std::array<BandCache, NumBands>     bandCache;
-    std::array<BandParamPtrs, NumBands> bandParams;
-    std::array<BandLast, NumBands>      bandLast;
+    bool              spectrumEnabled = false;
+    fxme::SpectrumTap inputTap, outputTap;
+    void pushSum (fxme::SpectrumTap& tap, const juce::AudioBuffer<float>& buffer) noexcept;
+
+    std::array<BandCache, MaxBands>     bandCache;
+    std::array<BandParamPtrs, MaxBands> bandParams;
+    std::array<BandLast, MaxBands>      bandLast;
 
     std::atomic<float>* onParam       = nullptr;
     std::atomic<float>* postGainParam = nullptr;

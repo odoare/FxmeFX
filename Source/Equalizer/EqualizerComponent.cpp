@@ -15,14 +15,88 @@
 // FrequencyResponseGraph Implementation
 //==============================================================================
 
-void FrequencyResponseGraph::setReferences (std::array<BandRefs, Equalizer::NumBands> b,
+void FrequencyResponseGraph::setReferences (std::array<BandRefs, Equalizer::MaxBands> b,
+                                            int numActiveBands,
                                             juce::Slider& postG,
                                             juce::ToggleButton& onB)
 {
     bands    = b;
+    numBands = juce::jlimit (0, Equalizer::MaxBands, numActiveBands);
     postGain = &postG;
     onBtn    = &onB;
     updateCurve();
+}
+
+void FrequencyResponseGraph::setSpectrumTaps (fxme::SpectrumTap* input,
+                                              fxme::SpectrumTap* output,
+                                              std::function<double()> srProvider)
+{
+    inputTap  = input;
+    outputTap = output;
+    sampleRateProvider = std::move (srProvider);
+
+    inputDb .fill (-120.0f);
+    outputDb.fill (-120.0f);
+
+    if (inputTap != nullptr || outputTap != nullptr)
+        startTimerHz (25);
+    else
+        stopTimer();
+}
+
+void FrequencyResponseGraph::timerCallback()
+{
+    const double sr = sampleRateProvider != nullptr ? sampleRateProvider() : 0.0;
+    constexpr float weight = 1.0f / 4.0f; // temporal averaging over ~4 frames
+
+    bool any = false;
+    if (inputTap != nullptr && inputTap->isEnabled())
+    {
+        analyzer.update (*inputTap, inputDb, sr, fxme::SpectrumAnalyzer::Mode::average, weight);
+        any = true;
+    }
+    if (outputTap != nullptr && outputTap->isEnabled())
+    {
+        analyzer.update (*outputTap, outputDb, sr, fxme::SpectrumAnalyzer::Mode::average, weight);
+        any = true;
+    }
+    if (any)
+        repaint();
+}
+
+float FrequencyResponseGraph::spectrumDbToY (float db) const noexcept
+{
+    return juce::jmap (juce::jlimit (spectrumMinDb, spectrumMaxDb, db),
+                       spectrumMinDb, spectrumMaxDb, (float) getHeight(), 0.0f);
+}
+
+void FrequencyResponseGraph::drawSpectrum (juce::Graphics& g,
+                                           const std::array<float, fxme::SpectrumAnalyzer::numPoints>& db,
+                                           juce::Colour colour, float thickness, bool fill) const
+{
+    juce::Path path;
+    bool started = false;
+    for (int p = 0; p < fxme::SpectrumAnalyzer::numPoints; ++p)
+    {
+        const float freq = fxme::SpectrumAnalyzer::pointFreq (p);
+        const float x = freqToX (freq);
+        const float y = spectrumDbToY (db[(size_t) p]);
+        if (! started) { path.startNewSubPath (x, y); started = true; }
+        else           path.lineTo (x, y);
+    }
+
+    if (fill)
+    {
+        juce::Path area = path;
+        area.lineTo ((float) getWidth(), (float) getHeight());
+        area.lineTo (0.0f, (float) getHeight());
+        area.closeSubPath();
+        g.setColour (colour.withAlpha (0.12f));
+        g.fillPath (area);
+    }
+
+    g.setColour (colour);
+    g.strokePath (path, juce::PathStrokeType (thickness));
 }
 
 Equalizer::BandType FrequencyResponseGraph::getBandType (int i) const noexcept
@@ -159,7 +233,7 @@ juce::Rectangle<float> FrequencyResponseGraph::getHandleRect (int i) const noexc
 
 int FrequencyResponseGraph::findHandleAt (juce::Point<int> pos) const noexcept
 {
-    for (int i = 0; i < Equalizer::NumBands; ++i)
+    for (int i = 0; i < numBands; ++i)
         if (bands[i].freq != nullptr
             && getHandleRect (i).expanded (5.0f).contains (pos.toFloat()))
             return i;
@@ -168,7 +242,7 @@ int FrequencyResponseGraph::findHandleAt (juce::Point<int> pos) const noexcept
 
 void FrequencyResponseGraph::updateCurve()
 {
-    if (bands[0].freq == nullptr) return;
+    if (numBands <= 0 || bands[0].freq == nullptr) return;
 
     curvePath.clear();
 
@@ -176,8 +250,8 @@ void FrequencyResponseGraph::updateCurve()
     int w = getWidth();
     if (w <= 0) w = 1;
 
-    std::array<BiquadCoeffs, Equalizer::NumBands> coeffs;
-    for (int i = 0; i < Equalizer::NumBands; ++i)
+    std::array<BiquadCoeffs, Equalizer::MaxBands> coeffs;
+    for (int i = 0; i < numBands; ++i)
     {
         if (! bandIsOn (i))
         {
@@ -194,8 +268,11 @@ void FrequencyResponseGraph::updateCurve()
     {
         double freq = 20.0 * std::pow (20000.0 / 20.0, x / (double) w);
         double mag = 1.0;
-        for (auto& c : coeffs)
+        for (int i = 0; i < numBands; ++i)
+        {
+            const auto& c = coeffs[i];
             mag *= evalMagnitude (c.b0, c.b1, c.b2, c.a1, c.a2, freq, sr);
+        }
 
         double db = juce::Decibels::gainToDecibels (mag);
         double y = juce::jmap (db, -24.0, 24.0, (double) getHeight(), 0.0);
@@ -204,7 +281,7 @@ void FrequencyResponseGraph::updateCurve()
         else        curvePath.lineTo ((float) x, (float) y);
     }
 
-    for (int i = 0; i < Equalizer::NumBands; ++i)
+    for (int i = 0; i < numBands; ++i)
     {
         bandPaths[i].clear();
         const auto& c = coeffs[i];
@@ -282,9 +359,15 @@ void FrequencyResponseGraph::paint (juce::Graphics& g)
             g.drawText (fl.second, (int) x + 3, getHeight() - 14, 28, 12, juce::Justification::left);
         }
 
+        // Live spectra, drawn behind the EQ curves: input dim, output tinted.
+        if (inputTap != nullptr && inputTap->isEnabled())
+            drawSpectrum (g, inputDb, juce::Colours::white.withAlpha (0.20f), 1.0f, false);
+        if (outputTap != nullptr && outputTap->isEnabled())
+            drawSpectrum (g, outputDb, juce::Colours::cyan.withAlpha (0.55f), 1.2f, true);
+
         bool eqOn = (onBtn && onBtn->getToggleState());
 
-        for (int i = 0; i < Equalizer::NumBands; ++i)
+        for (int i = 0; i < numBands; ++i)
         {
             bool bOn = eqOn && bandIsOn (i);
             juce::Colour c = bOn ? bands[i].colour : juce::Colours::grey;
@@ -295,7 +378,7 @@ void FrequencyResponseGraph::paint (juce::Graphics& g)
         g.setColour (eqOn ? juce::Colours::cyan : juce::Colours::grey);
         g.strokePath (curvePath, juce::PathStrokeType (2.0f));
 
-        for (int i = 0; i < Equalizer::NumBands; ++i)
+        for (int i = 0; i < numBands; ++i)
         {
             if (bands[i].freq == nullptr) continue;
             auto rect = getHandleRect (i);
@@ -436,8 +519,8 @@ void EqualizerComponent::updateBandVisibility (int i)
     bandGain[i].setVisible (bandShowsGain (i));
 }
 
-EqualizerComponent::EqualizerComponent (Equalizer& eq, juce::AudioProcessorValueTreeState& state, const juce::String& prefix)
-    : equalizer (eq), apvts (state)
+EqualizerComponent::EqualizerComponent (Equalizer& eq, juce::AudioProcessorValueTreeState& state, const juce::String& prefix, bool showTitle)
+    : equalizer (eq), apvts (state), numBands (eq.getNumBands())
 {
     addAndMakeVisible (onButton);
     onButton.setButtonText ("On");
@@ -446,19 +529,30 @@ EqualizerComponent::EqualizerComponent (Equalizer& eq, juce::AudioProcessorValue
     onAtt = std::make_unique<ButtonAttachment> (apvts, prefix + "_EQ_On", onButton);
     onButton.onClick = [this] { responseGraph.updateCurve(); };
 
-    addAndMakeVisible (titleLabel);
+    addChildComponent (titleLabel);
+    titleLabel.setVisible (showTitle);
     titleLabel.setText ("Equalizer", juce::NotificationType::dontSendNotification);
     titleLabel.setJustificationType (juce::Justification::centred);
     titleLabel.setFont (juce::Font (16.0f, juce::Font::bold));
 
-    static const juce::Colour bandColours[Equalizer::NumBands] = {
+    static const juce::Colour bandColours[Equalizer::MaxBands] = {
         juce::Colour::fromRGB (100, 180, 255),
         juce::Colour::fromRGB (255, 220,   0),
         juce::Colour::fromRGB ( 80, 220,  80),
         juce::Colour::fromRGB (255, 140,   0),
-        juce::Colour::fromRGB (255,  80, 180)
+        juce::Colour::fromRGB (255,  80, 180),
+        juce::Colour::fromRGB (170, 120, 255),
+        juce::Colour::fromRGB (  0, 210, 210),
+        juce::Colour::fromRGB (255, 100, 100)
     };
-    static const char* bandLabels[Equalizer::NumBands] = { "L", "1", "2", "3", "H" };
+
+    // Band label: first is the low shelf ("L"), last the high shelf ("H"), the
+    // rest are numbered. Depends on the active band count, so computed here.
+    auto bandLabel = [this] (int i) -> juce::String {
+        if (i == 0)             return "L";
+        if (i == numBands - 1)  return "H";
+        return juce::String (i);
+    };
 
     juce::Colour color = juce::Colours::cyan;
     auto typeNames = Equalizer::getBandTypeNames();
@@ -477,13 +571,13 @@ EqualizerComponent::EqualizerComponent (Equalizer& eq, juce::AudioProcessorValue
         s.onValueChange = [this] { responseGraph.updateCurve(); };
     };
 
-    for (int i = 0; i < Equalizer::NumBands; ++i)
+    for (int i = 0; i < numBands; ++i)
     {
-        const auto& cfg = Equalizer::getBandConfig (i);
+        const auto cfg = Equalizer::getBandConfig (i, numBands);
         juce::String pid = prefix + "_EQ_" + cfg.suffix;
 
         addAndMakeVisible (bandOnButton[i]);
-        bandOnButton[i].setButtonText (bandLabels[i]);
+        bandOnButton[i].setButtonText (bandLabel (i));
         bandOnButton[i].setLookAndFeel (&fxmeLookAndFeel);
         bandOnButton[i].setColour (juce::ToggleButton::tickColourId, bandColours[i]);
         bandOnButton[i].setTooltip (juce::String (cfg.suffix) + " band on/off");
@@ -530,11 +624,18 @@ EqualizerComponent::EqualizerComponent (Equalizer& eq, juce::AudioProcessorValue
 
     addAndMakeVisible (responseGraph);
 
-    std::array<FrequencyResponseGraph::BandRefs, Equalizer::NumBands> refs;
-    for (int i = 0; i < Equalizer::NumBands; ++i)
+    std::array<FrequencyResponseGraph::BandRefs, Equalizer::MaxBands> refs;
+    for (int i = 0; i < numBands; ++i)
         refs[i] = { &bandOnButton[i], &bandType[i], &bandFreq[i], &bandQ[i], &bandGain[i],
-                    bandColours[i], bandLabels[i] };
-    responseGraph.setReferences (refs, postGainSlider, onButton);
+                    bandColours[i], bandLabel (i) };
+    responseGraph.setReferences (refs, numBands, postGainSlider, onButton);
+
+    // Enable the live spectrum overlay only when the DSP instance provides it
+    // (off for components embedded in other projects, on for the EQ effect).
+    if (equalizer.hasSpectrum())
+        responseGraph.setSpectrumTaps (&equalizer.getInputTap(),
+                                       &equalizer.getOutputTap(),
+                                       [this] { return equalizer.getSampleRate(); });
 }
 
 EqualizerComponent::~EqualizerComponent()
@@ -562,8 +663,8 @@ void EqualizerComponent::resized()
     juce::FlexBox fmiddle;
     fmiddle.flexDirection = juce::FlexBox::Direction::row;
 
-    juce::FlexBox columns[Equalizer::NumBands];
-    for (int i = 0; i < Equalizer::NumBands; ++i)
+    juce::FlexBox columns[Equalizer::MaxBands];
+    for (int i = 0; i < numBands; ++i)
     {
         columns[i].flexDirection = juce::FlexBox::Direction::column;
         columns[i].items.add (fi (bandOnButton[i]).withHeight (20.f)

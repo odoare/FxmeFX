@@ -15,6 +15,7 @@ class FxmeEqualizerAudioProcessor  : public juce::AudioProcessor
 {
 public:
     static constexpr const char* parameterPrefix = "Main";
+    static constexpr int kNumBands = 6; // L / 1 / 2 / 3 / 4 / H
 
     FxmeEqualizerAudioProcessor();
     ~FxmeEqualizerAudioProcessor() override;
@@ -54,7 +55,8 @@ private:
     static juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
 
     juce::AudioProcessorValueTreeState apvts;
-    Equalizer equalizer;
+    // Standalone EQ effect: 6 bands and a live spectrum overlay.
+    Equalizer equalizer { kNumBands, true };
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (FxmeEqualizerAudioProcessor)
 };
