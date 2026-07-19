@@ -94,6 +94,7 @@ void Equalizer::assignParameters (juce::AudioProcessorValueTreeState& apvts, con
     {
         const auto& cfg   = getBandConfig (i);
         juce::String pid  = prefix + "_EQ_" + cfg.suffix;
+        bandParams[i].on   = apvts.getRawParameterValue (pid + "_On");
         bandParams[i].type = apvts.getRawParameterValue (pid + "_Type");
         bandParams[i].freq = apvts.getRawParameterValue (pid + "_Freq");
         bandParams[i].q    = apvts.getRawParameterValue (pid + "_Q");
@@ -114,6 +115,8 @@ void Equalizer::addParameters (std::vector<std::unique_ptr<juce::RangedAudioPara
         juce::String pid  = prefix + "_EQ_" + cfg.suffix;
         juce::String name = prefix + " EQ " + cfg.suffix;
 
+        params.push_back (std::make_unique<juce::AudioParameterBool> (
+            juce::ParameterID { pid + "_On", 1 }, name + " On", true));
         params.push_back (std::make_unique<juce::AudioParameterChoice> (
             juce::ParameterID { pid + "_Type", 1 }, name + " Type", typeNames, (int) cfg.defType));
         params.push_back (std::make_unique<juce::AudioParameterFloat> (
@@ -146,6 +149,7 @@ void Equalizer::checkParameters()
         auto& l = bandLast[i];
         auto& c = bandCache[i];
 
+        if (p.on   && *p.on   != l.on)   { c.on   = (*p.on > 0.5f);           l.on   = *p.on;   changed = true; }
         if (p.type && *p.type != l.type) { c.type = (BandType) (int) *p.type; l.type = *p.type; changed = true; }
         if (p.freq && *p.freq != l.freq) { c.f    = *p.freq;                  l.freq = *p.freq; changed = true; }
         if (p.q    && *p.q    != l.q)    { c.q    = *p.q;                     l.q    = *p.q;    changed = true; }
@@ -162,6 +166,12 @@ void Equalizer::checkParameters()
 // ---------------------------------------------------------------------------
 void Equalizer::calcByType (fxme::Biquad& bq, const BandCache& bc)
 {
+    if (! bc.on)
+    {
+        bq.c = fxme::BiquadCoeffs {}; // identity (pass-through) when band disabled
+        return;
+    }
+
     switch (bc.type)
     {
         case BandType::Lowpass:   bq.c = fxme::BiquadCoeffs::lowpass   (currentSampleRate, bc.f, bc.q);       break;

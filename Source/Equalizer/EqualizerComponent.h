@@ -25,6 +25,7 @@ public:
     /** Per-band references the graph reads to compute the response. */
     struct BandRefs
     {
+        juce::ToggleButton* on   = nullptr;
         juce::ComboBox* type = nullptr;
         juce::Slider*   freq = nullptr;
         juce::Slider*   q    = nullptr;
@@ -43,6 +44,7 @@ public:
     void mouseDown      (const juce::MouseEvent& e) override;
     void mouseDrag      (const juce::MouseEvent& e) override;
     void mouseUp        (const juce::MouseEvent& e) override;
+    void mouseDoubleClick (const juce::MouseEvent& e) override;
     void mouseWheelMove (const juce::MouseEvent& e, const juce::MouseWheelDetails& wheel) override;
     void mouseMove      (const juce::MouseEvent& e) override;
     void mouseExit      (const juce::MouseEvent& e) override;
@@ -59,6 +61,7 @@ private:
     int hoveredHandle = -1;
 
     Equalizer::BandType getBandType (int i) const noexcept;
+    bool bandIsOn (int i) const noexcept;
 
     float freqToX (double freq)  const noexcept;
     double xToFreq (float x)     const noexcept;
@@ -90,6 +93,7 @@ private:
     juce::ToggleButton onButton;
     juce::Label        titleLabel;
 
+    std::array<juce::ToggleButton, Equalizer::NumBands> bandOnButton;
     std::array<juce::ComboBox,     Equalizer::NumBands> bandType;
     std::array<fxme::FxmeSlider,   Equalizer::NumBands> bandFreq;
     std::array<fxme::FxmeSlider,   Equalizer::NumBands> bandQ;
@@ -104,6 +108,7 @@ private:
     using ComboBoxAttachment = juce::AudioProcessorValueTreeState::ComboBoxAttachment;
 
     std::unique_ptr<ButtonAttachment> onAtt;
+    std::array<std::unique_ptr<ButtonAttachment>,   Equalizer::NumBands> bandOnAtt;
     std::array<std::unique_ptr<ComboBoxAttachment>, Equalizer::NumBands> bandTypeAtt;
 
     fxme::FxmeLookAndFeel fxmeLookAndFeel;

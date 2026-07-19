@@ -34,6 +34,11 @@ Equalizer::BandType FrequencyResponseGraph::getBandType (int i) const noexcept
     return (Equalizer::BandType) idx;
 }
 
+bool FrequencyResponseGraph::bandIsOn (int i) const noexcept
+{
+    return bands[i].on == nullptr || bands[i].on->getToggleState();
+}
+
 static double evalMagnitude (double b0, double b1, double b2, double a1, double a2, double freq, double sr)
 {
     double w = 2.0 * juce::MathConstants<double>::pi * freq / sr;
@@ -174,6 +179,11 @@ void FrequencyResponseGraph::updateCurve()
     std::array<BiquadCoeffs, Equalizer::NumBands> coeffs;
     for (int i = 0; i < Equalizer::NumBands; ++i)
     {
+        if (! bandIsOn (i))
+        {
+            coeffs[i] = BiquadCoeffs { 1.0, 0.0, 0.0, 0.0, 0.0 }; // pass-through
+            continue;
+        }
         double f = bands[i].freq->getValue();
         double q = bands[i].q != nullptr ? bands[i].q->getValue() : 1.0;
         double g = bands[i].gain != nullptr ? bands[i].gain->getValue() : 0.0;
@@ -276,8 +286,9 @@ void FrequencyResponseGraph::paint (juce::Graphics& g)
 
         for (int i = 0; i < Equalizer::NumBands; ++i)
         {
-            juce::Colour c = eqOn ? bands[i].colour : juce::Colours::grey;
-            g.setColour (c.withAlpha (0.5f));
+            bool bOn = eqOn && bandIsOn (i);
+            juce::Colour c = bOn ? bands[i].colour : juce::Colours::grey;
+            g.setColour (c.withAlpha (bOn ? 0.5f : 0.25f));
             g.strokePath (bandPaths[i], juce::PathStrokeType (1.0f));
         }
 
@@ -290,15 +301,17 @@ void FrequencyResponseGraph::paint (juce::Graphics& g)
             auto rect = getHandleRect (i);
             bool hovered = (i == hoveredHandle);
             bool dragged = (i == draggedHandle);
+            bool bOn     = bandIsOn (i);
 
             float alpha = dragged ? 1.0f : (hovered ? 0.9f : 0.65f);
-            g.setColour (bands[i].colour.withAlpha (alpha));
+            juce::Colour fill = bOn ? bands[i].colour : juce::Colours::grey;
+            g.setColour (fill.withAlpha (bOn ? alpha : alpha * 0.5f));
             g.fillRect (rect);
-            g.setColour (juce::Colours::white.withAlpha (alpha));
+            g.setColour (juce::Colours::white.withAlpha (bOn ? alpha : alpha * 0.5f));
             g.drawRect (rect, 1.5f);
 
             g.setFont (juce::Font (8.0f, juce::Font::bold));
-            g.setColour (juce::Colours::black.withAlpha (alpha));
+            g.setColour (juce::Colours::black.withAlpha (bOn ? alpha : alpha * 0.5f));
             g.drawFittedText (bands[i].label, rect.toNearestInt(), juce::Justification::centred, 1);
         }
     }
@@ -339,6 +352,17 @@ void FrequencyResponseGraph::mouseUp (const juce::MouseEvent&)
 {
     draggedHandle = -1;
     repaint();
+}
+
+void FrequencyResponseGraph::mouseDoubleClick (const juce::MouseEvent& e)
+{
+    int h = findHandleAt (e.getPosition());
+    if (h < 0 || bands[h].on == nullptr) return;
+
+    // Toggle the band on/off. The button's onClick refreshes the curve.
+    bands[h].on->setToggleState (! bands[h].on->getToggleState(),
+                                 juce::sendNotification);
+    updateCurve();
 }
 
 void FrequencyResponseGraph::mouseWheelMove (const juce::MouseEvent& e, const juce::MouseWheelDetails& wheel)
@@ -458,6 +482,14 @@ EqualizerComponent::EqualizerComponent (Equalizer& eq, juce::AudioProcessorValue
         const auto& cfg = Equalizer::getBandConfig (i);
         juce::String pid = prefix + "_EQ_" + cfg.suffix;
 
+        addAndMakeVisible (bandOnButton[i]);
+        bandOnButton[i].setButtonText (bandLabels[i]);
+        bandOnButton[i].setLookAndFeel (&fxmeLookAndFeel);
+        bandOnButton[i].setColour (juce::ToggleButton::tickColourId, bandColours[i]);
+        bandOnButton[i].setTooltip (juce::String (cfg.suffix) + " band on/off");
+        bandOnAtt[i] = std::make_unique<ButtonAttachment> (apvts, pid + "_On", bandOnButton[i]);
+        bandOnButton[i].onClick = [this] { responseGraph.updateCurve(); };
+
         addAndMakeVisible (bandType[i]);
         bandType[i].addItemList (typeNames, 1);
         bandType[i].setLookAndFeel (&fxmeLookAndFeel);
@@ -500,7 +532,7 @@ EqualizerComponent::EqualizerComponent (Equalizer& eq, juce::AudioProcessorValue
 
     std::array<FrequencyResponseGraph::BandRefs, Equalizer::NumBands> refs;
     for (int i = 0; i < Equalizer::NumBands; ++i)
-        refs[i] = { &bandType[i], &bandFreq[i], &bandQ[i], &bandGain[i],
+        refs[i] = { &bandOnButton[i], &bandType[i], &bandFreq[i], &bandQ[i], &bandGain[i],
                     bandColours[i], bandLabels[i] };
     responseGraph.setReferences (refs, postGainSlider, onButton);
 }
@@ -534,6 +566,8 @@ void EqualizerComponent::resized()
     for (int i = 0; i < Equalizer::NumBands; ++i)
     {
         columns[i].flexDirection = juce::FlexBox::Direction::column;
+        columns[i].items.add (fi (bandOnButton[i]).withHeight (20.f)
+                                                  .withMargin (juce::FlexItem::Margin (2.f)));
         columns[i].items.add (fi (bandType[i]).withFlex (0.35f).withMargin (juce::FlexItem::Margin (2.f)));
         // All three slider rows are always added so freq / Q / gain stay at the
         // same vertical position across columns; setVisible(false) blanks the

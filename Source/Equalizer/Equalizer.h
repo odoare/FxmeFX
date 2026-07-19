@@ -75,10 +75,12 @@ private:
     {
         BandType type = BandType::Peak;
         float    f = 1000.0f, q = 1.0f, g = 0.0f;
+        bool     on = true;
     };
 
     struct BandParamPtrs
     {
+        std::atomic<float>* on   = nullptr;
         std::atomic<float>* type = nullptr;
         std::atomic<float>* freq = nullptr;
         std::atomic<float>* q    = nullptr;
@@ -87,6 +89,7 @@ private:
 
     struct BandLast
     {
+        float on   = -1.0f;
         float type = -1.0f;
         float freq = -1.0f;
         float q    = -1.0f;
