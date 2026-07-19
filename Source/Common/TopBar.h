@@ -19,6 +19,7 @@
 
 #include <JuceHeader.h>
 #include <FxmeCommonBinaryData.h>
+#include "Version.h"
 
 namespace fxmefx
 {
@@ -103,7 +104,7 @@ public:
 
         g.setColour (juce::Colours::lightgrey);
         g.setFont (juce::Font (juce::FontOptions (11.0f)));
-        g.drawText ("v" JucePlugin_VersionString "  -  FX-Mechanics",
+        g.drawText ("v" FXMEFX_VERSION_STRING "  -  FX-Mechanics",
                     area.removeFromRight (140), juce::Justification::centredRight);
 
         area.removeFromLeft (10);
