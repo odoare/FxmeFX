@@ -187,10 +187,12 @@ void FreezeComponent::setupRotary (fxme::FxmeSlider& slider, juce::Label& label,
 
 FreezeComponent::FreezeComponent (Freeze& f,
                                   juce::AudioProcessorValueTreeState& state,
-                                  const juce::String& prefix)
+                                  const juce::String& prefix,
+                                  bool showTitle)
     : freeze (f), apvts (state), spectrumDisplay (f, freezeTint)
 {
-    addAndMakeVisible (titleLabel);
+    addChildComponent (titleLabel);
+    titleLabel.setVisible (showTitle);
     titleLabel.setText ("Freeze", juce::NotificationType::dontSendNotification);
     titleLabel.setJustificationType (juce::Justification::centred);
     titleLabel.setFont (juce::Font (juce::FontOptions (16.0f, juce::Font::bold)));

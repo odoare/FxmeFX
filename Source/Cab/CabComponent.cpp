@@ -88,12 +88,14 @@ void CabComponent::setupGainSlider (fxme::FxmeSlider& slider, juce::Label& label
 
 CabComponent::CabComponent (Cab& c,
                                     juce::AudioProcessorValueTreeState& state,
-                                    const juce::String& prefix)
+                                    const juce::String& prefix,
+                                    bool showTitle)
     : cab (c), apvts (state),
       irLPlot (c, 0, cabTint),
       irRPlot (c, 1, cabTint.brighter (0.4f))
 {
-    addAndMakeVisible (titleLabel);
+    addChildComponent (titleLabel);
+    titleLabel.setVisible (showTitle);
     titleLabel.setText ("Cab", juce::NotificationType::dontSendNotification);
     titleLabel.setJustificationType (juce::Justification::centred);
     titleLabel.setFont (juce::Font (juce::FontOptions (16.0f, juce::Font::bold)));

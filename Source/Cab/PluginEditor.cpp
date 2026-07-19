@@ -13,7 +13,7 @@ FxmeCabAudioProcessorEditor::FxmeCabAudioProcessorEditor (FxmeCabAudioProcessor&
     : AudioProcessorEditor (&p),
       audioProcessor (p),
       topBar (JucePlugin_Name, "FX-Mechanics Cab IR loader", juce::Colours::orange),
-      cabComponent (p.getCab(), p.getApvts(), FxmeCabAudioProcessor::parameterPrefix)
+      cabComponent (p.getCab(), p.getApvts(), FxmeCabAudioProcessor::parameterPrefix, false)
 {
     addAndMakeVisible (topBar);
     addAndMakeVisible (cabComponent);

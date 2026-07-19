@@ -16,7 +16,7 @@ class LimiterComponent : public juce::Component,
                          public juce::Timer
 {
 public:
-    LimiterComponent (Limiter& limiterToControl, juce::AudioProcessorValueTreeState& apvts, const juce::String& prefix);
+    LimiterComponent (Limiter& limiterToControl, juce::AudioProcessorValueTreeState& apvts, const juce::String& prefix, bool showTitle = true);
     ~LimiterComponent() override;
 
     void paint (juce::Graphics&) override;

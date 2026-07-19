@@ -13,7 +13,7 @@ FxmeTransientAudioProcessorEditor::FxmeTransientAudioProcessorEditor (FxmeTransi
     : AudioProcessorEditor (&p),
       audioProcessor (p),
       topBar (JucePlugin_Name, "FX-Mechanics Transient Designer", juce::Colours::red),
-      transientComponent (p.getTransient(), p.getApvts(), FxmeTransientAudioProcessor::parameterPrefix)
+      transientComponent (p.getTransient(), p.getApvts(), FxmeTransientAudioProcessor::parameterPrefix, false)
 {
     addAndMakeVisible (topBar);
     addAndMakeVisible (transientComponent);

@@ -24,7 +24,7 @@ public:
      * @param apvts The APVTS.
      * @param prefix The parameter ID prefix.
      */
-    TubeComponent (Tube& tube, juce::AudioProcessorValueTreeState& apvts, const juce::String& prefix);
+    TubeComponent (Tube& tube, juce::AudioProcessorValueTreeState& apvts, const juce::String& prefix, bool showTitle = true);
     ~TubeComponent() override;
 
     void paint (juce::Graphics&) override;

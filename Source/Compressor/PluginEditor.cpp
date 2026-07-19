@@ -13,7 +13,7 @@ FxmeCompressorAudioProcessorEditor::FxmeCompressorAudioProcessorEditor (FxmeComp
     : AudioProcessorEditor (&p),
       audioProcessor (p),
       topBar (JucePlugin_Name, "FX-Mechanics Compressor", juce::Colours::red),
-      compressorComponent (p.getCompressor(), p.getApvts(), FxmeCompressorAudioProcessor::parameterPrefix)
+      compressorComponent (p.getCompressor(), p.getApvts(), FxmeCompressorAudioProcessor::parameterPrefix, false)
 {
     addAndMakeVisible (topBar);
     addAndMakeVisible (compressorComponent);

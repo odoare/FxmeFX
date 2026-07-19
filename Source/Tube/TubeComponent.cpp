@@ -16,7 +16,7 @@ void TubeComponent::setSliderColours (juce::Slider& s, juce::Colour c)
     s.setColour (juce::Slider::rotarySliderOutlineColourId, c.darker (2.0f));
 }
 
-TubeComponent::TubeComponent (Tube& t, juce::AudioProcessorValueTreeState& state, const juce::String& prefix)
+TubeComponent::TubeComponent (Tube& t, juce::AudioProcessorValueTreeState& state, const juce::String& prefix, bool showTitle)
     : tube (t), apvts (state)
 {
     addAndMakeVisible (onButton);
@@ -49,7 +49,8 @@ TubeComponent::TubeComponent (Tube& t, juce::AudioProcessorValueTreeState& state
     modelBox.setTooltip ("Tube Model. \n Standard: tanh. \n Dynamic: tanh + power-supply sag. \n Triode: asymmetric Dempwolf-style 12AX7 curve. \n Class AB: push-pull with crossover behaviour.");
     modelAtt = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (apvts, prefix + "_Tube_Model", modelBox);
 
-    addAndMakeVisible (titleLabel);
+    addChildComponent (titleLabel);
+    titleLabel.setVisible (showTitle);
     titleLabel.setText ("Tube Saturation", juce::NotificationType::dontSendNotification);
     titleLabel.setJustificationType (juce::Justification::centred);
     titleLabel.setFont (juce::Font (16.0f, juce::Font::bold));

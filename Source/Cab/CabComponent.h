@@ -33,7 +33,8 @@ class CabComponent : public juce::Component, public juce::Timer
 public:
     CabComponent (Cab& cabToControl,
                       juce::AudioProcessorValueTreeState& apvts,
-                      const juce::String& prefix);
+                      const juce::String& prefix,
+                      bool showTitle = true);
     ~CabComponent() override;
 
     void paint (juce::Graphics& g) override;

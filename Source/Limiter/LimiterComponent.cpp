@@ -16,7 +16,7 @@ void LimiterComponent::setSliderColours (juce::Slider& s, juce::Colour c)
     s.setColour (juce::Slider::rotarySliderOutlineColourId, c.darker (2.0f));
 }
 
-LimiterComponent::LimiterComponent (Limiter& lim, juce::AudioProcessorValueTreeState& state, const juce::String& prefix)
+LimiterComponent::LimiterComponent (Limiter& lim, juce::AudioProcessorValueTreeState& state, const juce::String& prefix, bool showTitle)
     : limiter (lim), apvts (state)
 {
     addAndMakeVisible (onButton);
@@ -25,7 +25,8 @@ LimiterComponent::LimiterComponent (Limiter& lim, juce::AudioProcessorValueTreeS
     onButton.setColour (juce::ToggleButton::tickColourId, juce::Colours::orange);
     onAtt = std::make_unique<ButtonAttachment> (apvts, prefix + "_Lim_On", onButton);
 
-    addAndMakeVisible (titleLabel);
+    addChildComponent (titleLabel);
+    titleLabel.setVisible (showTitle);
     titleLabel.setText ("Limiter", juce::NotificationType::dontSendNotification);
     titleLabel.setJustificationType (juce::Justification::centred);
     titleLabel.setFont (juce::Font (16.0f, juce::Font::bold));

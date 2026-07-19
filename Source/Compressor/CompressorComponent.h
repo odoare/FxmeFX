@@ -16,7 +16,7 @@ class CompressorComponent : public juce::Component,
                             public juce::Timer
 {
 public:
-    CompressorComponent (Compressor& compressorToControl, juce::AudioProcessorValueTreeState& apvts, const juce::String& prefix);
+    CompressorComponent (Compressor& compressorToControl, juce::AudioProcessorValueTreeState& apvts, const juce::String& prefix, bool showTitle = true);
     ~CompressorComponent() override;
 
     void paint (juce::Graphics&) override;

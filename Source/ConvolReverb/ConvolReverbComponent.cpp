@@ -189,10 +189,11 @@ void ImpulseResponsePlot::paint(juce::Graphics& g)
         g.strokePath (irPlotPathR, juce::PathStrokeType (1.5f));
 }
 
-ConvolReverbComponent::ConvolReverbComponent (ConvolReverb& r, juce::AudioProcessorValueTreeState& state, const juce::String& pfx)
+ConvolReverbComponent::ConvolReverbComponent (ConvolReverb& r, juce::AudioProcessorValueTreeState& state, const juce::String& pfx, bool showTitle)
     : reverb (r), apvts (state), irPlot(r), prefix (pfx)
 {
-    addAndMakeVisible (titleLabel);
+    addChildComponent (titleLabel);
+    titleLabel.setVisible (showTitle);
     titleLabel.setText ("Convolution Reverb", juce::NotificationType::dontSendNotification);
     titleLabel.setJustificationType (juce::Justification::centred);
     titleLabel.setFont (juce::Font (16.0f, juce::Font::bold));

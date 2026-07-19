@@ -16,7 +16,8 @@ class OctComponent : public juce::Component
 public:
     OctComponent (Oct& octToControl,
                   juce::AudioProcessorValueTreeState& apvts,
-                  const juce::String& prefix);
+                  const juce::String& prefix,
+                  bool showTitle = true);
     ~OctComponent() override;
 
     void paint (juce::Graphics& g) override;

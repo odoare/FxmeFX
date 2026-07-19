@@ -13,7 +13,7 @@ FxmeStereoDelayAudioProcessorEditor::FxmeStereoDelayAudioProcessorEditor (FxmeSt
     : AudioProcessorEditor (&p),
       audioProcessor (p),
       topBar (JucePlugin_Name, "FX-Mechanics Stereo Delay", juce::Colours::green),
-      stereoDelayComponent (p.getStereoDelay(), p.getApvts(), FxmeStereoDelayAudioProcessor::parameterPrefix)
+      stereoDelayComponent (p.getStereoDelay(), p.getApvts(), FxmeStereoDelayAudioProcessor::parameterPrefix, false)
 {
     addAndMakeVisible (topBar);
     addAndMakeVisible (stereoDelayComponent);

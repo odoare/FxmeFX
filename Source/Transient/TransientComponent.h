@@ -16,7 +16,7 @@ class TransientComponent : public juce::Component,
                            public juce::Timer
 {
 public:
-    TransientComponent (Transient& transientToControl, juce::AudioProcessorValueTreeState& apvts, const juce::String& prefix);
+    TransientComponent (Transient& transientToControl, juce::AudioProcessorValueTreeState& apvts, const juce::String& prefix, bool showTitle = true);
     ~TransientComponent() override;
 
     void paint (juce::Graphics&) override;

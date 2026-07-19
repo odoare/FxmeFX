@@ -13,7 +13,7 @@ FxmeFreezeAudioProcessorEditor::FxmeFreezeAudioProcessorEditor (FxmeFreezeAudioP
     : AudioProcessorEditor (&p),
       audioProcessor (p),
       topBar (JucePlugin_Name, "FX-Mechanics Spectral Freeze", juce::Colour::fromRGB (140, 100, 220)),
-      freezeComponent (p.getFreeze(), p.getApvts(), FxmeFreezeAudioProcessor::parameterPrefix)
+      freezeComponent (p.getFreeze(), p.getApvts(), FxmeFreezeAudioProcessor::parameterPrefix, false)
 {
     addAndMakeVisible (topBar);
     addAndMakeVisible (freezeComponent);

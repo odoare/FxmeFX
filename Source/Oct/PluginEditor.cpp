@@ -13,7 +13,7 @@ FxmeOctAudioProcessorEditor::FxmeOctAudioProcessorEditor (FxmeOctAudioProcessor&
     : AudioProcessorEditor (&p),
       audioProcessor (p),
       topBar (JucePlugin_Name, "FX-Mechanics Octaver", juce::Colour::fromRGB (140, 100, 220)),
-      octComponent (p.getOct(), p.getApvts(), FxmeOctAudioProcessor::parameterPrefix)
+      octComponent (p.getOct(), p.getApvts(), FxmeOctAudioProcessor::parameterPrefix, false)
 {
     addAndMakeVisible (topBar);
     addAndMakeVisible (octComponent);

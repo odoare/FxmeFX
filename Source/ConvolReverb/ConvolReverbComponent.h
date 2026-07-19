@@ -26,7 +26,7 @@ private:
 class ConvolReverbComponent : public juce::Component, public juce::Timer
 {
 public:
-    ConvolReverbComponent (ConvolReverb& reverbToControl, juce::AudioProcessorValueTreeState& apvts, const juce::String& prefix);
+    ConvolReverbComponent (ConvolReverb& reverbToControl, juce::AudioProcessorValueTreeState& apvts, const juce::String& prefix, bool showTitle = true);
     ~ConvolReverbComponent() override;
 
     void paint (juce::Graphics& g) override;

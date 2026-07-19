@@ -13,7 +13,7 @@ FxmeLimiterAudioProcessorEditor::FxmeLimiterAudioProcessorEditor (FxmeLimiterAud
     : AudioProcessorEditor (&p),
       audioProcessor (p),
       topBar (JucePlugin_Name, "FX-Mechanics look-ahead limiter / maximizer", juce::Colours::orange),
-      limiterComponent (p.getLimiter(), p.getApvts(), FxmeLimiterAudioProcessor::parameterPrefix)
+      limiterComponent (p.getLimiter(), p.getApvts(), FxmeLimiterAudioProcessor::parameterPrefix, false)
 {
     addAndMakeVisible (topBar);
     addAndMakeVisible (limiterComponent);

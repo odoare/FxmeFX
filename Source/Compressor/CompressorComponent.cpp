@@ -16,7 +16,7 @@ void CompressorComponent::setSliderColours (juce::Slider& s, juce::Colour c)
     s.setColour (juce::Slider::rotarySliderOutlineColourId, c.darker (2.0f));
 }
 
-CompressorComponent::CompressorComponent (Compressor& comp, juce::AudioProcessorValueTreeState& state, const juce::String& prefix)
+CompressorComponent::CompressorComponent (Compressor& comp, juce::AudioProcessorValueTreeState& state, const juce::String& prefix, bool showTitle)
     : compressor (comp), apvts (state)
 {
     addAndMakeVisible (onButton);
@@ -25,7 +25,8 @@ CompressorComponent::CompressorComponent (Compressor& comp, juce::AudioProcessor
     onButton.setColour(juce::ToggleButton::tickColourId, juce::Colours::red);
     onAtt = std::make_unique<ButtonAttachment> (apvts, prefix + "_Comp_On", onButton);
 
-    addAndMakeVisible (titleLabel);
+    addChildComponent (titleLabel);
+    titleLabel.setVisible (showTitle);
     titleLabel.setText ("Compressor", juce::NotificationType::dontSendNotification);
     titleLabel.setJustificationType (juce::Justification::centred);
     titleLabel.setFont (juce::Font (16.0f, juce::Font::bold));

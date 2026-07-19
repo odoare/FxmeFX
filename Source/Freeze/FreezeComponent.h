@@ -54,7 +54,8 @@ class FreezeComponent : public juce::Component
 public:
     FreezeComponent (Freeze& freezeToControl,
                      juce::AudioProcessorValueTreeState& apvts,
-                     const juce::String& prefix);
+                     const juce::String& prefix,
+                     bool showTitle = true);
     ~FreezeComponent() override;
 
     void paint (juce::Graphics& g) override;

@@ -15,7 +15,7 @@
 class StereoDelayComponent : public juce::Component, public juce::Timer
 {
 public:
-    StereoDelayComponent(StereoDelay& delayToControl, juce::AudioProcessorValueTreeState& apvts, const juce::String& prefix);
+    StereoDelayComponent(StereoDelay& delayToControl, juce::AudioProcessorValueTreeState& apvts, const juce::String& prefix, bool showTitle = true);
     ~StereoDelayComponent() override;
 
     void paint(juce::Graphics& g) override;

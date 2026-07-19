@@ -48,10 +48,11 @@ void StereoDelayComponent::setupBarSlider(juce::Slider& slider, juce::Label& lab
     setSliderColours(slider, color);
 }
 
-StereoDelayComponent::StereoDelayComponent(StereoDelay& d, juce::AudioProcessorValueTreeState& state, const juce::String& prefix)
+StereoDelayComponent::StereoDelayComponent(StereoDelay& d, juce::AudioProcessorValueTreeState& state, const juce::String& prefix, bool showTitle)
     : delay(d), apvts(state)
 {
-    addAndMakeVisible(titleLabel);
+    addChildComponent(titleLabel);
+    titleLabel.setVisible(showTitle);
     titleLabel.setText("Stereo Delay", juce::NotificationType::dontSendNotification);
     titleLabel.setJustificationType(juce::Justification::centred);
     titleLabel.setFont(juce::Font(16.0f, juce::Font::bold));

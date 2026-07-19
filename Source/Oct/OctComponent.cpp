@@ -42,10 +42,12 @@ void OctComponent::setupRotary (fxme::FxmeSlider& slider, juce::Label& label,
 
 OctComponent::OctComponent (Oct& o,
                             juce::AudioProcessorValueTreeState& state,
-                            const juce::String& prefix)
+                            const juce::String& prefix,
+                            bool showTitle)
     : oct (o), apvts (state)
 {
-    addAndMakeVisible (titleLabel);
+    addChildComponent (titleLabel);
+    titleLabel.setVisible (showTitle);
     titleLabel.setText ("Octaver", juce::NotificationType::dontSendNotification);
     titleLabel.setJustificationType (juce::Justification::centred);
     titleLabel.setFont (juce::Font (juce::FontOptions (16.0f, juce::Font::bold)));
