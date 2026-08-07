@@ -23,8 +23,15 @@ public:
      * @param tube The Tube effect instance.
      * @param apvts The APVTS.
      * @param prefix The parameter ID prefix.
+     * @param showTitle Whether to show the "Tube Saturation" title label.
+     * @param knobsInSingleRow Lays the four knobs out in one row instead of the
+     *        default 2x2 grid, and tightens the header margins. For hosts that
+     *        give the component a wide but short slot (an effect tab in a mixer
+     *        strip, say), where halving the height makes the knobs tiny.
+     *        Leave false for roughly square slots — the standalone plugin and
+     *        every other host keep the original layout.
      */
-    TubeComponent (Tube& tube, juce::AudioProcessorValueTreeState& apvts, const juce::String& prefix, bool showTitle = true);
+    TubeComponent (Tube& tube, juce::AudioProcessorValueTreeState& apvts, const juce::String& prefix, bool showTitle = true, bool knobsInSingleRow = false);
     ~TubeComponent() override;
 
     void paint (juce::Graphics&) override;
@@ -33,6 +40,7 @@ public:
 private:
     Tube& tube;
     juce::AudioProcessorValueTreeState& apvts;
+    const bool knobsInSingleRow;
 
     juce::ToggleButton onButton;
     juce::ComboBox modelBox;

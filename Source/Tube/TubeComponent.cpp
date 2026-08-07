@@ -16,8 +16,8 @@ void TubeComponent::setSliderColours (juce::Slider& s, juce::Colour c)
     s.setColour (juce::Slider::rotarySliderOutlineColourId, c.darker (2.0f));
 }
 
-TubeComponent::TubeComponent (Tube& t, juce::AudioProcessorValueTreeState& state, const juce::String& prefix, bool showTitle)
-    : tube (t), apvts (state)
+TubeComponent::TubeComponent (Tube& t, juce::AudioProcessorValueTreeState& state, const juce::String& prefix, bool showTitle, bool singleRow)
+    : tube (t), apvts (state), knobsInSingleRow (singleRow)
 {
     addAndMakeVisible (onButton);
     onButton.setButtonText ("On");
@@ -130,20 +130,42 @@ void TubeComponent::resized()
     f1.items.add(fi(titleLabel).withFlex(1.f));
     f1.items.add(fi(modelBox).withFlex(0.5f));
 
+    // In a wide but short slot every vertical pixel counts, so the header keeps
+    // its height (the button and combo still need it) but gives back its
+    // margins.
+    const float headerTopMargin    = knobsInSingleRow ?  2.f :  5.f;
+    const float headerBottomMargin = knobsInSingleRow ?  4.f : 10.f;
+
     // The tube artwork spans the full content height at its native aspect
     // ratio; the header (plus its vertical margins) is what it can't have.
     const float contentHeight = juce::jmax (0.0f, (float) area.getHeight()
-                                                  - fxmefx::kHeaderRowHeight - 15.0f);
+                                                  - fxmefx::kHeaderRowHeight
+                                                  - headerTopMargin - headerBottomMargin);
     float imageWidth = 0.0f;
     if (auto img = tubeImage.getImage(); img.isValid() && img.getHeight() > 0)
         imageWidth = contentHeight * (float) img.getWidth() / (float) img.getHeight();
 
-    knobRow1.items.add(fi(driveSlider).withFlex(1.f).withMargin(juce::FlexItem::Margin(5.f)));
-    knobRow1.items.add(fi(toneSlider).withFlex(1.f).withMargin(juce::FlexItem::Margin(5.f)));
-    knobRow2.items.add(fi(biasSlider).withFlex(1.f).withMargin(juce::FlexItem::Margin(5.f)));
-    knobRow2.items.add(fi(sagSlider).withFlex(1.f).withMargin(juce::FlexItem::Margin(5.f)));
-    knobs.items.add(fi(knobRow1).withFlex(1.f));
-    knobs.items.add(fi(knobRow2).withFlex(1.f));
+    const auto knobMargin = juce::FlexItem::Margin (5.f);
+
+    if (knobsInSingleRow)
+    {
+        // One row: each knob gets the whole content height rather than half of
+        // it. The slot is wide, so width is not the binding constraint.
+        knobRow1.items.add(fi(driveSlider).withFlex(1.f).withMargin(knobMargin));
+        knobRow1.items.add(fi(toneSlider).withFlex(1.f).withMargin(knobMargin));
+        knobRow1.items.add(fi(biasSlider).withFlex(1.f).withMargin(knobMargin));
+        knobRow1.items.add(fi(sagSlider).withFlex(1.f).withMargin(knobMargin));
+        knobs.items.add(fi(knobRow1).withFlex(1.f));
+    }
+    else
+    {
+        knobRow1.items.add(fi(driveSlider).withFlex(1.f).withMargin(knobMargin));
+        knobRow1.items.add(fi(toneSlider).withFlex(1.f).withMargin(knobMargin));
+        knobRow2.items.add(fi(biasSlider).withFlex(1.f).withMargin(knobMargin));
+        knobRow2.items.add(fi(sagSlider).withFlex(1.f).withMargin(knobMargin));
+        knobs.items.add(fi(knobRow1).withFlex(1.f));
+        knobs.items.add(fi(knobRow2).withFlex(1.f));
+    }
 
     f2.items.add(fi(tubeImage).withWidth(imageWidth));
     f2.items.add(fi(knobs).withFlex(1.f));
@@ -151,7 +173,7 @@ void TubeComponent::resized()
 
     fMain.items.add(fi(f1).withHeight(fxmefx::kHeaderRowHeight)
                           .withMinHeight(fxmefx::kHeaderRowHeight)
-                          .withMargin(juce::FlexItem::Margin(5.f, 0.f, 10.f, 0)));
+                          .withMargin(juce::FlexItem::Margin(headerTopMargin, 0.f, headerBottomMargin, 0.f)));
     fMain.items.add(fi(f2).withFlex(1.f));
 
     fMain.performLayout(area);
