@@ -182,11 +182,22 @@ void CabComponent::resized()
         gainRow.items.add (fi (gainLabel).withFlex (0.25f));
         gainRow.items.add (fi (gainSlider).withFlex (0.75f));
 
-        col.items.add (fi (header).withFlex (0.10f).withMaxHeight (24.0f));
-        col.items.add (fi (box).withFlex (0.12f).withMaxHeight (28.0f)
+        // The three control rows are sized by their minimum, not by their share
+        // of the column: a maximum alone caps a row that has room to spare and
+        // does nothing for one that has not, which in a short panel left the IR
+        // chooser about 12 px tall. Flex-shrink 0 keeps them at that minimum
+        // even when the column cannot fit everything.
+        //
+        // The plot is the only row that yields — it degrades into a smaller
+        // waveform, while the others degrade into being unusable.
+        col.items.add (fi (header).withFlex (0.10f, 0.0f)
+                                  .withMinHeight (18.0f).withMaxHeight (24.0f));
+        col.items.add (fi (box).withFlex (0.12f, 0.0f)
+                               .withMinHeight (28.0f).withMaxHeight (32.0f)
                                .withMargin (juce::FlexItem::Margin (4.f, 0.f, 4.f, 0.f)));
-        col.items.add (fi (plot).withFlex (1.0f));
-        col.items.add (fi (gainRow).withFlex (0.18f).withMaxHeight (32.0f)
+        col.items.add (fi (plot).withFlex (1.0f, 4.0f).withMinHeight (0.0f));
+        col.items.add (fi (gainRow).withFlex (0.18f, 0.0f)
+                                   .withMinHeight (30.0f).withMaxHeight (36.0f)
                                    .withMargin (juce::FlexItem::Margin (8.f, 0.f, 0.f, 0.f)));
     };
 
