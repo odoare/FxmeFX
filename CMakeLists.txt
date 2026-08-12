@@ -38,6 +38,9 @@ set(_all_plugins
     Oct
     Limiter
     Freeze
+    Chorus
+    Flanger
+    Phaser
 )
 
 if(PLUGIN STREQUAL "")

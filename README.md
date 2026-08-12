@@ -21,6 +21,10 @@ drum kits).
 | FxmeCab          | `CABN`      | Stereo cabinet/IR loader. Two independent mono-IR slots (one per output channel), 19 embedded cabinet IRs, output gain. |
 | FxmeOct          | `OCTV`      | Boss OC-2-style monophonic octaver. Schmitt-trigger zero-crossing + ÷2 / ÷4 flip-flops, envelope-tracked square synthesis, dry / -1 oct / -2 oct mix, detection LPF and tone LPF. Zero latency, stable on bass. |
 | FxmeLimiter      | `LIMT`      | Look-ahead brickwall limiter / maximizer. A short look-ahead lets the gain envelope duck before a peak arrives; Drive pushes the signal into the ceiling, and a final hard clamp guarantees the output never exceeds it. Drive / Ceiling / Release controls and a gain-reduction meter. |
+| FxmeFreeze       | `FRZE`      | Spectral freeze (paulstretch-style FFT wash). Engaging it freezes the window of input *preceding* the switch, so the wash starts in the very next block. Mix and stereo Width. |
+| FxmeChorus       | `CHOR`      | Stereo chorus. Two to four modulated delay taps per channel, spread evenly around one LFO cycle, no feedback. Rate / Depth / Delay / Voices / Width / Mix, free-running or tempo-synced. |
+| FxmeFlanger      | `FLNG`      | Stereo flanger. One very short modulated delay per channel with bipolar feedback - positive sharpens the comb into the jet whoosh, negative inverts it for the hollow variant. Delay places the comb, Depth sets the sweep. Free-running or tempo-synced. |
+| FxmePhaser       | `PHSR`      | Stereo phaser. 2 to 12 first-order allpass sections per channel swept by one LFO, with bipolar feedback. Freq is the sweep centre, Depth the excursion in octaves (up to 2.5 either way). Free-running or tempo-synced. |
 
 All plugins build as **VST3**, **AU** (macOS) and a **Standalone** application,
 and also as headless **Pure Data externals** — see the dedicated section below.
@@ -206,6 +210,82 @@ ceiling is never exceeded.
 | 4 | Ceiling (dB)  | -24 … 0                     | -0.3 |
 | 5 | Release (ms)  | 1 … 500   (skewed)          | 50   |
 
+### `fxmefreeze~`
+
+| Inlet | Parameter | Range | Default |
+|------:|-----------|-------|--------:|
+| 2 | On        | 0 / 1     | 0   |
+| 3 | Mix (%)   | 0 … 100   | 50  |
+| 4 | Width (%) | 0 … 100   | 100 |
+
+### The modulation trio: `fxmechorus~`, `fxmeflanger~`, `fxmephaser~`
+
+All three share the same LFO controls. **Shape** is
+`0 = Sine, 1 = Tri, 2 = Square, 3 = Saw Up, 4 = Saw Dn`, and **Div** is the
+zero-based index into
+
+```
+0..8   8/1  4/1  2/1  1/1  1/2  1/4  1/8  1/16  1/32
+9..12  1/2T 1/4T 1/8T 1/16T
+13..16 1/2. 1/4. 1/8. 1/16.
+```
+
+**Width** is the phase offset between the two channels' modulation (0 % =
+both sides sweep together, i.e. mono). Feedback is signed: negative values
+invert the comb.
+
+Note that a Pd external has no host transport, so **Sync resolves against a
+fixed 120 BPM** — in Pd, drive the rate in Hz and leave Sync at 0.
+
+#### `fxmechorus~`
+
+| Inlet | Parameter | Range | Default |
+|------:|-----------|-------|--------:|
+| 2  | On              | 0 / 1                    | 1    |
+| 3  | Rate (Hz)       | 0.01 … 10  (skewed)      | 0.6  |
+| 4  | Sync            | 0 / 1                    | 0    |
+| 5  | Div             | 0 … 16 (see above)       | 3    |
+| 6  | Shape           | 0 … 4  (see above)       | 0    |
+| 7  | Depth (%)       | 0 … 100                  | 40   |
+| 8  | Delay (ms)      | 1 … 40     (skewed)      | 12   |
+| 9  | Voices          | 2 … 4                    | 2    |
+| 10 | Width (%)       | 0 … 100                  | 100  |
+| 11 | Mix (%)         | 0 … 100                  | 50   |
+| 12 | Output (dB)     | -24 … 24                 | 0    |
+
+#### `fxmeflanger~`
+
+| Inlet | Parameter | Range | Default |
+|------:|-----------|-------|--------:|
+| 2  | On              | 0 / 1                    | 1    |
+| 3  | Rate (Hz)       | 0.01 … 10  (skewed)      | 0.25 |
+| 4  | Sync            | 0 / 1                    | 0    |
+| 5  | Div             | 0 … 16 (see above)       | 3    |
+| 6  | Shape           | 0 … 4  (see above)       | 0    |
+| 7  | Depth (%)       | 0 … 100                  | 70   |
+| 8  | Delay (ms)      | 0.1 … 10   (skewed)      | 1    |
+| 9  | Feedback (%)    | -95 … 95                 | 50   |
+| 10 | Width (%)       | 0 … 100                  | 100  |
+| 11 | Mix (%)         | 0 … 100                  | 50   |
+| 12 | Output (dB)     | -24 … 24                 | 0    |
+
+#### `fxmephaser~`
+
+| Inlet | Parameter | Range | Default |
+|------:|-----------|-------|--------:|
+| 2  | On              | 0 / 1                              | 1    |
+| 3  | Rate (Hz)       | 0.01 … 10  (skewed)                | 0.3  |
+| 4  | Sync            | 0 / 1                              | 0    |
+| 5  | Div             | 0 … 16 (see above)                 | 3    |
+| 6  | Shape           | 0 … 4  (see above)                 | 0    |
+| 7  | Stages          | 0 = 2, 1 = 4, 2 = 6, … 5 = 12      | 1    |
+| 8  | Depth (%)       | 0 … 100  (100 % = ±2.5 octaves)    | 70   |
+| 9  | Freq (Hz)       | 60 … 4000  (skewed)                | 500  |
+| 10 | Feedback (%)    | -95 … 95                           | 50   |
+| 11 | Width (%)       | 0 … 100                            | 100  |
+| 12 | Mix (%)         | 0 … 100                            | 50   |
+| 13 | Output (dB)     | -24 … 24                           | 0    |
+
 ## Repository layout
 
 ```
@@ -225,6 +305,10 @@ FxmeFX/
 │   │   └── IR/                 # built-in cabinet impulse responses (embedded as binary data)
 │   ├── Oct/                    # Boss-style frequency-division octaver
 │   ├── Limiter/                # look-ahead brickwall limiter / maximizer
+│   ├── Freeze/                 # spectral freeze
+│   ├── Chorus/                 # stereo chorus (tempo-syncable LFO)
+│   ├── Flanger/                # stereo flanger (tempo-syncable LFO)
+│   ├── Phaser/                 # stereo phaser  (tempo-syncable LFO)
 │   └── VuMeter/                # re-export shims for fxme::VuMeter / fxme::VuMeterComponent
 ├── lib/
 │   └── FxmeTools/              # submodule: shared GUI/DSP + nested WDL submodule
@@ -280,7 +364,8 @@ cmake --build build --parallel
 ```
 
 `PLUGIN` accepts: `Compressor`, `Equalizer`, `Tube`, `Transient`,
-`StereoDelay`, `ConvolReverb`, `Cab`, `Oct`, `Limiter`.
+`StereoDelay`, `ConvolReverb`, `Cab`, `Oct`, `Limiter`, `Freeze`, `Chorus`,
+`Flanger`, `Phaser`.
 
 ### A single plugin standalone
 
