@@ -192,6 +192,10 @@ void ImpulseResponsePlot::paint(juce::Graphics& g)
 ConvolReverbComponent::ConvolReverbComponent (ConvolReverb& r, juce::AudioProcessorValueTreeState& state, const juce::String& pfx, bool showTitle)
     : reverb (r), apvts (state), irPlot(r), prefix (pfx)
 {
+    // Tints this component's combo-box drop-downs; a menu is its own window
+    // and cannot see the box that opened it.
+    fxmeLookAndFeel.setAccentColour (juce::Colours::yellowgreen);
+
     addChildComponent (titleLabel);
     titleLabel.setVisible (showTitle);
     titleLabel.setText ("Convolution Reverb", juce::NotificationType::dontSendNotification);
@@ -208,6 +212,7 @@ ConvolReverbComponent::ConvolReverbComponent (ConvolReverb& r, juce::AudioProces
     irLabel.setText ("Impulse", juce::NotificationType::dontSendNotification);
     irLabel.setJustificationType (juce::Justification::centred);
     addAndMakeVisible (irBox);
+    irBox.setLookAndFeel (&fxmeLookAndFeel);
     const auto& names = reverb.getImpulseNames();
     for (int i = 0; i < names.size(); ++i)
         irBox.addItem (juce::File (names[i]).getFileNameWithoutExtension(), i + 1);
@@ -261,6 +266,7 @@ ConvolReverbComponent::ConvolReverbComponent (ConvolReverb& r, juce::AudioProces
     shapeLabel.setText ("Shape", juce::NotificationType::dontSendNotification);
     shapeLabel.setJustificationType (juce::Justification::centred);
     addAndMakeVisible (shapeBox);
+    shapeBox.setLookAndFeel (&fxmeLookAndFeel);
     shapeBox.addItem ("Fast Exp", 1);
     shapeBox.addItem ("Linear", 2);
     shapeBox.addItem ("Slow Log", 3);

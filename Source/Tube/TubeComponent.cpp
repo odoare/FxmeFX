@@ -19,6 +19,10 @@ void TubeComponent::setSliderColours (juce::Slider& s, juce::Colour c)
 TubeComponent::TubeComponent (Tube& t, juce::AudioProcessorValueTreeState& state, const juce::String& prefix, bool showTitle, bool singleRow)
     : tube (t), apvts (state), knobsInSingleRow (singleRow)
 {
+    // Tints this component's combo-box drop-downs; a menu is its own window
+    // and cannot see the box that opened it.
+    fxmeLookAndFeel.setAccentColour (juce::Colours::orange);
+
     addAndMakeVisible (onButton);
     onButton.setButtonText ("On");
     onButton.setLookAndFeel(&fxmeLookAndFeel);
@@ -42,6 +46,7 @@ TubeComponent::TubeComponent (Tube& t, juce::AudioProcessorValueTreeState& state
     tubeImage.toBack();
 
     addAndMakeVisible (modelBox);
+    modelBox.setLookAndFeel (&fxmeLookAndFeel);
     modelBox.addItem ("Standard", 1);
     modelBox.addItem ("Dynamic",  2);
     modelBox.addItem ("Triode",   3);

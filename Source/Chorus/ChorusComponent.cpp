@@ -47,6 +47,7 @@ void ChorusComponent::setupCombo (juce::ComboBox& box, juce::Label& label,
     label.setFont (juce::Font (juce::FontOptions (12.0f)));
 
     addAndMakeVisible (box);
+    box.setLookAndFeel (&fxmeLookAndFeel);
     box.addItemList (items, 1);
     box.setTooltip (text);
     box.setColour (juce::ComboBox::outlineColourId, chorusTint.darker());
@@ -59,6 +60,10 @@ ChorusComponent::ChorusComponent (Chorus& c,
                                   bool showTitle)
     : chorus (c), apvts (state)
 {
+    // Tints this component's combo-box drop-downs; a menu is its own window
+    // and cannot see the box that opened it.
+    fxmeLookAndFeel.setAccentColour (chorusTint);
+
     addChildComponent (titleLabel);
     titleLabel.setVisible (showTitle);
     titleLabel.setText ("Chorus", juce::NotificationType::dontSendNotification);

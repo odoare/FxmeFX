@@ -19,6 +19,10 @@ void TransientComponent::setSliderColours (juce::Slider& s, juce::Colour c)
 TransientComponent::TransientComponent (Transient& t, juce::AudioProcessorValueTreeState& state, const juce::String& prefix, bool showTitle)
     : transientFx (t), apvts (state)
 {
+    // Tints this component's combo-box drop-downs; a menu is its own window
+    // and cannot see the box that opened it.
+    fxmeLookAndFeel.setAccentColour (juce::Colours::red);
+
     addAndMakeVisible (onButton);
     onButton.setButtonText ("On");
     onButton.setLookAndFeel (&fxmeLookAndFeel);
@@ -32,6 +36,7 @@ TransientComponent::TransientComponent (Transient& t, juce::AudioProcessorValueT
     titleLabel.setFont (juce::Font (16.0f, juce::Font::bold));
 
     addAndMakeVisible (characterBox);
+    characterBox.setLookAndFeel (&fxmeLookAndFeel);
     characterBox.addItem ("Soft",     1);
     characterBox.addItem ("Standard", 2);
     characterBox.addItem ("Hard",     3);

@@ -522,6 +522,10 @@ void EqualizerComponent::updateBandVisibility (int i)
 EqualizerComponent::EqualizerComponent (Equalizer& eq, juce::AudioProcessorValueTreeState& state, const juce::String& prefix, bool showTitle)
     : equalizer (eq), apvts (state), numBands (eq.getNumBands())
 {
+    // Tints this component's combo-box drop-downs; a menu is its own window
+    // and cannot see the box that opened it.
+    fxmeLookAndFeel.setAccentColour (juce::Colours::cyan);
+
     addAndMakeVisible (onButton);
     onButton.setButtonText ("On");
     onButton.setLookAndFeel (&fxmeLookAndFeel);
@@ -585,6 +589,7 @@ EqualizerComponent::EqualizerComponent (Equalizer& eq, juce::AudioProcessorValue
         bandOnButton[i].onClick = [this] { responseGraph.updateCurve(); };
 
         addAndMakeVisible (bandType[i]);
+        bandType[i].setLookAndFeel (&fxmeLookAndFeel);
         bandType[i].addItemList (typeNames, 1);
         bandType[i].setLookAndFeel (&fxmeLookAndFeel);
         bandTypeAtt[i] = std::make_unique<ComboBoxAttachment> (apvts, pid + "_Type", bandType[i]);

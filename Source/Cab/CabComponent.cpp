@@ -94,6 +94,10 @@ CabComponent::CabComponent (Cab& c,
       irLPlot (c, 0, cabTint),
       irRPlot (c, 1, cabTint.brighter (0.4f))
 {
+    // Tints this component's combo-box drop-downs; a menu is its own window
+    // and cannot see the box that opened it.
+    fxmeLookAndFeel.setAccentColour (cabTint);
+
     addChildComponent (titleLabel);
     titleLabel.setVisible (showTitle);
     titleLabel.setText ("Cab", juce::NotificationType::dontSendNotification);
@@ -117,6 +121,7 @@ CabComponent::CabComponent (Cab& c,
     irLLabel.setText ("Left IR", juce::NotificationType::dontSendNotification);
     irLLabel.setJustificationType (juce::Justification::centred);
     addAndMakeVisible (irLBox);
+    irLBox.setLookAndFeel (&fxmeLookAndFeel);
     fillCombo (irLBox);
     irLBox.onChange = [this] { graphNeedsUpdate = true; };
     irLAtt = std::make_unique<ComboBoxAttachment> (apvts, prefix + "_Cab_IRL", irLBox);
@@ -125,6 +130,7 @@ CabComponent::CabComponent (Cab& c,
     irRLabel.setText ("Right IR", juce::NotificationType::dontSendNotification);
     irRLabel.setJustificationType (juce::Justification::centred);
     addAndMakeVisible (irRBox);
+    irRBox.setLookAndFeel (&fxmeLookAndFeel);
     fillCombo (irRBox);
     irRBox.onChange = [this] { graphNeedsUpdate = true; };
     irRAtt = std::make_unique<ComboBoxAttachment> (apvts, prefix + "_Cab_IRR", irRBox);
