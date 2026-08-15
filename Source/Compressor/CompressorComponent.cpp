@@ -29,7 +29,7 @@ CompressorComponent::CompressorComponent (Compressor& comp, juce::AudioProcessor
     titleLabel.setVisible (showTitle);
     titleLabel.setText ("Compressor", juce::NotificationType::dontSendNotification);
     titleLabel.setJustificationType (juce::Justification::centred);
-    titleLabel.setFont (juce::Font (16.0f, juce::Font::bold));
+    titleLabel.setFont (juce::Font (juce::FontOptions (16.0f, juce::Font::bold)));
 
     setupBarSlider (preGainSlider, preGainLabel, "Pre Gain", -24.0, 24.0, 0.0);
     setupSlider (attackSlider, attackLabel, "Attack (ms)", 0.1, 100.0, 10.0);

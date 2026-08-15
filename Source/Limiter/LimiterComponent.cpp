@@ -29,7 +29,7 @@ LimiterComponent::LimiterComponent (Limiter& lim, juce::AudioProcessorValueTreeS
     titleLabel.setVisible (showTitle);
     titleLabel.setText ("Limiter", juce::NotificationType::dontSendNotification);
     titleLabel.setJustificationType (juce::Justification::centred);
-    titleLabel.setFont (juce::Font (16.0f, juce::Font::bold));
+    titleLabel.setFont (juce::Font (juce::FontOptions (16.0f, juce::Font::bold)));
 
     setupSlider (driveSlider,   "Drive (dB)",   0.0,  24.0,  0.0);
     setupSlider (ceilingSlider, "Ceiling (dB)", -24.0, 0.0, -0.3);

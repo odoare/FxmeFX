@@ -33,7 +33,7 @@ TransientComponent::TransientComponent (Transient& t, juce::AudioProcessorValueT
     titleLabel.setVisible (showTitle);
     titleLabel.setText ("Transient", juce::NotificationType::dontSendNotification);
     titleLabel.setJustificationType (juce::Justification::centred);
-    titleLabel.setFont (juce::Font (16.0f, juce::Font::bold));
+    titleLabel.setFont (juce::Font (juce::FontOptions (16.0f, juce::Font::bold)));
 
     addAndMakeVisible (characterBox);
     characterBox.setLookAndFeel (&fxmeLookAndFeel);

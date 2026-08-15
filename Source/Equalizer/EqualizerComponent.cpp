@@ -348,7 +348,7 @@ void FrequencyResponseGraph::paint (juce::Graphics& g)
         }
 
         // Frequency labels at the bottom, just to the right of the major lines.
-        g.setFont (juce::Font (10.0f));
+        g.setFont (juce::Font (juce::FontOptions (10.0f)));
         g.setColour (juce::Colours::lightgrey.withAlpha (0.75f));
         const std::pair<float, const char*> freqLabels[] = {
             { 100.0f, "100" }, { 1000.0f, "1k" }, { 10000.0f, "10k" }
@@ -393,7 +393,7 @@ void FrequencyResponseGraph::paint (juce::Graphics& g)
             g.setColour (juce::Colours::white.withAlpha (bOn ? alpha : alpha * 0.5f));
             g.drawRect (rect, 1.5f);
 
-            g.setFont (juce::Font (8.0f, juce::Font::bold));
+            g.setFont (juce::Font (juce::FontOptions (8.0f, juce::Font::bold)));
             g.setColour (juce::Colours::black.withAlpha (bOn ? alpha : alpha * 0.5f));
             g.drawFittedText (bands[i].label, rect.toNearestInt(), juce::Justification::centred, 1);
         }
@@ -537,7 +537,7 @@ EqualizerComponent::EqualizerComponent (Equalizer& eq, juce::AudioProcessorValue
     titleLabel.setVisible (showTitle);
     titleLabel.setText ("Equalizer", juce::NotificationType::dontSendNotification);
     titleLabel.setJustificationType (juce::Justification::centred);
-    titleLabel.setFont (juce::Font (16.0f, juce::Font::bold));
+    titleLabel.setFont (juce::Font (juce::FontOptions (16.0f, juce::Font::bold)));
 
     static const juce::Colour bandColours[Equalizer::MaxBands] = {
         juce::Colour::fromRGB (100, 180, 255),

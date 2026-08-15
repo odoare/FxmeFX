@@ -58,7 +58,7 @@ TubeComponent::TubeComponent (Tube& t, juce::AudioProcessorValueTreeState& state
     titleLabel.setVisible (showTitle);
     titleLabel.setText ("Tube Saturation", juce::NotificationType::dontSendNotification);
     titleLabel.setJustificationType (juce::Justification::centred);
-    titleLabel.setFont (juce::Font (16.0f, juce::Font::bold));
+    titleLabel.setFont (juce::Font (juce::FontOptions (16.0f, juce::Font::bold)));
 
     setupSlider (driveSlider, driveLabel, "Drive (dB)", 0.0, 40.0, 0.0);
     setupSlider (biasSlider,  biasLabel,  "Bias",        0.0, 0.5,  0.0);
