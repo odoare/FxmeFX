@@ -103,18 +103,33 @@ juce::AudioProcessorEditor* FxmeChorusAudioProcessor::createEditor()
 }
 #endif
 
+// State format version, written as an attribute on the saved XML. Bump it
+// whenever this plugin's state layout changes and branch on it in
+// setStateInformation to migrate older sessions — a version cannot be added
+// retroactively to states that are already out there.
+static constexpr int kStateVersion = 1;
+
 void FxmeChorusAudioProcessor::getStateInformation (juce::MemoryBlock& destData)
 {
     if (auto state = apvts.copyState(); state.isValid())
         if (auto xml = state.createXml())
+        {
+            xml->setAttribute ("stateVersion", kStateVersion);
             copyXmlToBinary (*xml, destData);
+        }
 }
 
 void FxmeChorusAudioProcessor::setStateInformation (const void* data, int sizeInBytes)
 {
     if (auto xml = getXmlFromBinary (data, sizeInBytes))
         if (xml->hasTagName (apvts.state.getType()))
+        {
+            // States written before versioning report 1. Nothing to migrate yet.
+            const int stateVersion = xml->getIntAttribute ("stateVersion", 1);
+            juce::ignoreUnused (stateVersion);
+
             apvts.replaceState (juce::ValueTree::fromXml (*xml));
+        }
 }
 
 juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()

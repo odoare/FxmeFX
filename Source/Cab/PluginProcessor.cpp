@@ -121,11 +121,20 @@ juce::AudioProcessorEditor* FxmeCabAudioProcessor::createEditor()
 }
 #endif
 
+// State format version, written as an attribute on the saved XML. Version 1 is
+// the single-gain layout (one _Cab_Gain); version 2 split it into per-channel
+// gains. States written before versioning existed report 1, which is what the
+// migration below keys off.
+static constexpr int kStateVersion = 2;
+
 void FxmeCabAudioProcessor::getStateInformation (juce::MemoryBlock& destData)
 {
     if (auto state = apvts.copyState(); state.isValid())
         if (auto xml = state.createXml())
+        {
+            xml->setAttribute ("stateVersion", kStateVersion);
             copyXmlToBinary (*xml, destData);
+        }
 }
 
 void FxmeCabAudioProcessor::setStateInformation (const void* data, int sizeInBytes)
@@ -133,9 +142,13 @@ void FxmeCabAudioProcessor::setStateInformation (const void* data, int sizeInByt
     if (auto xml = getXmlFromBinary (data, sizeInBytes))
         if (xml->hasTagName (apvts.state.getType()))
         {
+            const int stateVersion = xml->getIntAttribute ("stateVersion", 1);
+
             // Presets from the single-gain version carry _Cab_Gain; map it
             // onto the per-channel gains before handing the tree to the APVTS.
-            Cab::migrateLegacyState (*xml, parameterPrefix);
+            if (stateVersion < 2)
+                Cab::migrateLegacyState (*xml, parameterPrefix);
+
             apvts.replaceState (juce::ValueTree::fromXml (*xml));
         }
 }
