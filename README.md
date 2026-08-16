@@ -42,6 +42,40 @@ and also as headless **Pure Data externals** — see the dedicated section below
 | **FxmeCab** | **FxmeOct** |
 | ![FxmeCab](doc/FxmeCab.png) | ![FxmeOct](doc/FxmeOct.png) |
 
+## Installing
+
+Download the zip for your platform from the
+[latest release](https://github.com/odoare/FxmeFX/releases) and copy the
+bundles into the folder your host scans.
+
+### Linux
+
+```bash
+unzip FxmeFX-VST3-Linux-x86_64.zip -d ~/.vst3
+```
+
+### Windows
+
+Copy the `.vst3` folders into `C:\Program Files\Common Files\VST3\`.
+
+### macOS
+
+Copy the `.vst3` bundles into `~/Library/Audio/Plug-Ins/VST3/` and the
+`.component` bundles into `~/Library/Audio/Plug-Ins/Components/`.
+
+These builds are **not notarised**, so macOS quarantines anything downloaded
+from a browser and the DAW then skips the plugin without saying why. Clear the
+quarantine flag after copying:
+
+```bash
+xattr -dr com.apple.quarantine ~/Library/Audio/Plug-Ins/VST3/Fxme*.vst3
+xattr -dr com.apple.quarantine ~/Library/Audio/Plug-Ins/Components/Fxme*.component
+```
+
+Then rescan in the host (Logic revalidates AUs on launch; most other hosts have
+a "rescan plugins" button). A host caches the module, so a reinstall over a
+running DAW needs a restart to take effect.
+
 ## Pure Data externals
 
 Each plugin also ships as a Pd signal external that reuses the exact same DSP
@@ -396,7 +430,7 @@ CI fetches Pd-vanilla automatically; only local Windows builds need this.
 
 Pushing a version tag like `v0.1.0` triggers
 [`release.yml`](.github/workflows/release.yml), which builds every plugin on
-Linux (x86_64 + arm64), macOS (universal arm64+x86_64) and Windows (x86_64),
+Linux (x86_64), macOS (universal arm64+x86_64) and Windows (x86_64),
 zips them per platform, and publishes a GitHub Release with the artefacts
 attached.
 
