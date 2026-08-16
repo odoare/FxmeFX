@@ -21,8 +21,11 @@ void Cab::prepare (double sampleRate, int samplesPerBlock)
     currentSampleRate = sampleRate;
     engine.Reset();
 
+    // Headroom over the promised block size: process() has a guard that resizes
+    // if a host hands over a bigger block than it announced, and that guard
+    // allocates on the audio thread. Sizing generously here keeps it dormant.
     const int maxChannels = 2;
-    wdlInputBuffer.setSize (maxChannels, samplesPerBlock, false, true, true);
+    wdlInputBuffer.setSize (maxChannels, juce::jmax (4096, samplesPerBlock), false, true, true);
     wdlInputPtrs.resize (maxChannels);
 
     rebuildEngineImpulse();

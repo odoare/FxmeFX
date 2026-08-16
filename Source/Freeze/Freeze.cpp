@@ -15,6 +15,10 @@ namespace
     // SpectralFreezeMulti fills them with the channel index.
     constexpr uint64_t kSeed = 0x46584d4546525aull;   // "FXMEFRZ"
     constexpr uint64_t kTag  = 0x467265657a6500ull;   // "Freeze" << 8
+
+    // Floor for the scratch buffer, so a host that exceeds the block size it
+    // announced does not push the resize onto the audio thread.
+    constexpr int kMinBufferSamples = 4096;
 }
 
 void Freeze::prepare (double sampleRate, int samplesPerBlock, int numChannels)
@@ -25,7 +29,10 @@ void Freeze::prepare (double sampleRate, int samplesPerBlock, int numChannels)
     freezer.setIdentity (kSeed, kTag);
     freezer.setMix (1.0f);   // wet/dry is applied here, smoothed per sample
 
-    dryBuffer.setSize (juce::jmax (1, numChannels), juce::jmax (1, samplesPerBlock));
+    // Headroom over the promised block size: process() has a guard that resizes
+    // if a host hands over a bigger block than it announced, and that guard
+    // allocates on the audio thread. Sizing generously here keeps it dormant.
+    dryBuffer.setSize (juce::jmax (1, numChannels), juce::jmax (kMinBufferSamples, samplesPerBlock));
 
     history.setSize (juce::jmax (1, numChannels), fxme::SpectralFreeze::kSize);
     history.clear();

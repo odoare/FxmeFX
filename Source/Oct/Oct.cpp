@@ -55,7 +55,9 @@ namespace
 void Oct::prepare (double sampleRate, int numChannels)
 {
     currentSampleRate = sampleRate;
-    channels.assign ((size_t) juce::jmax (1, numChannels), ChannelState{});
+    // Pre-allocate to be RT-safe: process() resizes if it is handed more
+    // channels than were prepared, and that resize is on the audio thread.
+    channels.assign ((size_t) juce::jmax (4, numChannels), ChannelState{});
     updateCoefficients();
 }
 
