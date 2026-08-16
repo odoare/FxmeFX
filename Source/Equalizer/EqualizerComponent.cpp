@@ -590,6 +590,8 @@ EqualizerComponent::EqualizerComponent (Equalizer& eq, juce::AudioProcessorValue
 
         addAndMakeVisible (bandType[i]);
         bandType[i].setLookAndFeel (&fxmeLookAndFeel);
+        bandType[i].setColour (juce::ComboBox::outlineColourId, color.darker());
+        bandType[i].setColour (juce::ComboBox::arrowColourId,   color.brighter (0.3f));
         bandType[i].addItemList (typeNames, 1);
         bandTypeAtt[i] = std::make_unique<ComboBoxAttachment> (apvts, pid + "_Type", bandType[i]);
         bandType[i].onChange = [this, i] {

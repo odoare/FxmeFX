@@ -46,6 +46,8 @@ CompressorComponent::CompressorComponent (Compressor& comp, juce::AudioProcessor
 
     addAndMakeVisible (relModeBox);
     relModeBox.setLookAndFeel (&fxmeLookAndFeel);
+    relModeBox.setColour (juce::ComboBox::outlineColourId, juce::Colours::red.darker());
+    relModeBox.setColour (juce::ComboBox::arrowColourId,   juce::Colours::red.brighter (0.3f));
     relModeBox.addItem ("Linear",  1);
     relModeBox.addItem ("Opto",    2);
     relModeBox.addItem ("Vintage", 3);

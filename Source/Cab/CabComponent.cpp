@@ -122,6 +122,8 @@ CabComponent::CabComponent (Cab& c,
     irLLabel.setJustificationType (juce::Justification::centred);
     addAndMakeVisible (irLBox);
     irLBox.setLookAndFeel (&fxmeLookAndFeel);
+    irLBox.setColour (juce::ComboBox::outlineColourId, cabTint.darker());
+    irLBox.setColour (juce::ComboBox::arrowColourId,   cabTint.brighter (0.3f));
     fillCombo (irLBox);
     irLBox.onChange = [this] { graphNeedsUpdate = true; };
     irLAtt = std::make_unique<ComboBoxAttachment> (apvts, prefix + "_Cab_IRL", irLBox);
@@ -131,6 +133,8 @@ CabComponent::CabComponent (Cab& c,
     irRLabel.setJustificationType (juce::Justification::centred);
     addAndMakeVisible (irRBox);
     irRBox.setLookAndFeel (&fxmeLookAndFeel);
+    irRBox.setColour (juce::ComboBox::outlineColourId, cabTint.darker());
+    irRBox.setColour (juce::ComboBox::arrowColourId,   cabTint.brighter (0.3f));
     fillCombo (irRBox);
     irRBox.onChange = [this] { graphNeedsUpdate = true; };
     irRAtt = std::make_unique<ComboBoxAttachment> (apvts, prefix + "_Cab_IRR", irRBox);

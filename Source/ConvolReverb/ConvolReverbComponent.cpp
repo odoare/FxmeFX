@@ -212,6 +212,8 @@ ConvolReverbComponent::ConvolReverbComponent (ConvolReverb& r, juce::AudioProces
     irLabel.setJustificationType (juce::Justification::centred);
     addAndMakeVisible (irBox);
     irBox.setLookAndFeel (&fxmeLookAndFeel);
+    irBox.setColour (juce::ComboBox::outlineColourId, juce::Colours::yellowgreen.darker());
+    irBox.setColour (juce::ComboBox::arrowColourId,   juce::Colours::yellowgreen.brighter (0.3f));
     const auto& names = reverb.getImpulseNames();
     for (int i = 0; i < names.size(); ++i)
         irBox.addItem (juce::File (names[i]).getFileNameWithoutExtension(), i + 1);
@@ -266,6 +268,8 @@ ConvolReverbComponent::ConvolReverbComponent (ConvolReverb& r, juce::AudioProces
     shapeLabel.setJustificationType (juce::Justification::centred);
     addAndMakeVisible (shapeBox);
     shapeBox.setLookAndFeel (&fxmeLookAndFeel);
+    shapeBox.setColour (juce::ComboBox::outlineColourId, juce::Colours::yellowgreen.darker());
+    shapeBox.setColour (juce::ComboBox::arrowColourId,   juce::Colours::yellowgreen.brighter (0.3f));
     shapeBox.addItem ("Fast Exp", 1);
     shapeBox.addItem ("Linear", 2);
     shapeBox.addItem ("Slow Log", 3);

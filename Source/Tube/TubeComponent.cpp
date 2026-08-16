@@ -47,6 +47,8 @@ TubeComponent::TubeComponent (Tube& t, juce::AudioProcessorValueTreeState& state
 
     addAndMakeVisible (modelBox);
     modelBox.setLookAndFeel (&fxmeLookAndFeel);
+    modelBox.setColour (juce::ComboBox::outlineColourId, juce::Colours::orange.darker());
+    modelBox.setColour (juce::ComboBox::arrowColourId,   juce::Colours::orange.brighter (0.3f));
     modelBox.addItem ("Standard", 1);
     modelBox.addItem ("Dynamic",  2);
     modelBox.addItem ("Triode",   3);

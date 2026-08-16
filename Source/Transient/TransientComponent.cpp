@@ -37,6 +37,8 @@ TransientComponent::TransientComponent (Transient& t, juce::AudioProcessorValueT
 
     addAndMakeVisible (characterBox);
     characterBox.setLookAndFeel (&fxmeLookAndFeel);
+    characterBox.setColour (juce::ComboBox::outlineColourId, juce::Colours::red.darker());
+    characterBox.setColour (juce::ComboBox::arrowColourId,   juce::Colours::red.brighter (0.3f));
     characterBox.addItem ("Soft",     1);
     characterBox.addItem ("Standard", 2);
     characterBox.addItem ("Hard",     3);
