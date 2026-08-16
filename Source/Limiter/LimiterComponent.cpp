@@ -19,6 +19,10 @@ void LimiterComponent::setSliderColours (juce::Slider& s, juce::Colour c)
 LimiterComponent::LimiterComponent (Limiter& lim, juce::AudioProcessorValueTreeState& state, const juce::String& prefix, bool showTitle)
     : limiter (lim), apvts (state)
 {
+    // Tints this component's drop-down menus and tooltips; both are their own
+    // windows and cannot see the widget that opened them.
+    fxmeLookAndFeel.setAccentColour (juce::Colours::orange);
+
     addAndMakeVisible (onButton);
     onButton.setButtonText ("On");
     onButton.setLookAndFeel (&fxmeLookAndFeel);

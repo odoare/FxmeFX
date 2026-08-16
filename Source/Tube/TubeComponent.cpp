@@ -105,9 +105,9 @@ void TubeComponent::setupBarSlider (fxme::FxmeSlider& slider, juce::Label& label
 
     addAndMakeVisible (slider);
     slider.setSliderStyle (juce::Slider::LinearBarVertical);
-    slider.setTextBoxStyle (juce::Slider::TextBoxBelow, false, 50, 15);
     slider.setRange (min, max);
     slider.setValue (def);
+    slider.setCentralValue (0.0);   // bipolar ±dB: the bar grows from 0 dB
     slider.setTextValueSuffix ("dB");
     slider.setTooltip (text);
     slider.setLookAndFeel (&fxmeLookAndFeel);

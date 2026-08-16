@@ -591,7 +591,6 @@ EqualizerComponent::EqualizerComponent (Equalizer& eq, juce::AudioProcessorValue
         addAndMakeVisible (bandType[i]);
         bandType[i].setLookAndFeel (&fxmeLookAndFeel);
         bandType[i].addItemList (typeNames, 1);
-        bandType[i].setLookAndFeel (&fxmeLookAndFeel);
         bandTypeAtt[i] = std::make_unique<ComboBoxAttachment> (apvts, pid + "_Type", bandType[i]);
         bandType[i].onChange = [this, i] {
             updateBandVisibility (i);
@@ -617,9 +616,9 @@ EqualizerComponent::EqualizerComponent (Equalizer& eq, juce::AudioProcessorValue
 
     addAndMakeVisible (postGainSlider);
     postGainSlider.setSliderStyle (juce::Slider::LinearBarVertical);
-    postGainSlider.setTextBoxStyle (juce::Slider::TextBoxBelow, false, 50, 15);
     postGainSlider.setRange (-24.0, 24.0, 0.1);
     postGainSlider.setValue (0.0);
+    postGainSlider.setCentralValue (0.0);   // bipolar ±dB: the bar grows from 0 dB
     postGainSlider.setTextValueSuffix ("dB");
     postGainSlider.setTooltip ("Post Gain");
     postGainSlider.setLookAndFeel (&fxmeLookAndFeel);

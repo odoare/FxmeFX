@@ -46,6 +46,10 @@ OctComponent::OctComponent (Oct& o,
                             bool showTitle)
     : oct (o), apvts (state)
 {
+    // Tints this component's drop-down menus and tooltips; both are their own
+    // windows and cannot see the widget that opened them.
+    fxmeLookAndFeel.setAccentColour (octTint);
+
     addChildComponent (titleLabel);
     titleLabel.setVisible (showTitle);
     titleLabel.setText ("Octaver", juce::NotificationType::dontSendNotification);

@@ -42,7 +42,6 @@ void StereoDelayComponent::setupBarSlider(juce::Slider& slider, juce::Label& lab
 
     addAndMakeVisible(slider);
     slider.setSliderStyle(juce::Slider::LinearBarVertical);
-    slider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 50, 15);
     slider.setTooltip(text);
     slider.setLookAndFeel(&fxmeLookAndFeel);
     setSliderColours(slider, color);
@@ -51,6 +50,10 @@ void StereoDelayComponent::setupBarSlider(juce::Slider& slider, juce::Label& lab
 StereoDelayComponent::StereoDelayComponent(StereoDelay& d, juce::AudioProcessorValueTreeState& state, const juce::String& prefix, bool showTitle)
     : delay(d), apvts(state)
 {
+    // Tints this component's drop-down menus and tooltips; both are their own
+    // windows and cannot see the widget that opened them.
+    fxmeLookAndFeel.setAccentColour (juce::Colours::green);
+
     addChildComponent(titleLabel);
     titleLabel.setVisible(showTitle);
     titleLabel.setText("Stereo Delay", juce::NotificationType::dontSendNotification);

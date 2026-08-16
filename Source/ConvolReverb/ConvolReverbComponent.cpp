@@ -44,7 +44,6 @@ void ConvolReverbComponent::setupBarSlider (juce::Slider& slider, juce::Label& l
 
     addAndMakeVisible (slider);
     slider.setSliderStyle (juce::Slider::LinearBarVertical);
-    slider.setTextBoxStyle (juce::Slider::TextBoxBelow, false, 50, 15);
     slider.setRange (min, max);
     slider.setValue (def);
     slider.setTooltip (text);

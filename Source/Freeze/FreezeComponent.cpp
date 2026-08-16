@@ -191,6 +191,10 @@ FreezeComponent::FreezeComponent (Freeze& f,
                                   bool showTitle)
     : freeze (f), apvts (state), spectrumDisplay (f, freezeTint)
 {
+    // Tints this component's drop-down menus and tooltips; both are their own
+    // windows and cannot see the widget that opened them.
+    fxmeLookAndFeel.setAccentColour (freezeTint);
+
     addChildComponent (titleLabel);
     titleLabel.setVisible (showTitle);
     titleLabel.setText ("Freeze", juce::NotificationType::dontSendNotification);

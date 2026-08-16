@@ -19,6 +19,10 @@ void CompressorComponent::setSliderColours (juce::Slider& s, juce::Colour c)
 CompressorComponent::CompressorComponent (Compressor& comp, juce::AudioProcessorValueTreeState& state, const juce::String& prefix, bool showTitle)
     : compressor (comp), apvts (state)
 {
+    // Tints this component's combo-box drop-downs; a menu is its own window
+    // and cannot see the box that opened it.
+    fxmeLookAndFeel.setAccentColour (juce::Colours::red);
+
     addAndMakeVisible (onButton);
     onButton.setButtonText ("On");
     onButton.setLookAndFeel(&fxmeLookAndFeel);
@@ -41,6 +45,7 @@ CompressorComponent::CompressorComponent (Compressor& comp, juce::AudioProcessor
     setupBarSlider (gainSlider, gainLabel, "Gain (dB)", -24.0, 24.0, 0.0);
 
     addAndMakeVisible (relModeBox);
+    relModeBox.setLookAndFeel (&fxmeLookAndFeel);
     relModeBox.addItem ("Linear",  1);
     relModeBox.addItem ("Opto",    2);
     relModeBox.addItem ("Vintage", 3);
@@ -93,9 +98,9 @@ void CompressorComponent::setupBarSlider (fxme::FxmeSlider& slider, juce::Label&
 
     addAndMakeVisible (slider);
     slider.setSliderStyle (juce::Slider::LinearBarVertical);
-    slider.setTextBoxStyle (juce::Slider::TextBoxBelow, false, 50, 15);
     slider.setRange (min, max);
     slider.setValue (def);
+    slider.setCentralValue (0.0);   // bipolar ±dB: the bar grows from 0 dB
     slider.setTextValueSuffix ("dB");
     slider.setTooltip (text);
     slider.setLookAndFeel(&fxmeLookAndFeel);

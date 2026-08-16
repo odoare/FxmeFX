@@ -77,7 +77,7 @@ void CabComponent::setupGainSlider (fxme::FxmeSlider& slider, juce::Label& label
     slider.setName (text);
     slider.setTooltip (text);
     slider.setTextValueSuffix (" dB");
-    slider.getProperties().set ("drawFromCentre", true);   // bipolar ±dB
+    slider.setCentralValue (0.0);   // bipolar ±dB: the bar grows from 0 dB
     slider.setLookAndFeel (&fxmeLookAndFeel);
     setSliderColours (slider, cabTint);
 
