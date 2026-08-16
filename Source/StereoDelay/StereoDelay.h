@@ -9,6 +9,7 @@
 #pragma once
 
 #include <JuceHeader.h>
+#include <FxmeTools/dsp/Biquad.h>   // fxme::Biquad / fxme::BiquadCoeffs
 #include <vector>
 #include <atomic>
 
@@ -29,18 +30,9 @@ public:
     double getBPM() const { return currentBPM; }
 
 private:
-    struct Biquad
-    {
-        float b0 = 1.0f, b1 = 0.0f, b2 = 0.0f, a1 = 0.0f, a2 = 0.0f;
-        float z1 = 0.0f, z2 = 0.0f;
-        void reset() { z1 = 0.0f; z2 = 0.0f; }
-        float process(float in);
-    };
-
     void updateDelayTimes();
     void updateGains();
     void updateFilter();
-    void calcLowPass(Biquad& bq, float f, float q);
 
     double currentSampleRate = 44100.0;
     int maxDelaySamples = 0;
@@ -48,7 +40,7 @@ private:
     juce::AudioBuffer<float> delayBuffer;
     int writePos = 0;
 
-    Biquad filterL, filterR;
+    fxme::Biquad filterL, filterR;   // damping in the feedback path
 
     // Parameter cache
     float delayTimeLMs = 0.5f, delayTimeRMs = 0.5f; // Now in beats

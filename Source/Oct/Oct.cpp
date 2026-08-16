@@ -20,38 +20,6 @@ float Oct::onePoleCoef (float cutoffHz, double sampleRate)
     return 1.0f - std::exp (-2.0f * juce::MathConstants<float>::pi * fc / fs);
 }
 
-namespace
-{
-    // RBJ-cookbook biquad LPF, normalised by a0.
-    Oct::BiquadCoeffs makeLowpass (float fc, double sampleRate, float Q)
-    {
-        Oct::BiquadCoeffs c;
-        const float fs    = (float) sampleRate;
-        const float clamp = juce::jlimit (1.0f, 0.45f * fs, fc);
-        const float w     = 2.0f * juce::MathConstants<float>::pi * clamp / fs;
-        const float cs    = std::cos (w);
-        const float sn    = std::sin (w);
-        const float alpha = sn / (2.0f * juce::jmax (0.001f, Q));
-        const float a0    = 1.0f + alpha;
-
-        c.b0 = ((1.0f - cs) * 0.5f) / a0;
-        c.b1 = (1.0f - cs) / a0;
-        c.b2 = c.b0;
-        c.a1 = (-2.0f * cs) / a0;
-        c.a2 = (1.0f - alpha) / a0;
-        return c;
-    }
-
-    // Transposed Direct Form II — robust under coefficient changes.
-    inline float processBiquad (const Oct::BiquadCoeffs& c, float x, float& s1, float& s2)
-    {
-        const float y = c.b0 * x + s1;
-        s1 = c.b1 * x - c.a1 * y + s2;
-        s2 = c.b2 * x - c.a2 * y;
-        return y;
-    }
-}
-
 void Oct::prepare (double sampleRate, int numChannels)
 {
     currentSampleRate = sampleRate;
@@ -65,8 +33,18 @@ void Oct::updateCoefficients()
 {
     // 4th-order Butterworth LPF: two cascaded biquads with the standard
     // Butterworth Q values for a maximally-flat magnitude response.
-    detectBq1 = makeLowpass (detectFreqHz, currentSampleRate, 0.5411961f);
-    detectBq2 = makeLowpass (detectFreqHz, currentSampleRate, 1.3065630f);
+    detectCoeffs1 = fxme::BiquadCoeffs::lowpass (currentSampleRate, detectFreqHz, 0.5411961f);
+    detectCoeffs2 = fxme::BiquadCoeffs::lowpass (currentSampleRate, detectFreqHz, 1.3065630f);
+
+    // The coefficients are shared; the filter state is not. Copying them in
+    // leaves each channel's z1/z2 untouched, so a live cutoff move does not
+    // click. Cheap and allocation-free, which matters because a parameter
+    // change lands here from the audio thread.
+    for (auto& ch : channels)
+    {
+        ch.detectBq1.c = detectCoeffs1;
+        ch.detectBq2.c = detectCoeffs2;
+    }
 
     toneLpCoef      = onePoleCoef (toneFreqHz,             currentSampleRate);
     envAttackCoef   = onePoleCoef (1000.0f / envAttackMs,  currentSampleRate);
@@ -174,7 +152,19 @@ void Oct::process (juce::AudioBuffer<float>& buffer)
     const int numSamples  = buffer.getNumSamples();
 
     if ((int) channels.size() < numChannels)
+    {
+        const auto oldSize = channels.size();
         channels.resize ((size_t) numChannels);
+
+        // Fresh channels come up with identity coefficients, so seed them from
+        // the live set rather than recomputing (this path is on the audio
+        // thread; prepare() sizes generously so it should never be taken).
+        for (auto i = oldSize; i < channels.size(); ++i)
+        {
+            channels[i].detectBq1.c = detectCoeffs1;
+            channels[i].detectBq2.c = detectCoeffs2;
+        }
+    }
 
     for (int ch = 0; ch < numChannels; ++ch)
     {
@@ -199,8 +189,8 @@ void Oct::process (juce::AudioBuffer<float>& buffer)
             // 1-pole version: a 1-pole at 800 Hz on a bass note barely
             // attenuates the 2nd/3rd harmonic and lets them re-trigger the
             // comparator inside one period.
-            float lp = processBiquad (detectBq1, in, s.bq1s1, s.bq1s2);
-            lp       = processBiquad (detectBq2, lp, s.bq2s1, s.bq2s2);
+            float lp = s.detectBq1.processSample (in);
+            lp       = s.detectBq2.processSample (lp);
 
             // Envelope of the *detection* signal (NOT the raw input) — this
             // is the level the comparator actually sees and the right

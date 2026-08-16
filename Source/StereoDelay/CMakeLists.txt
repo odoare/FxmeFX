@@ -93,6 +93,8 @@ fxme_add_pd_external(FxmeStereoDelay_pd
         StereoDelay.cpp
     INCLUDES
         ${CMAKE_CURRENT_SOURCE_DIR}
+        # StereoDelay.cpp/.h use header-only <FxmeTools/dsp/Biquad.h>.
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../lib/FxmeTools
     DEFINES
         JucePlugin_Name="FxmeStereoDelay"
 )

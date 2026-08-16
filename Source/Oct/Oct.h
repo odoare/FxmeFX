@@ -21,6 +21,7 @@
 #pragma once
 
 #include <JuceHeader.h>
+#include <FxmeTools/dsp/Biquad.h>   // fxme::Biquad / fxme::BiquadCoeffs
 #include <array>
 #include <atomic>
 #include <vector>
@@ -41,15 +42,6 @@ public:
     static void addParameters (std::vector<std::unique_ptr<juce::RangedAudioParameter>>& params,
                                const juce::String& prefix);
 
-    // 2nd-order biquad coefficients (TDF2). Two cascaded give the 4th-order
-    // Butterworth detection low-pass. Public so the .cpp's helper functions
-    // can reference it; it's a POD with no invariants worth hiding.
-    struct BiquadCoeffs
-    {
-        float b0 = 1.0f, b1 = 0.0f, b2 = 0.0f;
-        float a1 = 0.0f, a2 = 0.0f;
-    };
-
 private:
 
     struct ChannelState
@@ -57,9 +49,10 @@ private:
         // Pre-detection 4th-order Butterworth low-pass (two cascaded biquads).
         // 24 dB/oct is enough to suppress the 2nd/3rd harmonic of a bass note
         // when the cutoff is set just above the fundamental, so the comparator
-        // sees a near-sinusoid and toggles cleanly.
-        float bq1s1 = 0.0f, bq1s2 = 0.0f;
-        float bq2s1 = 0.0f, bq2s2 = 0.0f;
+        // sees a near-sinusoid and toggles cleanly. Each channel carries its
+        // own filter state; updateCoefficients() copies the shared coefficients
+        // into every one of them.
+        fxme::Biquad detectBq1, detectBq2;
 
         // Schmitt-trigger comparator state and the two toggle flip-flops.
         bool  schmittHigh = false;   // current comparator output
@@ -88,8 +81,8 @@ private:
     double currentSampleRate = 44100.0;
     bool   on = true;
 
-    // Live coefficients
-    BiquadCoeffs detectBq1, detectBq2;
+    // Live coefficients, shared by every channel's pair of biquads.
+    fxme::BiquadCoeffs detectCoeffs1, detectCoeffs2;
     int   refractorySamples = 0;
     float toneLpCoef       = 0.0f;
     float envAttackCoef    = 0.0f;

@@ -12,14 +12,6 @@ StereoDelay::StereoDelay()
 {
 }
 
-float StereoDelay::Biquad::process(float in)
-{
-    float out = in * b0 + z1;
-    z1 = in * b1 + z2 - a1 * out;
-    z2 = in * b2 - a2 * out;
-    return out;
-}
-
 void StereoDelay::prepare(double sampleRate, int samplesPerBlock)
 {
     currentSampleRate = sampleRate;
@@ -60,8 +52,8 @@ void StereoDelay::process(juce::AudioBuffer<float>& buffer)
         float feedbackR = delayedR * feedbackRGain + delayedL * crossFeedbackGain;
 
         // Apply filter to feedback
-        float filteredFeedbackL = filterL.process(feedbackL);
-        float filteredFeedbackR = filterR.process(feedbackR);
+        float filteredFeedbackL = filterL.processSample(feedbackL);
+        float filteredFeedbackR = filterR.processSample(feedbackR);
 
         // Write input + feedback to delay buffer
         delayWriteL[writePos] = juce::jlimit(-1.0f, 1.0f, channelDataL[i] + filteredFeedbackL);
@@ -207,20 +199,7 @@ void StereoDelay::updateGains()
 
 void StereoDelay::updateFilter()
 {
-    calcLowPass(filterL, filterCutoff, filterQ);
-    calcLowPass(filterR, filterCutoff, filterQ);
-}
-
-void StereoDelay::calcLowPass(Biquad& bq, float f, float q)
-{
-    float w0 = 2.0f * juce::MathConstants<float>::pi * f / (float)currentSampleRate;
-    float cos_w0 = std::cos(w0);
-    float alpha = std::sin(w0) / (2.0f * q);
-
-    float a0 = 1.0f + alpha;
-    bq.b0 = (1.0f - cos_w0) / 2.0f / a0;
-    bq.b1 = (1.0f - cos_w0) / a0;
-    bq.b2 = (1.0f - cos_w0) / 2.0f / a0;
-    bq.a1 = -2.0f * cos_w0 / a0;
-    bq.a2 = (1.0f - alpha) / a0;
+    const auto coeffs = fxme::BiquadCoeffs::lowpass(currentSampleRate, filterCutoff, filterQ);
+    filterL.c = coeffs;
+    filterR.c = coeffs;
 }
