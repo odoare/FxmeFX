@@ -3,15 +3,19 @@ cmake_minimum_required(VERSION 3.22)
 # Series version — single source of truth is Source/Common/Version.h.
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/FxmeVersion.cmake)
 
+# Both of these must be set before project(): the compiler probes run there,
+# so a CMAKE_OSX_ARCHITECTURES set afterwards gives a single-slice build that
+# still calls itself universal. 10.13 rather than 11.0 — 11.0 silently
+# excludes Catalina.
+if(APPLE)
+    set(CMAKE_OSX_DEPLOYMENT_TARGET "10.13" CACHE STRING "Minimum macOS deployment version")
+    set(CMAKE_OSX_ARCHITECTURES "arm64;x86_64" CACHE STRING "Target architectures")
+endif()
+
 project(FxmeFX VERSION ${FXMEFX_VERSION} LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
-if(APPLE)
-    set(CMAKE_OSX_DEPLOYMENT_TARGET "11.0" CACHE STRING "Minimum macOS deployment version")
-    set(CMAKE_OSX_ARCHITECTURES "arm64;x86_64" CACHE STRING "Target architectures")
-endif()
 
 # JUCE is expected as a sibling of this repo:
 #   ../JUCE/   (juce-framework/JUCE checkout)

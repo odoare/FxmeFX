@@ -5,15 +5,19 @@ cmake_minimum_required(VERSION 3.22)
 # has already done that — skip to keep targets unique.
 if(NOT COMMAND juce_add_plugin)
     include(${CMAKE_CURRENT_LIST_DIR}/../../cmake/FxmeVersion.cmake)
+
+    # Both of these must be set before project(): the compiler probes run
+    # there, so a later CMAKE_OSX_ARCHITECTURES gives a single-slice build.
+    # 10.13 rather than 11.0 — 11.0 silently excludes Catalina.
+    if(APPLE)
+        set(CMAKE_OSX_DEPLOYMENT_TARGET "10.13" CACHE STRING "Minimum macOS deployment version")
+        set(CMAKE_OSX_ARCHITECTURES "arm64;x86_64" CACHE STRING "Target architectures")
+    endif()
+
     project(FxmeCompressor VERSION ${FXMEFX_VERSION})
 
     set(CMAKE_CXX_STANDARD 17)
     set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
-    if(APPLE)
-        set(CMAKE_OSX_DEPLOYMENT_TARGET "11.0" CACHE STRING "Minimum macOS deployment version")
-        set(CMAKE_OSX_ARCHITECTURES "arm64;x86_64" CACHE STRING "Target architectures")
-    endif()
 
     add_subdirectory(../../../JUCE JUCE)
     include(${CMAKE_CURRENT_SOURCE_DIR}/../../lib/FxmeTools/cmake/FxmeTools.cmake)
