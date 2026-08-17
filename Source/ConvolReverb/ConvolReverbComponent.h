@@ -56,6 +56,7 @@ private:
 
     ImpulseResponsePlot irPlot;
     std::atomic<bool> graphNeedsUpdate { false };
+    int lastIrGeneration = -1;
 
     fxme::FxmeLookAndFeel fxmeLookAndFeel;
 

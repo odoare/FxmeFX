@@ -56,6 +56,7 @@ private:
 
     CabIRPlot irLPlot, irRPlot;
     std::atomic<bool> graphNeedsUpdate { true };
+    int lastIrGeneration = -1;
 
     using SliderAttachment   = juce::AudioProcessorValueTreeState::SliderAttachment;
     using ComboBoxAttachment = juce::AudioProcessorValueTreeState::ComboBoxAttachment;

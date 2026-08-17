@@ -17,33 +17,67 @@ ConvolReverb::ConvolReverb()
 
 ConvolReverb::~ConvolReverb()
 {
+    // Stop polling before anything it touches goes away.
+    poller.stopThread (500);
+
     if (apvtsRef != nullptr)
         apvtsRef->state.removeListener (this);
 }
 
 void ConvolReverb::prepare (double sampleRate, int samplesPerBlock)
 {
+    const bool rateChanged = (currentSampleRate != sampleRate);
     currentSampleRate = sampleRate;
-    engine.Reset();
+
+    {
+        const juce::ScopedLock sl (stageLock);
+        if (stage != nullptr)
+            stage->engine.Reset();
+    }
+
     // Headroom over the promised block size: process() has a guard that resizes
     // if a host hands over a bigger block than it announced, and that guard
     // allocates on the audio thread. Sizing generously here keeps it dormant.
     const int maxChannels = 4; // Pre-allocate for a maximum number of channels
     wdlInputBuffer.setSize(maxChannels, juce::jmax (4096, samplesPerBlock), false, true, true);
     wdlInputPtrs.resize(maxChannels);
+
+    // The impulse is resampled to the session rate, so a rate change has to
+    // rebuild it. Safe to do inline: the host is not calling process() yet.
+    if (rateChanged || stage == nullptr)
+    {
+        const juce::ScopedLock sl (lock);
+        updateModifiedIR();
+    }
+
+    if (! poller.isThreadRunning())
+        poller.startThread (juce::Thread::Priority::background);
 }
 
 void ConvolReverb::process (juce::AudioBuffer<float>& buffer)
 {
-    juce::ScopedLock sl (lock);
+    checkParameters(); // gains and on/off only — the IR is the loader's business
 
-    checkParameters(); // Update parameters before processing
-    
     if (!on) return;
+
+    // Try rather than wait: if the loader thread is mid-swap, leave this one
+    // block dry instead of blocking the audio thread. The swap is a pointer
+    // assignment, so in practice this never misses.
+    const juce::CriticalSection::ScopedTryLockType sl (stageLock);
+    if (! sl.isLocked() || stage == nullptr)
+    {
+        // Dry only, at its proper gain — the same thing the loop below does for
+        // samples the engine has no wet output for. Passing the buffer through
+        // untouched would leak dry at unity, and the default dry gain is -60 dB.
+        buffer.applyGain (dryGainLinear);
+        return;
+    }
+
+    auto& engine = stage->engine;
 
     int numSamples = buffer.getNumSamples();
     int numInputChannels = buffer.getNumChannels();
-    int numImpulseChannels = impulseBuffer.GetNumChannels();
+    int numImpulseChannels = stage->impulse.GetNumChannels();
     int channelsToProcess = juce::jmin(numInputChannels, numImpulseChannels);
 
     if (channelsToProcess == 0)
@@ -404,7 +438,7 @@ void ConvolReverb::updateModifiedIR()
     if (originalIR.getNumSamples() == 0)
     {
         modifiedIR.clear();
-        loadImpulseToEngine (modifiedIR); // Load empty IR
+        installStage (modifiedIR); // an empty impulse, so the wet path is silent
         return;
     }
 
@@ -479,12 +513,15 @@ void ConvolReverb::updateModifiedIR()
         modifiedIR.makeCopyOf(shapedIR);
     }
 
-    loadImpulseToEngine(modifiedIR);
+    installStage (modifiedIR);
 }
 
-void ConvolReverb::loadImpulseToEngine (const juce::AudioBuffer<float>& buffer)
+void ConvolReverb::installStage (const juce::AudioBuffer<float>& buffer)
 {
-    juce::ScopedLock sl (lock);
+    // Everything here allocates — the impulse buffer, and SetImpulse partitioning
+    // it into FFT blocks — so it all happens on a stage the audio thread cannot
+    // see yet. Only the handover at the end touches shared state.
+    auto next = std::make_unique<Stage>();
 
     int nch = buffer.getNumChannels();
     int len = buffer.getNumSamples();
@@ -495,10 +532,10 @@ void ConvolReverb::loadImpulseToEngine (const juce::AudioBuffer<float>& buffer)
         // Load a dummy silent impulse
         nch = 1;
         len = 1;
-        impulseBuffer.SetNumChannels (nch);
-        impulseBuffer.SetLength (len);
-        impulseBuffer.samplerate = currentSampleRate;
-        auto* dest = impulseBuffer.impulses[0].Get();
+        next->impulse.SetNumChannels (nch);
+        next->impulse.SetLength (len);
+        next->impulse.samplerate = currentSampleRate;
+        auto* dest = next->impulse.impulses[0].Get();
         dest[0] = 0.0;
     }
     else
@@ -507,24 +544,43 @@ void ConvolReverb::loadImpulseToEngine (const juce::AudioBuffer<float>& buffer)
         // channels; otherwise process() only convolves the left side of a
         // stereo input.
         const int engineChannels = (nch == 1) ? 2 : nch;
-        impulseBuffer.SetNumChannels (engineChannels);
-        impulseBuffer.SetLength (len);
-        impulseBuffer.samplerate = currentSampleRate;
+        next->impulse.SetNumChannels (engineChannels);
+        next->impulse.SetLength (len);
+        next->impulse.samplerate = currentSampleRate;
 
         for (int c = 0; c < engineChannels; ++c)
         {
-            auto* dest = impulseBuffer.impulses[c].Get();
+            auto* dest = next->impulse.impulses[c].Get();
             auto* src = buffer.getReadPointer (juce::jmin (c, nch - 1));
             for (int i = 0; i < len; ++i)
                 dest[i] = (WDL_FFT_REAL) src[i];
         }
     }
 
-    engine.SetImpulse (&impulseBuffer);
+    next->engine.SetImpulse (&next->impulse);
+
+    // Hand over. The outgoing stage is moved out under the lock but destroyed
+    // after it, so freeing several megabytes never widens the window in which
+    // the audio thread's try-lock could miss.
+    std::unique_ptr<Stage> outgoing;
+    {
+        const juce::ScopedLock sl (stageLock);
+        outgoing = std::move (stage);
+        stage    = std::move (next);
+    }
+
+    ++irGeneration;
 }
 
-void ConvolReverb::checkParameters()
+// Runs on the loader thread. Everything here can allocate, decode audio and
+// rebuild the engine; none of it may happen on the audio thread, which is why
+// process() no longer calls it.
+void ConvolReverb::serviceParameters()
 {
+    // One loader at a time, and never interleaved with the GUI dropping a new
+    // external IR in through setExternalIRFile().
+    const juce::ScopedLock sl (lock);
+
     // The state tree was replaced (preset/session load) or the external IR
     // data changed: if the External slot is and stays selected, the selection
     // parameter doesn't move, so force a reload of the (possibly different)
@@ -570,7 +626,13 @@ void ConvolReverb::checkParameters()
         setStartOffset(*startOffsetParam);
         lastStartOffset = *startOffsetParam;
     }
+}
 
+// Runs on the audio thread from process(): the two gains and the bypass, which
+// are a couple of multiplications and must track automation per block rather
+// than at the loader's polling rate.
+void ConvolReverb::checkParameters()
+{
     if (dryGainParam && *dryGainParam != lastDryGain)
     {
         dryGain = *dryGainParam;

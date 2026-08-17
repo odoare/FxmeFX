@@ -33,6 +33,11 @@ public:
 
     const juce::StringArray& getImpulseNames() const { return irNames; }
     juce::AudioBuffer<float> getModifiedIR() const;
+
+    /** Bumped every time a new impulse is installed. The GUI watches it to know
+        when getModifiedIR() has something new: loading is asynchronous now, so a
+        control change arrives before the audio it selected does. */
+    int getIrGeneration() const noexcept { return irGeneration.load(); }
     int getCurrentImpulseIndex() const { return currentIndex; }
     float getCurrentLengthRatio() const { return currentLengthRatio; }
     int getCurrentShapeType() const { return currentShapeType; }
@@ -58,19 +63,63 @@ public:
     void assignParameters (juce::AudioProcessorValueTreeState& apvts, const juce::String& prefix);
     static void addParameters (std::vector<std::unique_ptr<juce::RangedAudioParameter>>& params, const juce::String& prefix, int numIRs = 0);
 
-    // Poll APVTS parameters and reload the IR / update the modified buffer when
-    // anything has changed.  Called from process() on the audio thread, but also
-    // safe to call from the GUI timer when the component needs an up-to-date IR
-    // snapshot for drawing (the GUI-side instance has its own lock).
+    // Applies the cheap parameters (on/off and the two gains) — no allocation,
+    // no locking, safe from process(). Everything that needs an IR reload is
+    // handled by the loader thread instead; see serviceParameters().
     void checkParameters();
 
 private:
-    // WDL Engine
-    WDL_ImpulseBuffer impulseBuffer;
-    WDL_ConvolutionEngine_Div engine;
+    // A fully prepared convolution stage: an impulse and an engine that has
+    // already partitioned it. Building one decodes audio, resamples and runs
+    // the engine's FFT setup, all of which allocates — so it is built on the
+    // loader thread and handed to the audio thread as a finished object.
+    struct Stage
+    {
+        WDL_ImpulseBuffer impulse;
+        WDL_ConvolutionEngine_Div engine;
+    };
+
+    /** What process() convolves with. Guarded by stageLock, which is held just
+        long enough to swap the pointer: the audio thread try-locks it and skips
+        a single block in the rare event that a swap is in flight, rather than
+        waiting for one (it used to wait for a whole IR load). */
+    std::unique_ptr<Stage> stage;
+    mutable juce::CriticalSection stageLock;
+    std::atomic<int> irGeneration { 0 };
+
+    /** Serialises everything to do with loading — originalIR, modifiedIR, the
+        external path, and building a new Stage. Taken by the loader thread and
+        by the GUI; never by the audio thread. */
     mutable juce::CriticalSection lock;
+
     juce::AudioBuffer<WDL_FFT_REAL> wdlInputBuffer;
     std::vector<WDL_FFT_REAL*> wdlInputPtrs;
+
+    /** Polls the IR-selection parameters off the audio thread. A plain thread
+        rather than an AsyncUpdater because this has to work with no editor open
+        and with no message loop at all — the Pd external initialises JUCE but
+        never pumps one, so async callbacks would never arrive there. */
+    class ParameterPoller : public juce::Thread
+    {
+    public:
+        explicit ParameterPoller (ConvolReverb& o)
+            : juce::Thread ("FxmeConvolReverb IR loader"), owner (o) {}
+
+        void run() override
+        {
+            while (! threadShouldExit())
+            {
+                owner.serviceParameters();
+                wait (20);   // a user or automation move lands within a frame
+            }
+        }
+
+    private:
+        ConvolReverb& owner;
+    };
+
+    ParameterPoller poller { *this };
+    void serviceParameters();
 
     double currentSampleRate = 44100.0;
 
@@ -124,8 +173,8 @@ private:
     void loadResource (const juce::String& resourceName);
     void loadExternalIR(); // Loads the external IR file from externalPath
     void loadIRFromReader (juce::AudioFormatReader& reader);
-    void updateModifiedIR(); // Applies length/shape to originalIR and loads into wdlReverb
-    void loadImpulseToEngine (const juce::AudioBuffer<float>& buffer);
+    void updateModifiedIR(); // Applies length/shape to originalIR and installs it
+    void installStage (const juce::AudioBuffer<float>& buffer);
     void updateGains();
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ConvolReverb)

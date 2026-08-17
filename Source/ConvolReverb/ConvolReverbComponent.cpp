@@ -358,9 +358,12 @@ void ConvolReverbComponent::openExternalIRChooser()
 
 void ConvolReverbComponent::timerCallback()
 {
-    if (graphNeedsUpdate.exchange(false))
+    // Redraw when a control moved, and again when the loader thread has actually
+    // published the IR it selected — the two are a frame or so apart.
+    const int generation = reverb.getIrGeneration();
+    if (graphNeedsUpdate.exchange(false) || generation != lastIrGeneration)
     {
-        reverb.checkParameters();
+        lastIrGeneration = generation;
         irPlot.updateGraph();
         irPlot.repaint();
     }

@@ -153,9 +153,12 @@ CabComponent::~CabComponent() = default;
 
 void CabComponent::timerCallback()
 {
-    if (graphNeedsUpdate.exchange (false))
+    // Redraw when a control moved, and again when the loader thread has actually
+    // published the IRs it selected — the two are a frame or so apart.
+    const int generation = cab.getIrGeneration();
+    if (graphNeedsUpdate.exchange (false) || generation != lastIrGeneration)
     {
-        cab.checkParameters();
+        lastIrGeneration = generation;
         irLPlot.updateGraph();
         irRPlot.updateGraph();
     }

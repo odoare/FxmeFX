@@ -14,12 +14,21 @@ Cab::Cab()
     updateGain();
 }
 
-Cab::~Cab() = default;
+Cab::~Cab()
+{
+    // Stop polling before anything it touches goes away.
+    poller.stopThread (500);
+}
 
 void Cab::prepare (double sampleRate, int samplesPerBlock)
 {
     currentSampleRate = sampleRate;
-    engine.Reset();
+
+    {
+        const juce::ScopedLock sl (stageLock);
+        if (stage != nullptr)
+            stage->engine.Reset();
+    }
 
     // Headroom over the promised block size: process() has a guard that resizes
     // if a host hands over a bigger block than it announced, and that guard
@@ -28,20 +37,42 @@ void Cab::prepare (double sampleRate, int samplesPerBlock)
     wdlInputBuffer.setSize (maxChannels, juce::jmax (4096, samplesPerBlock), false, true, true);
     wdlInputPtrs.resize (maxChannels);
 
-    rebuildEngineImpulse();
+    // The IRs are resampled to the session rate, so rebuild for the new one.
+    // Safe to do inline: the host is not calling process() yet.
+    {
+        const juce::ScopedLock sl (lock);
+        rebuildEngineImpulse();
+    }
+
+    if (! poller.isThreadRunning())
+        poller.startThread (juce::Thread::Priority::background);
 }
 
 void Cab::process (juce::AudioBuffer<float>& buffer)
 {
-    juce::ScopedLock sl (lock);
-    checkParameters();
+    checkParameters();   // gains and on/off only — the IRs are the loader's business
 
     if (! on)
         return;
 
+    // Try rather than wait: if the loader thread is mid-swap, leave this one
+    // block dry instead of blocking the audio thread. The swap is a pointer
+    // assignment, so in practice this never misses.
+    const juce::CriticalSection::ScopedTryLockType sl (stageLock);
+    if (! sl.isLocked() || stage == nullptr)
+    {
+        // Silence, not the dry input: a cabinet emulation is 100 % wet, so
+        // leaking un-cabbed signal for a block would be far more audible than
+        // a gap. Same reasoning as the trailing-samples loop below.
+        buffer.clear();
+        return;
+    }
+
+    auto& engine = stage->engine;
+
     const int numSamples       = buffer.getNumSamples();
     const int numInputChannels = buffer.getNumChannels();
-    const int numImpulseCh     = impulseBuffer.GetNumChannels();
+    const int numImpulseCh     = stage->impulse.GetNumChannels();
     const int channelsToProcess = juce::jmin (numInputChannels, numImpulseCh);
     if (channelsToProcess == 0)
         return;
@@ -273,7 +304,10 @@ void Cab::loadIRFromReader (int channel, juce::AudioFormatReader& reader)
 
 void Cab::rebuildEngineImpulse()
 {
-    juce::ScopedLock sl (lock);
+    // Everything here allocates — the impulse buffer, and SetImpulse partitioning
+    // it into FFT blocks — so it all happens on a stage the audio thread cannot
+    // see yet. Only the handover at the end touches shared state.
+    auto next = std::make_unique<Stage>();
 
     const int lenL = monoIR[0].getNumSamples();
     const int lenR = monoIR[1].getNumSamples();
@@ -283,21 +317,22 @@ void Cab::rebuildEngineImpulse()
     {
         // Engine refuses zero-length impulses; load a single silent sample
         // so process() can still run safely while no IR is selected.
-        impulseBuffer.SetNumChannels (1);
-        impulseBuffer.SetLength (1);
-        impulseBuffer.samplerate = currentSampleRate;
-        impulseBuffer.impulses[0].Get()[0] = 0.0;
-        engine.SetImpulse (&impulseBuffer);
+        next->impulse.SetNumChannels (1);
+        next->impulse.SetLength (1);
+        next->impulse.samplerate = currentSampleRate;
+        next->impulse.impulses[0].Get()[0] = 0.0;
+        next->engine.SetImpulse (&next->impulse);
+        publishStage (std::move (next));
         return;
     }
 
-    impulseBuffer.SetNumChannels (NumSlots);
-    impulseBuffer.SetLength (len);
-    impulseBuffer.samplerate = currentSampleRate;
+    next->impulse.SetNumChannels (NumSlots);
+    next->impulse.SetLength (len);
+    next->impulse.samplerate = currentSampleRate;
 
     for (int c = 0; c < NumSlots; ++c)
     {
-        auto* dst = impulseBuffer.impulses[c].Get();
+        auto* dst = next->impulse.impulses[c].Get();
         const auto* src = monoIR[(size_t) c].getReadPointer (0);
         const int n = monoIR[(size_t) c].getNumSamples();
         for (int i = 0; i < n; ++i)
@@ -306,16 +341,30 @@ void Cab::rebuildEngineImpulse()
             dst[i] = 0.0;
     }
 
-    engine.SetImpulse (&impulseBuffer);
+    next->engine.SetImpulse (&next->impulse);
+    publishStage (std::move (next));
 }
 
-void Cab::checkParameters()
+void Cab::publishStage (std::unique_ptr<Stage> next)
 {
-    if (onParam && *onParam != lastOn)
+    // The outgoing stage is moved out under the lock but destroyed after it, so
+    // freeing several megabytes never widens the window in which the audio
+    // thread's try-lock could miss.
+    std::unique_ptr<Stage> outgoing;
     {
-        setOn (*onParam > 0.5f);
-        lastOn = *onParam;
+        const juce::ScopedLock sl (stageLock);
+        outgoing = std::move (stage);
+        stage    = std::move (next);
     }
+
+    ++irGeneration;
+}
+
+// Runs on the loader thread: selecting an IR decodes a WAV, resamples it and
+// rebuilds the engine, none of which may happen on the audio thread.
+void Cab::serviceParameters()
+{
+    const juce::ScopedLock sl (lock);
 
     if (irLParam && (int) *irLParam != lastIRL)
     {
@@ -329,6 +378,18 @@ void Cab::checkParameters()
         const int idx = (int) *irRParam - 1;
         selectImpulse (1, idx);
         lastIRR = (int) *irRParam;
+    }
+}
+
+// Runs on the audio thread from process(): the gains and the bypass, which are
+// a couple of multiplications and must track automation per block rather than
+// at the loader's polling rate.
+void Cab::checkParameters()
+{
+    if (onParam && *onParam != lastOn)
+    {
+        setOn (*onParam > 0.5f);
+        lastOn = *onParam;
     }
 
     for (size_t c = 0; c < (size_t) NumSlots; ++c)
