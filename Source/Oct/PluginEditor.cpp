@@ -26,7 +26,7 @@ FxmeOctAudioProcessorEditor::~FxmeOctAudioProcessorEditor() = default;
 
 void FxmeOctAudioProcessorEditor::paint (juce::Graphics& g)
 {
-    fxmefx::paintTintedBackground (g, getLocalBounds().toFloat(), juce::Colour::fromRGB (140, 100, 220));
+    fxme::paintTintedBackground (g, getLocalBounds().toFloat(), juce::Colour::fromRGB (140, 100, 220));
 }
 
 void FxmeOctAudioProcessorEditor::resized()

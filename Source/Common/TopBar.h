@@ -31,38 +31,10 @@ constexpr int kTopBarHeight = 44;
 constexpr float kHeaderRowHeight = 40.0f;
 constexpr float kOnButtonWidth   = 60.0f;
 
-// Near-black background with just a whisper of the plugin's accent colour —
-// same restrained, dark feel as Spread's backdrop.
-inline void paintTintedBackground (juce::Graphics& g, juce::Rectangle<float> bounds, juce::Colour accent)
-{
-    const auto topColour    = juce::Colours::black.interpolatedWith (accent, 0.05f);
-    const auto bottomColour = juce::Colours::black.interpolatedWith (accent, 0.02f);
-    juce::ColourGradient grad (bottomColour, bounds.getBottomLeft(),
-                               topColour, bounds.getTopRight(), false);
-    g.setGradientFill (grad);
-    g.fillRect (bounds);
-}
-
-// Same near-black/whisper-of-accent treatment, but along the component's
-// corner-to-corner diagonal — for the embeddable effect Components' own
-// paint(), which is what actually fills a plugin window (the standalone
-// editor's flat background above sits entirely behind it).
-inline void paintComponentBackground (juce::Graphics& g, juce::Rectangle<float> bounds, juce::Colour accent)
-{
-    const auto diagonale     = bounds.getTopLeft() - bounds.getBottomRight();
-    const auto length        = diagonale.getDistanceFromOrigin();
-    const auto perpendicular = diagonale.rotatedAboutOrigin (juce::degreesToRadians (270.0f)) / length;
-    const auto height        = (bounds.getWidth() * bounds.getHeight()) / length;
-
-    const auto darkBase     = juce::Colour (0xff181818);
-    const auto lightCorner = darkBase.interpolatedWith (accent, 0.14f);
-    const auto darkCorner  = darkBase.interpolatedWith (accent, 0.05f);
-
-    juce::ColourGradient grad (darkCorner,  perpendicular *  height,
-                               lightCorner, perpendicular * -height, false);
-    g.setGradientFill (grad);
-    g.fillRect (bounds);
-}
+// The two house backdrops now live in FxmeTools as fxme::paintTintedBackground
+// and fxme::paintComponentBackground (lookandfeels/PanelBackground.h), so every
+// FX-Mechanics plugin shares them. Only this bar, which embeds FxmeFX's own logo
+// and series version, is still project-specific.
 
 class TopBar : public juce::Component
 {

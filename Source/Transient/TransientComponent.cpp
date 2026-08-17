@@ -102,7 +102,7 @@ void TransientComponent::setupBarSlider (fxme::FxmeSlider& slider, juce::Label& 
 
 void TransientComponent::paint (juce::Graphics& g)
 {
-    fxmefx::paintComponentBackground (g, getLocalBounds().toFloat(), juce::Colours::red);
+    fxme::paintComponentBackground (g, getLocalBounds().toFloat(), juce::Colours::red);
 }
 
 void TransientComponent::resized()

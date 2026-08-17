@@ -140,7 +140,7 @@ void PhaserComponent::timerCallback()
 
 void PhaserComponent::paint (juce::Graphics& g)
 {
-    fxmefx::paintComponentBackground (g, getLocalBounds().toFloat(), phaserTint);
+    fxme::paintComponentBackground (g, getLocalBounds().toFloat(), phaserTint);
 }
 
 void PhaserComponent::resized()

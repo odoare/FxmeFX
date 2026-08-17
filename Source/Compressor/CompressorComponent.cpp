@@ -109,7 +109,7 @@ void CompressorComponent::setupBarSlider (fxme::FxmeSlider& slider, juce::Label&
 
 void CompressorComponent::paint (juce::Graphics& g)
 {
-    fxmefx::paintComponentBackground (g, getLocalBounds().toFloat(), juce::Colours::red);
+    fxme::paintComponentBackground (g, getLocalBounds().toFloat(), juce::Colours::red);
 }
 
 void CompressorComponent::resized()

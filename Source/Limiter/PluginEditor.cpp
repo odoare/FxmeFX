@@ -28,7 +28,7 @@ FxmeLimiterAudioProcessorEditor::~FxmeLimiterAudioProcessorEditor()
 
 void FxmeLimiterAudioProcessorEditor::paint (juce::Graphics& g)
 {
-    fxmefx::paintTintedBackground (g, getLocalBounds().toFloat(), juce::Colours::orange);
+    fxme::paintTintedBackground (g, getLocalBounds().toFloat(), juce::Colours::orange);
 }
 
 void FxmeLimiterAudioProcessorEditor::resized()

@@ -137,7 +137,7 @@ void FlangerComponent::timerCallback()
 
 void FlangerComponent::paint (juce::Graphics& g)
 {
-    fxmefx::paintComponentBackground (g, getLocalBounds().toFloat(), flangerTint);
+    fxme::paintComponentBackground (g, getLocalBounds().toFloat(), flangerTint);
 }
 
 void FlangerComponent::resized()

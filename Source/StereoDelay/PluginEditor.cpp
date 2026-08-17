@@ -26,7 +26,7 @@ FxmeStereoDelayAudioProcessorEditor::~FxmeStereoDelayAudioProcessorEditor() = de
 
 void FxmeStereoDelayAudioProcessorEditor::paint (juce::Graphics& g)
 {
-    fxmefx::paintTintedBackground (g, getLocalBounds().toFloat(), juce::Colours::green);
+    fxme::paintTintedBackground (g, getLocalBounds().toFloat(), juce::Colours::green);
 }
 
 void FxmeStereoDelayAudioProcessorEditor::resized()

@@ -219,7 +219,7 @@ FreezeComponent::~FreezeComponent() = default;
 
 void FreezeComponent::paint (juce::Graphics& g)
 {
-    fxmefx::paintComponentBackground (g, getLocalBounds().toFloat(), freezeTint);
+    fxme::paintComponentBackground (g, getLocalBounds().toFloat(), freezeTint);
 }
 
 void FreezeComponent::resized()

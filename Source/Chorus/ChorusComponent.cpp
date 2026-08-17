@@ -133,7 +133,7 @@ void ChorusComponent::timerCallback()
 
 void ChorusComponent::paint (juce::Graphics& g)
 {
-    fxmefx::paintComponentBackground (g, getLocalBounds().toFloat(), chorusTint);
+    fxme::paintComponentBackground (g, getLocalBounds().toFloat(), chorusTint);
 }
 
 void ChorusComponent::resized()

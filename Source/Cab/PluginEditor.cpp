@@ -26,7 +26,7 @@ FxmeCabAudioProcessorEditor::~FxmeCabAudioProcessorEditor() = default;
 
 void FxmeCabAudioProcessorEditor::paint (juce::Graphics& g)
 {
-    fxmefx::paintTintedBackground (g, getLocalBounds().toFloat(), juce::Colours::orange);
+    fxme::paintTintedBackground (g, getLocalBounds().toFloat(), juce::Colours::orange);
 }
 
 void FxmeCabAudioProcessorEditor::resized()

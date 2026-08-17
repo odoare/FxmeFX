@@ -26,7 +26,7 @@ FxmeTransientAudioProcessorEditor::~FxmeTransientAudioProcessorEditor() = defaul
 
 void FxmeTransientAudioProcessorEditor::paint (juce::Graphics& g)
 {
-    fxmefx::paintTintedBackground (g, getLocalBounds().toFloat(), juce::Colours::red);
+    fxme::paintTintedBackground (g, getLocalBounds().toFloat(), juce::Colours::red);
 }
 
 void FxmeTransientAudioProcessorEditor::resized()

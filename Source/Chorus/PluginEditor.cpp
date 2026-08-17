@@ -31,7 +31,7 @@ FxmeChorusAudioProcessorEditor::~FxmeChorusAudioProcessorEditor() = default;
 
 void FxmeChorusAudioProcessorEditor::paint (juce::Graphics& g)
 {
-    fxmefx::paintTintedBackground (g, getLocalBounds().toFloat(), chorusTint);
+    fxme::paintTintedBackground (g, getLocalBounds().toFloat(), chorusTint);
 }
 
 void FxmeChorusAudioProcessorEditor::resized()

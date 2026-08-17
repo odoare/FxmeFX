@@ -647,7 +647,7 @@ EqualizerComponent::~EqualizerComponent()
 
 void EqualizerComponent::paint (juce::Graphics& g)
 {
-    fxmefx::paintComponentBackground (g, getLocalBounds().toFloat(), juce::Colours::cyan);
+    fxme::paintComponentBackground (g, getLocalBounds().toFloat(), juce::Colours::cyan);
 }
 
 void EqualizerComponent::resized()

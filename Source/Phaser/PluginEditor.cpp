@@ -31,7 +31,7 @@ FxmePhaserAudioProcessorEditor::~FxmePhaserAudioProcessorEditor() = default;
 
 void FxmePhaserAudioProcessorEditor::paint (juce::Graphics& g)
 {
-    fxmefx::paintTintedBackground (g, getLocalBounds().toFloat(), phaserTint);
+    fxme::paintTintedBackground (g, getLocalBounds().toFloat(), phaserTint);
 }
 
 void FxmePhaserAudioProcessorEditor::resized()

@@ -28,7 +28,7 @@ FxmeCompressorAudioProcessorEditor::~FxmeCompressorAudioProcessorEditor()
 
 void FxmeCompressorAudioProcessorEditor::paint (juce::Graphics& g)
 {
-    fxmefx::paintTintedBackground (g, getLocalBounds().toFloat(), juce::Colours::red);
+    fxme::paintTintedBackground (g, getLocalBounds().toFloat(), juce::Colours::red);
 }
 
 void FxmeCompressorAudioProcessorEditor::resized()

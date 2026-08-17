@@ -26,7 +26,7 @@ FxmeEqualizerAudioProcessorEditor::~FxmeEqualizerAudioProcessorEditor() = defaul
 
 void FxmeEqualizerAudioProcessorEditor::paint (juce::Graphics& g)
 {
-    fxmefx::paintTintedBackground (g, getLocalBounds().toFloat(), juce::Colours::cyan);
+    fxme::paintTintedBackground (g, getLocalBounds().toFloat(), juce::Colours::cyan);
 }
 
 void FxmeEqualizerAudioProcessorEditor::resized()

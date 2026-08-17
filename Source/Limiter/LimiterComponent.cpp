@@ -68,7 +68,7 @@ void LimiterComponent::setupSlider (fxme::FxmeSlider& slider, const juce::String
 
 void LimiterComponent::paint (juce::Graphics& g)
 {
-    fxmefx::paintComponentBackground (g, getLocalBounds().toFloat(), juce::Colours::orange);
+    fxme::paintComponentBackground (g, getLocalBounds().toFloat(), juce::Colours::orange);
 }
 
 void LimiterComponent::resized()

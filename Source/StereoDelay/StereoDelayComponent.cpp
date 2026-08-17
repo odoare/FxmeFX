@@ -119,12 +119,13 @@ StereoDelayComponent::StereoDelayComponent(StereoDelay& d, juce::AudioProcessorV
 
     startTimer(100);
 
+    // No suffix on the two delay knobs: the number is unitless now, and what it
+    // means is the matching Mode's business. The read-out beside the mode boxes
+    // is what says how long the delay actually is.
     setupSlider(delayLSlider, delayLLabel, "Delay L");
-    delayLSlider.setTextValueSuffix(" bt");
     delayLSlider.setAttachment(new juce::AudioProcessorValueTreeState::SliderAttachment(apvts, prefix + "_Del_DelayL", delayLSlider));
 
     setupSlider(delayRSlider, delayRLabel, "Delay R");
-    delayRSlider.setTextValueSuffix(" bt");
     delayRSlider.setAttachment(new juce::AudioProcessorValueTreeState::SliderAttachment(apvts, prefix + "_Del_DelayR", delayRSlider));
 
     setupSlider(fdbkLSlider, fdbkLLabel, "Fdbk L");
@@ -162,7 +163,7 @@ StereoDelayComponent::~StereoDelayComponent()
 
 void StereoDelayComponent::paint(juce::Graphics& g)
 {
-    fxmefx::paintComponentBackground (g, getLocalBounds().toFloat(), juce::Colours::green);
+    fxme::paintComponentBackground (g, getLocalBounds().toFloat(), juce::Colours::green);
 }
 
 void StereoDelayComponent::resized()

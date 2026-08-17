@@ -368,7 +368,7 @@ void ConvolReverbComponent::timerCallback()
 
 void ConvolReverbComponent::paint (juce::Graphics& g)
 {
-    fxmefx::paintComponentBackground (g, getLocalBounds().toFloat(), juce::Colours::yellowgreen);
+    fxme::paintComponentBackground (g, getLocalBounds().toFloat(), juce::Colours::yellowgreen);
 }
 
 void ConvolReverbComponent::resized()

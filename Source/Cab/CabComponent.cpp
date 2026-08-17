@@ -163,7 +163,7 @@ void CabComponent::timerCallback()
 
 void CabComponent::paint (juce::Graphics& g)
 {
-    fxmefx::paintComponentBackground (g, getLocalBounds().toFloat(), cabTint);
+    fxme::paintComponentBackground (g, getLocalBounds().toFloat(), cabTint);
 }
 
 void CabComponent::resized()

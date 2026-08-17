@@ -31,7 +31,7 @@ FxmeFlangerAudioProcessorEditor::~FxmeFlangerAudioProcessorEditor() = default;
 
 void FxmeFlangerAudioProcessorEditor::paint (juce::Graphics& g)
 {
-    fxmefx::paintTintedBackground (g, getLocalBounds().toFloat(), flangerTint);
+    fxme::paintTintedBackground (g, getLocalBounds().toFloat(), flangerTint);
 }
 
 void FxmeFlangerAudioProcessorEditor::resized()

@@ -77,7 +77,7 @@ OctComponent::~OctComponent() = default;
 
 void OctComponent::paint (juce::Graphics& g)
 {
-    fxmefx::paintComponentBackground (g, getLocalBounds().toFloat(), octTint);
+    fxme::paintComponentBackground (g, getLocalBounds().toFloat(), octTint);
 }
 
 void OctComponent::resized()

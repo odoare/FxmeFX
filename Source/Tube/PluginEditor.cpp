@@ -26,7 +26,7 @@ FxmeTubeAudioProcessorEditor::~FxmeTubeAudioProcessorEditor() = default;
 
 void FxmeTubeAudioProcessorEditor::paint (juce::Graphics& g)
 {
-    fxmefx::paintTintedBackground (g, getLocalBounds().toFloat(), juce::Colours::orange);
+    fxme::paintTintedBackground (g, getLocalBounds().toFloat(), juce::Colours::orange);
 }
 
 void FxmeTubeAudioProcessorEditor::resized()

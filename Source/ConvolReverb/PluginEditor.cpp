@@ -26,7 +26,7 @@ FxmeConvolReverbAudioProcessorEditor::~FxmeConvolReverbAudioProcessorEditor() = 
 
 void FxmeConvolReverbAudioProcessorEditor::paint (juce::Graphics& g)
 {
-    fxmefx::paintTintedBackground (g, getLocalBounds().toFloat(), juce::Colours::yellowgreen);
+    fxme::paintTintedBackground (g, getLocalBounds().toFloat(), juce::Colours::yellowgreen);
 }
 
 void FxmeConvolReverbAudioProcessorEditor::resized()

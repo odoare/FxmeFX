@@ -116,7 +116,7 @@ void TubeComponent::setupBarSlider (fxme::FxmeSlider& slider, juce::Label& label
 
 void TubeComponent::paint (juce::Graphics& g)
 {
-    fxmefx::paintComponentBackground (g, getLocalBounds().toFloat(), juce::Colours::orange);
+    fxme::paintComponentBackground (g, getLocalBounds().toFloat(), juce::Colours::orange);
 }
 
 void TubeComponent::resized()
