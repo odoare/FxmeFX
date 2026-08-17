@@ -44,7 +44,8 @@ OctComponent::OctComponent (Oct& o,
                             juce::AudioProcessorValueTreeState& state,
                             const juce::String& prefix,
                             bool showTitle)
-    : oct (o), apvts (state)
+    : oct (o), apvts (state),
+      onButton (state, prefix + "_Oct_On", "On", octTint)
 {
     // Tints this component's drop-down menus and tooltips; both are their own
     // windows and cannot see the widget that opened them.
@@ -57,10 +58,7 @@ OctComponent::OctComponent (Oct& o,
     titleLabel.setFont (juce::Font (juce::FontOptions (16.0f, juce::Font::bold)));
 
     addAndMakeVisible (onButton);
-    onButton.setButtonText ("On");
-    onButton.setColour (juce::ToggleButton::tickColourId, octTint);
     onButton.setLookAndFeel (&fxmeLookAndFeel);
-    onAtt = std::make_unique<ButtonAttachment> (apvts, prefix + "_Oct_On", onButton);
 
     setupRotary (drySlider,    dryLabel,    "Dry",    -60.0, 12.0,  0.0,   " dB");
     setupRotary (oct1Slider,   oct1Label,   "-1 Oct", -60.0, 12.0, -6.0,   " dB");

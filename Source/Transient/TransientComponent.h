@@ -27,16 +27,14 @@ private:
     Transient& transientFx;
     juce::AudioProcessorValueTreeState& apvts;
 
-    juce::ToggleButton onButton;
+    fxme::FxmeButton onButton;
     juce::Label titleLabel;
     juce::ComboBox characterBox;
     VuMeterComponent gainMeter;
     juce::Label preGainLabel, attackLabel, sustainLabel, gainLabel;
     fxme::FxmeSlider preGainSlider, attackSlider, sustainSlider, gainSlider;
 
-    using ButtonAttachment   = juce::AudioProcessorValueTreeState::ButtonAttachment;
     using ComboBoxAttachment = juce::AudioProcessorValueTreeState::ComboBoxAttachment;
-    std::unique_ptr<ButtonAttachment>   onAtt;
     std::unique_ptr<ComboBoxAttachment> characterAtt;
 
     void setupSlider (fxme::FxmeSlider& slider, juce::Label& label, const juce::String& text, double min, double max, double def);

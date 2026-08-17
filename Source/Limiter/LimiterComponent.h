@@ -27,13 +27,10 @@ private:
     Limiter& limiter;
     juce::AudioProcessorValueTreeState& apvts;
 
-    juce::ToggleButton onButton;
+    fxme::FxmeButton onButton;
     juce::Label titleLabel;
     VuMeterComponent grMeter;
     fxme::FxmeSlider driveSlider, ceilingSlider, releaseSlider;
-
-    using ButtonAttachment = juce::AudioProcessorValueTreeState::ButtonAttachment;
-    std::unique_ptr<ButtonAttachment> onAtt;
 
     void setupSlider (fxme::FxmeSlider& slider, const juce::String& text, double min, double max, double def);
     void setSliderColours (juce::Slider& s, juce::Colour c);

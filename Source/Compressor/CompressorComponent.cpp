@@ -17,17 +17,15 @@ void CompressorComponent::setSliderColours (juce::Slider& s, juce::Colour c)
 }
 
 CompressorComponent::CompressorComponent (Compressor& comp, juce::AudioProcessorValueTreeState& state, const juce::String& prefix, bool showTitle)
-    : compressor (comp), apvts (state)
+    : compressor (comp), apvts (state),
+      onButton (state, prefix + "_Comp_On", "On", juce::Colours::red)
 {
     // Tints this component's combo-box drop-downs; a menu is its own window
     // and cannot see the box that opened it.
     fxmeLookAndFeel.setAccentColour (juce::Colours::red);
 
     addAndMakeVisible (onButton);
-    onButton.setButtonText ("On");
     onButton.setLookAndFeel(&fxmeLookAndFeel);
-    onButton.setColour(juce::ToggleButton::tickColourId, juce::Colours::red);
-    onAtt = std::make_unique<ButtonAttachment> (apvts, prefix + "_Comp_On", onButton);
 
     addChildComponent (titleLabel);
     titleLabel.setVisible (showTitle);

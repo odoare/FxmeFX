@@ -58,7 +58,9 @@ PhaserComponent::PhaserComponent (Phaser& p,
                                   juce::AudioProcessorValueTreeState& state,
                                   const juce::String& prefix,
                                   bool showTitle)
-    : phaser (p), apvts (state)
+    : phaser (p), apvts (state),
+      onButton   (state, prefix + "_Phaser_On",   "On",   phaserTint),
+      syncButton (state, prefix + "_Phaser_Sync", "Sync", phaserTint)
 {
     // Tints this component's combo-box drop-downs; a menu is its own window
     // and cannot see the box that opened it.
@@ -71,19 +73,13 @@ PhaserComponent::PhaserComponent (Phaser& p,
     titleLabel.setFont (juce::Font (juce::FontOptions (16.0f, juce::Font::bold)));
 
     addAndMakeVisible (onButton);
-    onButton.setButtonText ("On");
-    onButton.setColour (juce::ToggleButton::tickColourId, phaserTint);
     onButton.setLookAndFeel (&fxmeLookAndFeel);
-    onAtt = std::make_unique<ButtonAttachment> (apvts, prefix + "_Phaser_On", onButton);
 
     addAndMakeVisible (syncButton);
-    syncButton.setButtonText ("Sync");
-    syncButton.setTooltip ("Sync. \n Locks the LFO to the host tempo: the rate becomes the "
-                           "musical division on the right, and the sweep is re-anchored to "
-                           "the timeline on every block while the transport rolls.");
-    syncButton.setColour (juce::ToggleButton::tickColourId, phaserTint);
     syncButton.setLookAndFeel (&fxmeLookAndFeel);
-    syncAtt = std::make_unique<ButtonAttachment> (apvts, prefix + "_Phaser_Sync", syncButton);
+    syncButton.button.setTooltip ("Sync. \n Locks the LFO to the host tempo: the rate becomes the "
+                                  "musical division on the right, and the sweep is re-anchored to "
+                                  "the timeline on every block while the transport rolls.");
 
     setupCombo (shapeBox,  shapeLabel,  "Shape",  fxme::Lfo::shapeChoices());
     setupCombo (stagesBox, stagesLabel, "Stages", Phaser::stageChoices());

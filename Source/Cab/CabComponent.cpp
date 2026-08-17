@@ -91,6 +91,7 @@ CabComponent::CabComponent (Cab& c,
                                     const juce::String& prefix,
                                     bool showTitle)
     : cab (c), apvts (state),
+      onButton (state, prefix + "_Cab_On", "On", cabTint),
       irLPlot (c, 0, cabTint),
       irRPlot (c, 1, cabTint.brighter (0.4f))
 {
@@ -105,10 +106,7 @@ CabComponent::CabComponent (Cab& c,
     titleLabel.setFont (juce::Font (juce::FontOptions (16.0f, juce::Font::bold)));
 
     addAndMakeVisible (onButton);
-    onButton.setButtonText ("On");
-    onButton.setColour (juce::ToggleButton::tickColourId, cabTint);
     onButton.setLookAndFeel (&fxmeLookAndFeel);
-    onAtt = std::make_unique<ButtonAttachment> (apvts, prefix + "_Cab_On", onButton);
 
     auto fillCombo = [&] (juce::ComboBox& box)
     {

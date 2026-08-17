@@ -66,16 +66,13 @@ private:
     juce::AudioProcessorValueTreeState& apvts;
 
     juce::Label        titleLabel;
-    juce::ToggleButton onButton;
+    fxme::FxmeButton onButton;
 
     SpectrumDisplay  spectrumDisplay;
     fxme::FxmeSlider mixSlider, widthSlider;
     juce::Label      mixLabel, widthLabel;
 
     using SliderAttachment = juce::AudioProcessorValueTreeState::SliderAttachment;
-    using ButtonAttachment = juce::AudioProcessorValueTreeState::ButtonAttachment;
-
-    std::unique_ptr<ButtonAttachment> onAtt;
 
     void setupRotary (fxme::FxmeSlider& slider, juce::Label& label,
                       const juce::String& text, double min, double max, double def,

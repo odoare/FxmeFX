@@ -37,7 +37,7 @@ private:
     juce::AudioProcessorValueTreeState& apvts;
 
     juce::Label        titleLabel;
-    juce::ToggleButton onButton, syncButton;
+    fxme::FxmeButton onButton, syncButton;
 
     juce::ComboBox shapeBox, stagesBox, divBox;
     juce::Label    shapeLabel, stagesLabel, divLabel;
@@ -46,10 +46,8 @@ private:
                      widthSlider, mixSlider, outSlider;
 
     using SliderAttachment   = juce::AudioProcessorValueTreeState::SliderAttachment;
-    using ButtonAttachment   = juce::AudioProcessorValueTreeState::ButtonAttachment;
     using ComboBoxAttachment = juce::AudioProcessorValueTreeState::ComboBoxAttachment;
 
-    std::unique_ptr<ButtonAttachment>   onAtt, syncAtt;
     std::unique_ptr<ComboBoxAttachment> shapeAtt, stagesAtt, divAtt;
 
     std::atomic<float>* syncParam = nullptr;

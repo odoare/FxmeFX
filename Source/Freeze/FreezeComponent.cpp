@@ -189,7 +189,9 @@ FreezeComponent::FreezeComponent (Freeze& f,
                                   juce::AudioProcessorValueTreeState& state,
                                   const juce::String& prefix,
                                   bool showTitle)
-    : freeze (f), apvts (state), spectrumDisplay (f, freezeTint)
+    : freeze (f), apvts (state),
+      onButton (state, prefix + "_Freeze_On", "On", freezeTint),
+      spectrumDisplay (f, freezeTint)
 {
     // Tints this component's drop-down menus and tooltips; both are their own
     // windows and cannot see the widget that opened them.
@@ -202,10 +204,7 @@ FreezeComponent::FreezeComponent (Freeze& f,
     titleLabel.setFont (juce::Font (juce::FontOptions (16.0f, juce::Font::bold)));
 
     addAndMakeVisible (onButton);
-    onButton.setButtonText ("On");
-    onButton.setColour (juce::ToggleButton::tickColourId, freezeTint);
     onButton.setLookAndFeel (&fxmeLookAndFeel);
-    onAtt = std::make_unique<ButtonAttachment> (apvts, prefix + "_Freeze_On", onButton);
 
     addAndMakeVisible (spectrumDisplay);
 

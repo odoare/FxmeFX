@@ -48,7 +48,8 @@ void StereoDelayComponent::setupBarSlider(juce::Slider& slider, juce::Label& lab
 }
 
 StereoDelayComponent::StereoDelayComponent(StereoDelay& d, juce::AudioProcessorValueTreeState& state, const juce::String& prefix, bool showTitle)
-    : delay(d), apvts(state)
+    : delay(d), apvts(state),
+      onButton (state, prefix + "_Del_On", "On", juce::Colours::green)
 {
     // Tints this component's drop-down menus and tooltips; both are their own
     // windows and cannot see the widget that opened them.
@@ -61,10 +62,7 @@ StereoDelayComponent::StereoDelayComponent(StereoDelay& d, juce::AudioProcessorV
     titleLabel.setFont(juce::Font (juce::FontOptions (16.0f, juce::Font::bold)));
 
     addAndMakeVisible (onButton);
-    onButton.setButtonText ("On");
-    onButton.setColour(juce::ToggleButton::tickColourId, juce::Colours::green);
     onButton.setLookAndFeel(&fxmeLookAndFeel);
-    onAtt = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (apvts, prefix + "_Del_On", onButton);
 
     addAndMakeVisible(bpmLabel);
     bpmLabel.setJustificationType(juce::Justification::centredRight);

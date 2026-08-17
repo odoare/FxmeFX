@@ -58,7 +58,9 @@ ChorusComponent::ChorusComponent (Chorus& c,
                                   juce::AudioProcessorValueTreeState& state,
                                   const juce::String& prefix,
                                   bool showTitle)
-    : chorus (c), apvts (state)
+    : chorus (c), apvts (state),
+      onButton   (state, prefix + "_Chorus_On",   "On",   chorusTint),
+      syncButton (state, prefix + "_Chorus_Sync", "Sync", chorusTint)
 {
     // Tints this component's combo-box drop-downs; a menu is its own window
     // and cannot see the box that opened it.
@@ -71,19 +73,13 @@ ChorusComponent::ChorusComponent (Chorus& c,
     titleLabel.setFont (juce::Font (juce::FontOptions (16.0f, juce::Font::bold)));
 
     addAndMakeVisible (onButton);
-    onButton.setButtonText ("On");
-    onButton.setColour (juce::ToggleButton::tickColourId, chorusTint);
     onButton.setLookAndFeel (&fxmeLookAndFeel);
-    onAtt = std::make_unique<ButtonAttachment> (apvts, prefix + "_Chorus_On", onButton);
 
     addAndMakeVisible (syncButton);
-    syncButton.setButtonText ("Sync");
-    syncButton.setTooltip ("Sync. \n Locks the LFO to the host tempo: the rate becomes the "
-                           "musical division on the right, and the sweep is re-anchored to "
-                           "the timeline on every block while the transport rolls.");
-    syncButton.setColour (juce::ToggleButton::tickColourId, chorusTint);
     syncButton.setLookAndFeel (&fxmeLookAndFeel);
-    syncAtt = std::make_unique<ButtonAttachment> (apvts, prefix + "_Chorus_Sync", syncButton);
+    syncButton.button.setTooltip ("Sync. \n Locks the LFO to the host tempo: the rate becomes the "
+                                  "musical division on the right, and the sweep is re-anchored to "
+                                  "the timeline on every block while the transport rolls.");
 
     setupCombo (shapeBox, shapeLabel, "Shape", fxme::Lfo::shapeChoices());
     setupCombo (divBox,   divLabel,   "Div",   fxme::Lfo::syncDivisionChoices());

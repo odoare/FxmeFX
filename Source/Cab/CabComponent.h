@@ -46,7 +46,7 @@ private:
     juce::AudioProcessorValueTreeState& apvts;
 
     juce::Label        titleLabel;
-    juce::ToggleButton onButton;
+    fxme::FxmeButton onButton;
 
     juce::Label    irLLabel, irRLabel;
     juce::ComboBox irLBox, irRBox;
@@ -58,10 +58,8 @@ private:
     std::atomic<bool> graphNeedsUpdate { true };
 
     using SliderAttachment   = juce::AudioProcessorValueTreeState::SliderAttachment;
-    using ButtonAttachment   = juce::AudioProcessorValueTreeState::ButtonAttachment;
     using ComboBoxAttachment = juce::AudioProcessorValueTreeState::ComboBoxAttachment;
 
-    std::unique_ptr<ButtonAttachment>   onAtt;
     std::unique_ptr<ComboBoxAttachment> irLAtt, irRAtt;
 
     fxme::FxmeLookAndFeel fxmeLookAndFeel;

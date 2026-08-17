@@ -119,10 +119,13 @@ private:
     juce::AudioProcessorValueTreeState& apvts;
     const int numBands;
 
-    juce::ToggleButton onButton;
-    juce::Label        titleLabel;
+    fxme::FxmeButton onButton;
+    juce::Label      titleLabel;
 
-    std::array<juce::ToggleButton, Equalizer::MaxBands> bandOnButton;
+    // FxmeButton binds its parameter in the constructor and is non-copyable,
+    // so the per-band buttons cannot be a plain array of objects: only the
+    // first numBands entries are created, the rest stay null.
+    std::array<std::unique_ptr<fxme::FxmeButton>, Equalizer::MaxBands> bandOnButton;
     std::array<juce::ComboBox,     Equalizer::MaxBands> bandType;
     std::array<fxme::FxmeSlider,   Equalizer::MaxBands> bandFreq;
     std::array<fxme::FxmeSlider,   Equalizer::MaxBands> bandQ;
@@ -133,11 +136,8 @@ private:
     FrequencyResponseGraph responseGraph;
 
     using SliderAttachment   = juce::AudioProcessorValueTreeState::SliderAttachment;
-    using ButtonAttachment   = juce::AudioProcessorValueTreeState::ButtonAttachment;
     using ComboBoxAttachment = juce::AudioProcessorValueTreeState::ComboBoxAttachment;
 
-    std::unique_ptr<ButtonAttachment> onAtt;
-    std::array<std::unique_ptr<ButtonAttachment>,   Equalizer::MaxBands> bandOnAtt;
     std::array<std::unique_ptr<ComboBoxAttachment>, Equalizer::MaxBands> bandTypeAtt;
 
     fxme::FxmeLookAndFeel fxmeLookAndFeel;

@@ -42,7 +42,7 @@ private:
     juce::AudioProcessorValueTreeState& apvts;
     const bool knobsInSingleRow;
 
-    juce::ToggleButton onButton;
+    fxme::FxmeButton onButton;
     juce::ComboBox modelBox;
     juce::Label titleLabel;
     juce::ImageComponent tubeImage;
@@ -50,7 +50,6 @@ private:
     fxme::FxmeSlider driveSlider, biasSlider, toneSlider, sagSlider;
     fxme::FxmeSlider outSlider;
 
-    std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> onAtt;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> modelAtt;
 
     void setupSlider (fxme::FxmeSlider& slider, juce::Label& label, const juce::String& text, double min, double max, double def);

@@ -189,7 +189,8 @@ void ImpulseResponsePlot::paint(juce::Graphics& g)
 }
 
 ConvolReverbComponent::ConvolReverbComponent (ConvolReverb& r, juce::AudioProcessorValueTreeState& state, const juce::String& pfx, bool showTitle)
-    : reverb (r), apvts (state), irPlot(r), prefix (pfx)
+    : reverb (r), apvts (state), irPlot(r), prefix (pfx),
+      onButton (state, pfx + "_Rev_On", "On", juce::Colours::yellow)
 {
     // Tints this component's combo-box drop-downs; a menu is its own window
     // and cannot see the box that opened it.
@@ -202,10 +203,7 @@ ConvolReverbComponent::ConvolReverbComponent (ConvolReverb& r, juce::AudioProces
     titleLabel.setFont (juce::Font (juce::FontOptions (16.0f, juce::Font::bold)));
 
     addAndMakeVisible (onButton);
-    onButton.setButtonText ("On");
-    onButton.setColour(juce::ToggleButton::tickColourId, juce::Colours::yellow);
     onButton.setLookAndFeel(&fxmeLookAndFeel);
-    onAtt = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (apvts, prefix + "_Rev_On", onButton);
 
     addAndMakeVisible (irLabel);
     irLabel.setText ("Impulse", juce::NotificationType::dontSendNotification);

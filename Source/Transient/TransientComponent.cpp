@@ -17,17 +17,15 @@ void TransientComponent::setSliderColours (juce::Slider& s, juce::Colour c)
 }
 
 TransientComponent::TransientComponent (Transient& t, juce::AudioProcessorValueTreeState& state, const juce::String& prefix, bool showTitle)
-    : transientFx (t), apvts (state)
+    : transientFx (t), apvts (state),
+      onButton (state, prefix + "_Trans_On", "On", juce::Colours::red)
 {
     // Tints this component's combo-box drop-downs; a menu is its own window
     // and cannot see the box that opened it.
     fxmeLookAndFeel.setAccentColour (juce::Colours::red);
 
     addAndMakeVisible (onButton);
-    onButton.setButtonText ("On");
     onButton.setLookAndFeel (&fxmeLookAndFeel);
-    onButton.setColour (juce::ToggleButton::tickColourId, juce::Colours::red);
-    onAtt = std::make_unique<ButtonAttachment> (apvts, prefix + "_Trans_On", onButton);
 
     addChildComponent (titleLabel);
     titleLabel.setVisible (showTitle);

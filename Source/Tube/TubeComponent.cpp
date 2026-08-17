@@ -17,22 +17,20 @@ void TubeComponent::setSliderColours (juce::Slider& s, juce::Colour c)
 }
 
 TubeComponent::TubeComponent (Tube& t, juce::AudioProcessorValueTreeState& state, const juce::String& prefix, bool showTitle, bool singleRow)
-    : tube (t), apvts (state), knobsInSingleRow (singleRow)
+    : tube (t), apvts (state), knobsInSingleRow (singleRow),
+      onButton (state, prefix + "_Tube_On", "On", juce::Colours::orange)
 {
     // Tints this component's combo-box drop-downs; a menu is its own window
     // and cannot see the box that opened it.
     fxmeLookAndFeel.setAccentColour (juce::Colours::orange);
 
     addAndMakeVisible (onButton);
-    onButton.setButtonText ("On");
     onButton.setLookAndFeel(&fxmeLookAndFeel);
-    onButton.setColour(juce::ToggleButton::tickColourId, juce::Colours::orange);
-    onAtt = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (apvts, prefix + "_Tube_On", onButton);
 
-    onButton.onClick = [this] {
+    onButton.button.onClick = [this] {
         int size = 0;
         const char* data = nullptr;
-        if (onButton.getToggleState())
+        if (onButton.button.getToggleState())
             data = BinaryData::getNamedResource("tube2_png", size);
         else
             data = BinaryData::getNamedResource("tube2_bw_png", size);
@@ -40,7 +38,7 @@ TubeComponent::TubeComponent (Tube& t, juce::AudioProcessorValueTreeState& state
         if (data)
             tubeImage.setImage(juce::ImageCache::getFromMemory(data, size));
     };
-    onButton.onClick();
+    onButton.button.onClick();   // sync the faceplate with the restored state
 
     addAndMakeVisible(tubeImage);
     tubeImage.toBack();

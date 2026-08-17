@@ -520,18 +520,16 @@ void EqualizerComponent::updateBandVisibility (int i)
 }
 
 EqualizerComponent::EqualizerComponent (Equalizer& eq, juce::AudioProcessorValueTreeState& state, const juce::String& prefix, bool showTitle)
-    : equalizer (eq), apvts (state), numBands (eq.getNumBands())
+    : equalizer (eq), apvts (state), numBands (eq.getNumBands()),
+      onButton (state, prefix + "_EQ_On", "On", juce::Colours::cyan)
 {
     // Tints this component's combo-box drop-downs; a menu is its own window
     // and cannot see the box that opened it.
     fxmeLookAndFeel.setAccentColour (juce::Colours::cyan);
 
     addAndMakeVisible (onButton);
-    onButton.setButtonText ("On");
     onButton.setLookAndFeel (&fxmeLookAndFeel);
-    onButton.setColour (juce::ToggleButton::tickColourId, juce::Colours::cyan);
-    onAtt = std::make_unique<ButtonAttachment> (apvts, prefix + "_EQ_On", onButton);
-    onButton.onClick = [this] { responseGraph.updateCurve(); };
+    onButton.button.onClick = [this] { responseGraph.updateCurve(); };
 
     addChildComponent (titleLabel);
     titleLabel.setVisible (showTitle);
@@ -580,13 +578,12 @@ EqualizerComponent::EqualizerComponent (Equalizer& eq, juce::AudioProcessorValue
         const auto cfg = Equalizer::getBandConfig (i, numBands);
         juce::String pid = prefix + "_EQ_" + cfg.suffix;
 
-        addAndMakeVisible (bandOnButton[i]);
-        bandOnButton[i].setButtonText (bandLabel (i));
-        bandOnButton[i].setLookAndFeel (&fxmeLookAndFeel);
-        bandOnButton[i].setColour (juce::ToggleButton::tickColourId, bandColours[i]);
-        bandOnButton[i].setTooltip (juce::String (cfg.suffix) + " band on/off");
-        bandOnAtt[i] = std::make_unique<ButtonAttachment> (apvts, pid + "_On", bandOnButton[i]);
-        bandOnButton[i].onClick = [this] { responseGraph.updateCurve(); };
+        bandOnButton[i] = std::make_unique<fxme::FxmeButton> (apvts, pid + "_On",
+                                                             bandLabel (i), bandColours[i]);
+        addAndMakeVisible (*bandOnButton[i]);
+        bandOnButton[i]->setLookAndFeel (&fxmeLookAndFeel);
+        bandOnButton[i]->button.setTooltip (juce::String (cfg.suffix) + " band on/off");
+        bandOnButton[i]->button.onClick = [this] { responseGraph.updateCurve(); };
 
         addAndMakeVisible (bandType[i]);
         bandType[i].setLookAndFeel (&fxmeLookAndFeel);
@@ -632,9 +629,9 @@ EqualizerComponent::EqualizerComponent (Equalizer& eq, juce::AudioProcessorValue
 
     std::array<FrequencyResponseGraph::BandRefs, Equalizer::MaxBands> refs;
     for (int i = 0; i < numBands; ++i)
-        refs[i] = { &bandOnButton[i], &bandType[i], &bandFreq[i], &bandQ[i], &bandGain[i],
+        refs[i] = { &bandOnButton[i]->button, &bandType[i], &bandFreq[i], &bandQ[i], &bandGain[i],
                     bandColours[i], bandLabel (i) };
-    responseGraph.setReferences (refs, numBands, postGainSlider, onButton);
+    responseGraph.setReferences (refs, numBands, postGainSlider, onButton.button);
 
     // Enable the live spectrum overlay only when the DSP instance provides it
     // (off for components embedded in other projects, on for the EQ effect).
@@ -673,7 +670,7 @@ void EqualizerComponent::resized()
     for (int i = 0; i < numBands; ++i)
     {
         columns[i].flexDirection = juce::FlexBox::Direction::column;
-        columns[i].items.add (fi (bandOnButton[i]).withHeight (20.f)
+        columns[i].items.add (fi (*bandOnButton[i]).withHeight (20.f)
                                                   .withMargin (juce::FlexItem::Margin (2.f)));
         columns[i].items.add (fi (bandType[i]).withFlex (0.35f).withMargin (juce::FlexItem::Margin (2.f)));
         // All three slider rows are always added so freq / Q / gain stay at the

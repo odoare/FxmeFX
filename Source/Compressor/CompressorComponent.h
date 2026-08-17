@@ -27,7 +27,7 @@ private:
     Compressor& compressor;
     juce::AudioProcessorValueTreeState& apvts;
 
-    juce::ToggleButton onButton;
+    fxme::FxmeButton onButton;
     juce::Label titleLabel;
     VuMeterComponent grMeter;
     juce::Label preGainLabel, attackLabel, releaseLabel, threshLabel, ratioLabel, gainLabel;
@@ -36,10 +36,8 @@ private:
     fxme::FxmeSlider kneeSlider, peakRmsSlider;
     juce::ComboBox relModeBox;
 
-    using ButtonAttachment   = juce::AudioProcessorValueTreeState::ButtonAttachment;
     using ComboBoxAttachment = juce::AudioProcessorValueTreeState::ComboBoxAttachment;
 
-    std::unique_ptr<ButtonAttachment>   onAtt;
     std::unique_ptr<ComboBoxAttachment> relModeAtt;
 
     void setupSlider (fxme::FxmeSlider& slider, juce::Label& label, const juce::String& text, double min, double max, double def);

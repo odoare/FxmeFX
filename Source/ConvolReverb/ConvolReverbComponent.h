@@ -38,7 +38,7 @@ private:
     juce::AudioProcessorValueTreeState& apvts;
 
     juce::Label titleLabel;
-    juce::ToggleButton onButton;
+    fxme::FxmeButton onButton;
 
     juce::ComboBox irBox;
     juce::Label irLabel;
@@ -52,7 +52,6 @@ private:
     juce::Label dryGainLabel, wetGainLabel;
 
     std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> irAtt;
-    std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> onAtt;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> shapeAtt;
 
     ImpulseResponsePlot irPlot;

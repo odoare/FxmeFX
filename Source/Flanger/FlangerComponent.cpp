@@ -58,7 +58,9 @@ FlangerComponent::FlangerComponent (Flanger& f,
                                     juce::AudioProcessorValueTreeState& state,
                                     const juce::String& prefix,
                                     bool showTitle)
-    : flanger (f), apvts (state)
+    : flanger (f), apvts (state),
+      onButton   (state, prefix + "_Flanger_On",   "On",   flangerTint),
+      syncButton (state, prefix + "_Flanger_Sync", "Sync", flangerTint)
 {
     // Tints this component's combo-box drop-downs; a menu is its own window
     // and cannot see the box that opened it.
@@ -71,19 +73,13 @@ FlangerComponent::FlangerComponent (Flanger& f,
     titleLabel.setFont (juce::Font (juce::FontOptions (16.0f, juce::Font::bold)));
 
     addAndMakeVisible (onButton);
-    onButton.setButtonText ("On");
-    onButton.setColour (juce::ToggleButton::tickColourId, flangerTint);
     onButton.setLookAndFeel (&fxmeLookAndFeel);
-    onAtt = std::make_unique<ButtonAttachment> (apvts, prefix + "_Flanger_On", onButton);
 
     addAndMakeVisible (syncButton);
-    syncButton.setButtonText ("Sync");
-    syncButton.setTooltip ("Sync. \n Locks the LFO to the host tempo: the rate becomes the "
-                           "musical division on the right, and the sweep is re-anchored to "
-                           "the timeline on every block while the transport rolls.");
-    syncButton.setColour (juce::ToggleButton::tickColourId, flangerTint);
     syncButton.setLookAndFeel (&fxmeLookAndFeel);
-    syncAtt = std::make_unique<ButtonAttachment> (apvts, prefix + "_Flanger_Sync", syncButton);
+    syncButton.button.setTooltip ("Sync. \n Locks the LFO to the host tempo: the rate becomes the "
+                                  "musical division on the right, and the sweep is re-anchored to "
+                                  "the timeline on every block while the transport rolls.");
 
     setupCombo (shapeBox, shapeLabel, "Shape", fxme::Lfo::shapeChoices());
     setupCombo (divBox,   divLabel,   "Div",   fxme::Lfo::syncDivisionChoices());

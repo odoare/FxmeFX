@@ -27,8 +27,7 @@ private:
     juce::AudioProcessorValueTreeState& apvts;
 
     juce::Label titleLabel;
-    juce::ToggleButton onButton;
-    std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> onAtt;
+    fxme::FxmeButton onButton;
 
     juce::Label bpmLabel;
     fxme::FxmeSlider delayLSlider, delayRSlider;
