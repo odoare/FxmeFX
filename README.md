@@ -16,7 +16,7 @@ drum kits).
 | FxmeEqualizer    | `EQUL`      | 5-band parametric EQ. Each band switches between Lowpass, Highpass, Peak, Low Shelf and High Shelf, with an interactive frequency-response graph. |
 | FxmeTube         | `TUBE`      | Valve / tube saturation with four models (Standard, Dynamic, Triode, Class-AB), bias, tone and power-supply sag. |
 | FxmeTransient    | `TRNS`      | SPL-style transient designer using the Differential Envelope Technique - independent attack and sustain shaping. |
-| FxmeStereoDelay  | `SDEL`      | Tempo-synced stereo delay with cross-feedback and a state-variable lowpass in the feedback path. |
+| FxmeStereoDelay  | `SDEL`      | Stereo delay with cross-feedback and a lowpass in the feedback path. Each side's delay time reads three ways, chosen per side: seconds, a proportion of a whole note locked to the host tempo, or a multiple of the period of the last MIDI note (which tunes the line to it). |
 | FxmeConvolReverb | `CREV`      | Convolution reverb (WDL engine) with six embedded impulse responses, length / shape / start-offset shaping, plus an "External…" slot for loading a user IR. |
 | FxmeCab          | `CABN`      | Stereo cabinet/IR loader. Two independent mono-IR slots (one per output channel), 19 embedded cabinet IRs, output gain. |
 | FxmeOct          | `OCTV`      | Boss OC-2-style monophonic octaver. Schmitt-trigger zero-crossing + ÷2 / ÷4 flip-flops, envelope-tracked square synthesis, dry / -1 oct / -2 oct mix, detection LPF and tone LPF. Zero latency, stable on bass. |
@@ -75,6 +75,23 @@ xattr -dr com.apple.quarantine ~/Library/Audio/Plug-Ins/Components/Fxme*.compone
 Then rescan in the host (Logic revalidates AUs on launch; most other hosts have
 a "rescan plugins" button). A host caches the module, so a reinstall over a
 running DAW needs a restart to take effect.
+
+## Sending MIDI to FxmeStereoDelay
+
+Only one plugin here reacts to MIDI: FxmeStereoDelay's "MIDI note" delay mode
+tunes each delay line to the last note received, so the line becomes a
+resonator. Every other plugin ignores MIDI entirely and needs none of this.
+
+Hosts do not route MIDI to an audio effect by default:
+
+- **Reaper**: the track's MIDI already reaches the FX chain, so nothing to do.
+- **Ableton Live**: Live will not send MIDI to an audio effect on an audio
+  track. Put the plugin on a MIDI track after an instrument, or use a second
+  track routed into the first.
+- **Bitwig**: add a Note Receiver, or drop the plugin on an instrument track.
+- **Logic**: the AU build is `kAudioUnitType_Effect`, which by the AU spec has
+  no MIDI input at all, so the MIDI-note mode is unavailable there. The
+  seconds and DAW-sync modes work normally. Use the VST3 if you need it.
 
 ## Pure Data externals
 
@@ -175,8 +192,8 @@ Attack/Sustain are signed amounts in percent (negative = attenuate, positive
 | Inlet | Parameter | Range | Default |
 |------:|-----------|-------|--------:|
 | 2  | On                 | 0 / 1                              | 1      |
-| 3  | Delay L (s)        | 0 … 2                              | 0.5    |
-| 4  | Delay R (s)        | 0 … 2                              | 0.75   |
+| 3  | Delay L            | 0 … 2                              | 0.5    |
+| 4  | Delay R            | 0 … 2                              | 0.75   |
 | 5  | Feedback L (dB)    | -60 … 6                            | -6     |
 | 6  | Feedback R (dB)    | -60 … 6                            | -6     |
 | 7  | Cross Feedback (dB)| -60 … 6                            | -60    |
@@ -184,6 +201,14 @@ Attack/Sustain are signed amounts in percent (negative = attenuate, positive
 | 9  | Filter Q           | 0.1 … 10                           | 0.707  |
 | 10 | Dry Gain (dB)      | -60 … 6                            | 0      |
 | 11 | Wet Gain (dB)      | -60 … 6                            | -6     |
+| 12 | Mode L             | 0 = seconds, 1 = sync, 2 = note    | 0      |
+| 13 | Mode R             | 0 = seconds, 1 = sync, 2 = note    | 0      |
+
+The two Delay inlets carry no unit of their own — the matching Mode inlet says
+how the number is read: seconds, a proportion of a whole note (0.25 being a
+quarter note), or a multiple of the period of the last MIDI note. The external
+receives no MIDI and no transport, so mode 1 assumes 120 BPM and mode 2 falls
+back to reading the value as seconds.
 
 ### `fxmeconvolreverb~`
 

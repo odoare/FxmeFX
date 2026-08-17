@@ -33,6 +33,19 @@ private:
     fxme::FxmeSlider delayLSlider, delayRSlider;
     juce::Label delayLLabel, delayRLabel;
 
+    // How each side reads its delay value, and what that currently comes to in
+    // milliseconds — without the read-out, "0.25" means nothing on its own.
+    juce::ComboBox modeLBox, modeRBox;
+    juce::Label    modeLLabel, modeRLabel;
+    juce::Label    resolvedLabel;
+    juce::String   resolvedText;
+
+    using ComboBoxAttachment = juce::AudioProcessorValueTreeState::ComboBoxAttachment;
+    std::unique_ptr<ComboBoxAttachment> modeLAtt, modeRAtt;
+
+    void setupCombo (juce::ComboBox& box, juce::Label& label, const juce::String& text);
+    juce::String resolvedTimeText() const;
+
     fxme::FxmeSlider fdbkLSlider, fdbkRSlider;
     juce::Label fdbkLLabel, fdbkRLabel;
 

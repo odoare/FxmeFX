@@ -39,7 +39,9 @@ juce::AudioProcessorValueTreeState::ParameterLayout FxmeStereoDelayAudioProcesso
 }
 
 const juce::String FxmeStereoDelayAudioProcessor::getName() const          { return JucePlugin_Name; }
-bool   FxmeStereoDelayAudioProcessor::acceptsMidi() const                  { return false; }
+// MIDI in, but only to know the last note played: the MIDI-note delay mode
+// tunes the line to it. See CMakeLists.txt for the AU-side caveat.
+bool   FxmeStereoDelayAudioProcessor::acceptsMidi() const                  { return true; }
 bool   FxmeStereoDelayAudioProcessor::producesMidi() const                 { return false; }
 bool   FxmeStereoDelayAudioProcessor::isMidiEffect() const                 { return false; }
 double FxmeStereoDelayAudioProcessor::getTailLengthSeconds() const         { return 4.0; }
@@ -68,7 +70,7 @@ bool FxmeStereoDelayAudioProcessor::isBusesLayoutSupported (const BusesLayout& l
 }
 #endif
 
-void FxmeStereoDelayAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer&)
+void FxmeStereoDelayAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midi)
 {
     juce::ScopedNoDenormals noDenormals;
     auto totalIn  = getTotalNumInputChannels();
@@ -81,6 +83,15 @@ void FxmeStereoDelayAudioProcessor::processBlock (juce::AudioBuffer<float>& buff
         if (auto pos = playHead->getPosition())
             if (auto bpm = pos->getBpm())
                 stereoDelay.setBPM (*bpm);
+    }
+
+    // The last note of the block wins: the MIDI-note delay mode tracks whatever
+    // was played most recently, and re-triggering the same note is a no-op.
+    for (const auto meta : midi)
+    {
+        const auto m = meta.getMessage();
+        if (m.isNoteOn())
+            stereoDelay.setLastNoteHz ((float) m.getMidiNoteInHertz (m.getNoteNumber()));
     }
 
     stereoDelay.checkParameters();
@@ -98,11 +109,11 @@ juce::AudioProcessorEditor* FxmeStereoDelayAudioProcessor::createEditor()
 }
 #endif
 
-// State format version, written as an attribute on the saved XML. Bump it
-// whenever this plugin's state layout changes and branch on it in
-// setStateInformation to migrate older sessions — a version cannot be added
-// retroactively to states that are already out there.
-static constexpr int kStateVersion = 1;
+// State format version, written as an attribute on the saved XML. Version 1
+// read both delay times as beats and had no mode parameters; version 2 reads
+// them under a per-side mode (seconds / DAW sync / MIDI note). States written
+// before versioning existed report 1, which is what the migration keys off.
+static constexpr int kStateVersion = 2;
 
 void FxmeStereoDelayAudioProcessor::getStateInformation (juce::MemoryBlock& destData)
 {
@@ -119,9 +130,13 @@ void FxmeStereoDelayAudioProcessor::setStateInformation (const void* data, int s
     if (auto xml = getXmlFromBinary (data, sizeInBytes))
         if (xml->hasTagName (apvts.state.getType()))
         {
-            // States written before versioning report 1. Nothing to migrate yet.
             const int stateVersion = xml->getIntAttribute ("stateVersion", 1);
-            juce::ignoreUnused (stateVersion);
+
+            // Version 1 stored the delay times as beats and knew no modes; put
+            // such a state into DAW-sync mode with rescaled values so it keeps
+            // the delay time it was saved with.
+            if (stateVersion < 2)
+                StereoDelay::migrateLegacyState (*xml, parameterPrefix);
 
             apvts.replaceState (juce::ValueTree::fromXml (*xml));
         }

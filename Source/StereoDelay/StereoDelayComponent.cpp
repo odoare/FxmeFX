@@ -47,6 +47,45 @@ void StereoDelayComponent::setupBarSlider(juce::Slider& slider, juce::Label& lab
     setSliderColours(slider, color);
 }
 
+void StereoDelayComponent::setupCombo (juce::ComboBox& box, juce::Label& label, const juce::String& text)
+{
+    addAndMakeVisible (label);
+    label.setText (text, juce::NotificationType::dontSendNotification);
+    label.setJustificationType (juce::Justification::centredRight);
+    label.setFont (juce::Font (juce::FontOptions (12.0f)));
+
+    addAndMakeVisible (box);
+    box.setLookAndFeel (&fxmeLookAndFeel);
+    box.addItemList (StereoDelay::delayModeChoices(), 1);
+    box.setTooltip ("How this side reads its delay value. \n Seconds: the value is "
+                    "the delay in seconds. \n DAW sync: a proportion of a whole note, "
+                    "so 0.25 is a quarter note. \n MIDI note: a multiple of the period "
+                    "of the last note played, so 1 tunes the line to it.");
+    box.setColour (juce::ComboBox::outlineColourId, juce::Colours::green.darker());
+    box.setColour (juce::ComboBox::arrowColourId,   juce::Colours::green.brighter (0.3f));
+}
+
+juce::String StereoDelayComponent::resolvedTimeText() const
+{
+    const auto ms = [this] (bool right)
+    {
+        return juce::String (delay.resolvedSeconds (right) * 1000.0f, 1) + " ms";
+    };
+
+    juce::String text = "L " + ms (false) + "    R " + ms (true);
+
+    // The note mode has nothing to lock to until something has been played, and
+    // silently reading the value as seconds would look like a bug.
+    const auto usesNote = [this] (const juce::ComboBox& box)
+    {
+        return box.getSelectedItemIndex() == (int) fxme::DelayTimeMode::notePeriod;
+    };
+    if ((usesNote (modeLBox) || usesNote (modeRBox)) && delay.getLastNoteHz() <= 0.0f)
+        text += "    (no MIDI note yet)";
+
+    return text;
+}
+
 StereoDelayComponent::StereoDelayComponent(StereoDelay& d, juce::AudioProcessorValueTreeState& state, const juce::String& prefix, bool showTitle)
     : delay(d), apvts(state),
       onButton (state, prefix + "_Del_On", "On", juce::Colours::green)
@@ -66,7 +105,19 @@ StereoDelayComponent::StereoDelayComponent(StereoDelay& d, juce::AudioProcessorV
 
     addAndMakeVisible(bpmLabel);
     bpmLabel.setJustificationType(juce::Justification::centredRight);
-    startTimer(200);
+
+    setupCombo (modeLBox, modeLLabel, "Mode L");
+    setupCombo (modeRBox, modeRLabel, "Mode R");
+    modeLAtt = std::make_unique<ComboBoxAttachment> (apvts, prefix + "_Del_ModeL", modeLBox);
+    modeRAtt = std::make_unique<ComboBoxAttachment> (apvts, prefix + "_Del_ModeR", modeRBox);
+
+    addAndMakeVisible (resolvedLabel);
+    resolvedLabel.setJustificationType (juce::Justification::centred);
+    resolvedLabel.setFont (juce::Font (juce::FontOptions (12.0f)));
+    resolvedText = resolvedTimeText();
+    resolvedLabel.setText (resolvedText, juce::NotificationType::dontSendNotification);
+
+    startTimer(100);
 
     setupSlider(delayLSlider, delayLLabel, "Delay L");
     delayLSlider.setTextValueSuffix(" bt");
@@ -118,15 +169,22 @@ void StereoDelayComponent::resized()
 {
     auto area = getLocalBounds().reduced(5);
     using fi = juce::FlexItem;
-    juce::FlexBox fMain, fTop, fSliders1, fSliders2;
+    juce::FlexBox fMain, fTop, fModes, fSliders1, fSliders2;
     fMain.flexDirection = juce::FlexBox::Direction::column;
     fTop.flexDirection = juce::FlexBox::Direction::row;
+    fModes.flexDirection = juce::FlexBox::Direction::row;
     fSliders1.flexDirection = juce::FlexBox::Direction::row;
     fSliders2.flexDirection = juce::FlexBox::Direction::row;
 
     fTop.items.add(fi(onButton).withWidth(fxmefx::kOnButtonWidth));
     fTop.items.add(fi(titleLabel).withFlex(1.f));
     fTop.items.add(fi(bpmLabel).withFlex(0.3f));
+
+    fModes.items.add (fi (modeLLabel).withWidth (52.0f));
+    fModes.items.add (fi (modeLBox)  .withFlex (1.0f).withMargin (juce::FlexItem::Margin (0.f, 12.f, 0.f, 4.f)));
+    fModes.items.add (fi (modeRLabel).withWidth (52.0f));
+    fModes.items.add (fi (modeRBox)  .withFlex (1.0f).withMargin (juce::FlexItem::Margin (0.f, 12.f, 0.f, 4.f)));
+    fModes.items.add (fi (resolvedLabel).withFlex (1.2f));
 
     auto barSliderBox = [](juce::FlexBox& box, juce::Label& label, juce::Slider& slider)
     {
@@ -151,7 +209,9 @@ void StereoDelayComponent::resized()
 
     fMain.items.add(fi(fTop).withHeight(fxmefx::kHeaderRowHeight)
                             .withMinHeight(fxmefx::kHeaderRowHeight)
-                            .withMargin(juce::FlexItem::Margin(5.f, 0.f, 8.f, 0.f)));
+                            .withMargin(juce::FlexItem::Margin(5.f, 0.f, 6.f, 0.f)));
+    fMain.items.add(fi(fModes).withHeight(26.f).withMinHeight(24.f)
+                              .withMargin(juce::FlexItem::Margin(0.f, 4.f, 6.f, 4.f)));
     fMain.items.add(fi(fSliders1).withFlex(0.85f));
     fMain.items.add(fi(fSliders2).withFlex(0.85f));
     
@@ -161,4 +221,12 @@ void StereoDelayComponent::resized()
 void StereoDelayComponent::timerCallback()
 {
     bpmLabel.setText(juce::String(delay.getBPM(), 1) + " BPM", juce::NotificationType::dontSendNotification);
+
+    // Only repaint the read-out when it actually changes: it follows the knobs,
+    // the transport tempo and the last note, so it moves on its own.
+    if (const auto text = resolvedTimeText(); text != resolvedText)
+    {
+        resolvedText = text;
+        resolvedLabel.setText (text, juce::NotificationType::dontSendNotification);
+    }
 }

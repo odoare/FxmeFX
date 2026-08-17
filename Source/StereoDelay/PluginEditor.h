@@ -17,7 +17,7 @@ class FxmeStereoDelayAudioProcessorEditor  : public juce::AudioProcessorEditor
 {
 public:
     static constexpr int kPreferredWidth  = 600;
-    static constexpr int kPreferredHeight = 300 + fxmefx::kTopBarHeight;
+    static constexpr int kPreferredHeight = 340 + fxmefx::kTopBarHeight;
 
     FxmeStereoDelayAudioProcessorEditor (FxmeStereoDelayAudioProcessor&);
     ~FxmeStereoDelayAudioProcessorEditor() override;

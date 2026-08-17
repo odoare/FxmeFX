@@ -9,7 +9,8 @@
 #pragma once
 
 #include <JuceHeader.h>
-#include <FxmeTools/dsp/Biquad.h>   // fxme::Biquad / fxme::BiquadCoeffs
+#include <FxmeTools/dsp/Biquad.h>              // fxme::Biquad / fxme::BiquadCoeffs
+#include <FxmeTools/dsp/DelayTimeResolver.h>   // fxme::DelayTimeResolver
 #include <vector>
 #include <atomic>
 
@@ -29,7 +30,35 @@ public:
     void setBPM(double bpm);
     double getBPM() const { return currentBPM; }
 
+    /** Pitch that the MIDI-note delay mode locks to. Fed from the note-ons of
+        the incoming MIDI; zero until something has played. */
+    void setLastNoteHz (float hz);
+    float getLastNoteHz() const { return lastNoteHz.load(); }
+
+    /** What a side's delay value currently comes to in seconds, under its own
+        mode and the current transport/pitch context. For the GUI read-out. */
+    float resolvedSeconds (bool rightSide) const;
+
+    /** Longest delay the lines are sized for. The sync and MIDI-note modes can
+        ask for far more than the time parameter's own 0…2 range suggests, so
+        the buffer has room beyond it and the resolver clamps to it. Six seconds
+        is three whole notes at 120 BPM. */
+    static constexpr float maxDelaySeconds = 6.0f;
+
+    /** Delay-mode choices, in the order they are stored as a choice index. */
+    static juce::StringArray delayModeChoices()
+    {
+        return { "Seconds", "DAW sync", "MIDI note" };
+    }
+
+    /** Version-1 state stored one meaning only: the time values were beats.
+        Re-points such a state at the DAW-sync mode and rescales the values,
+        which are now a proportion of a whole note rather than of a beat, so an
+        old session or preset keeps the delay time it was saved with. */
+    static void migrateLegacyState (juce::XmlElement& state, const juce::String& prefix);
+
 private:
+    fxme::DelayTimeResolver makeResolver() const;
     void updateDelayTimes();
     void updateGains();
     void updateFilter();
@@ -42,8 +71,13 @@ private:
 
     fxme::Biquad filterL, filterR;   // damping in the feedback path
 
-    // Parameter cache
-    float delayTimeLMs = 0.5f, delayTimeRMs = 0.5f; // Now in beats
+    // Parameter cache. The two delay values carry no unit of their own: what
+    // they mean is the matching mode's business (seconds, a proportion of a
+    // whole note, or a multiple of the last MIDI note's period).
+    float delayValueL = 0.5f, delayValueR = 0.75f;
+    fxme::DelayTimeMode modeL = fxme::DelayTimeMode::seconds;
+    fxme::DelayTimeMode modeR = fxme::DelayTimeMode::seconds;
+    std::atomic<float> lastNoteHz { 0.0f };
     float feedbackL = -6.0f, feedbackR = -6.0f;
     float crossFeedback = -60.0f;
     float filterCutoff = 5000.0f, filterQ = 1.0f;
@@ -71,9 +105,12 @@ private:
     std::atomic<float>* dryGainParam = nullptr;
     std::atomic<float>* wetGainParam = nullptr;
     std::atomic<float>* onParam = nullptr;
+    std::atomic<float>* modeLParam = nullptr;
+    std::atomic<float>* modeRParam = nullptr;
 
     // Last values for change detection
     float lastDelayL = -1.0f, lastDelayR = -1.0f;
+    float lastModeL = -1.0f, lastModeR = -1.0f;
     float lastFdbkL = -100.0f, lastFdbkR = -100.0f;
     float lastCrossFdbk = -100.0f;
     float lastCutoff = -1.0f, lastQ = -1.0f;

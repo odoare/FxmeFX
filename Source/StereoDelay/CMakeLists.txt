@@ -29,7 +29,12 @@ juce_add_plugin(FxmeStereoDelay
     PRODUCT_NAME                "FxmeStereoDelay"
     DESCRIPTION                 "FX-Mechanics Stereo Delay"
     IS_SYNTH                    FALSE
-    NEEDS_MIDI_INPUT            FALSE
+    # MIDI in feeds the "MIDI note" delay mode (the line is tuned to the last
+    # note played). NOTE: an AU of type kAudioUnitType_Effect cannot receive
+    # MIDI at all, so that mode works in VST3 and Standalone but not yet in the
+    # AU — making it work there means AU_MAIN_TYPE kAudioUnitType_MusicEffect,
+    # which changes the AU's identity and drops it out of existing sessions.
+    NEEDS_MIDI_INPUT            TRUE
     NEEDS_MIDI_OUTPUT           FALSE
     IS_MIDI_EFFECT              FALSE
     EDITOR_WANTS_KEYBOARD_FOCUS FALSE

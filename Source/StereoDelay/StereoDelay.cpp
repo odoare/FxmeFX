@@ -15,7 +15,7 @@ StereoDelay::StereoDelay()
 void StereoDelay::prepare(double sampleRate, int samplesPerBlock)
 {
     currentSampleRate = sampleRate;
-    maxDelaySamples = (int)(sampleRate * 2.0); // 2 seconds max delay
+    maxDelaySamples = (int)(sampleRate * (double) maxDelaySeconds);
     delayBuffer.setSize(2, maxDelaySamples, false, true, true);
     delayBuffer.clear();
     writePos = 0;
@@ -30,9 +30,20 @@ void StereoDelay::process(juce::AudioBuffer<float>& buffer)
 
     if (!on) return;
 
-    const int numSamples = buffer.getNumSamples();
+    const int numSamples  = buffer.getNumSamples();
+    const int numChannels = buffer.getNumChannels();
+    if (numChannels < 1)
+        return;
+
+    // isBusesLayoutSupported accepts mono, so a mono instance has to work here:
+    // there is no right channel to read or write, and cross feedback has
+    // nothing to cross to. (getWritePointer(1) on a mono buffer returns the
+    // null terminator of the channel array, so the old unconditional read of
+    // channel 1 crashed rather than degrading.)
+    const bool stereo = numChannels >= 2;
+
     auto* channelDataL = buffer.getWritePointer(0);
-    auto* channelDataR = buffer.getWritePointer(1);
+    auto* channelDataR = stereo ? buffer.getWritePointer(1) : nullptr;
     const auto* delayDataL = delayBuffer.getReadPointer(0);
     const auto* delayDataR = delayBuffer.getReadPointer(1);
     auto* delayWriteL = delayBuffer.getWritePointer(0);
@@ -42,26 +53,36 @@ void StereoDelay::process(juce::AudioBuffer<float>& buffer)
     {
         // Read from delay lines
         int readPosL = (writePos - delaySamplesL + maxDelaySamples) % maxDelaySamples;
-        int readPosR = (writePos - delaySamplesR + maxDelaySamples) % maxDelaySamples;
-
         float delayedL = delayDataL[readPosL];
-        float delayedR = delayDataR[readPosR];
 
-        // Calculate feedback with cross-feedback
-        float feedbackL = delayedL * feedbackLGain + delayedR * crossFeedbackGain;
-        float feedbackR = delayedR * feedbackRGain + delayedL * crossFeedbackGain;
+        if (stereo)
+        {
+            int readPosR = (writePos - delaySamplesR + maxDelaySamples) % maxDelaySamples;
+            float delayedR = delayDataR[readPosR];
 
-        // Apply filter to feedback
-        float filteredFeedbackL = filterL.processSample(feedbackL);
-        float filteredFeedbackR = filterR.processSample(feedbackR);
+            // Calculate feedback with cross-feedback
+            float feedbackL = delayedL * feedbackLGain + delayedR * crossFeedbackGain;
+            float feedbackR = delayedR * feedbackRGain + delayedL * crossFeedbackGain;
 
-        // Write input + feedback to delay buffer
-        delayWriteL[writePos] = juce::jlimit(-1.0f, 1.0f, channelDataL[i] + filteredFeedbackL);
-        delayWriteR[writePos] = juce::jlimit(-1.0f, 1.0f, channelDataR[i] + filteredFeedbackR);
+            // Apply filter to feedback
+            float filteredFeedbackL = filterL.processSample(feedbackL);
+            float filteredFeedbackR = filterR.processSample(feedbackR);
 
-        // Calculate output (dry + wet)
-        channelDataL[i] = channelDataL[i] * dryGainLinear + delayedL * wetGainLinear;
-        channelDataR[i] = channelDataR[i] * dryGainLinear + delayedR * wetGainLinear;
+            // Write input + feedback to delay buffer
+            delayWriteL[writePos] = juce::jlimit(-1.0f, 1.0f, channelDataL[i] + filteredFeedbackL);
+            delayWriteR[writePos] = juce::jlimit(-1.0f, 1.0f, channelDataR[i] + filteredFeedbackR);
+
+            // Calculate output (dry + wet)
+            channelDataL[i] = channelDataL[i] * dryGainLinear + delayedL * wetGainLinear;
+            channelDataR[i] = channelDataR[i] * dryGainLinear + delayedR * wetGainLinear;
+        }
+        else
+        {
+            float filteredFeedbackL = filterL.processSample(delayedL * feedbackLGain);
+
+            delayWriteL[writePos] = juce::jlimit(-1.0f, 1.0f, channelDataL[i] + filteredFeedbackL);
+            channelDataL[i] = channelDataL[i] * dryGainLinear + delayedL * wetGainLinear;
+        }
 
         writePos = (writePos + 1) % maxDelaySamples;
     }
@@ -86,6 +107,17 @@ void StereoDelay::addParameters(std::vector<std::unique_ptr<juce::RangedAudioPar
     params.push_back(std::make_unique<juce::AudioParameterFloat>(prefix + "_Del_FilterQ", prefix + " Del Filter Q", 0.1f, 10.0f, 0.707f));
     params.push_back(std::make_unique<juce::AudioParameterFloat>(prefix + "_Del_DryGain", prefix + " Del Dry Gain", -60.0f, 6.0f, 0.0f));
     params.push_back(std::make_unique<juce::AudioParameterFloat>(prefix + "_Del_WetGain", prefix + " Del Wet Gain", -60.0f, 6.0f, -6.0f));
+
+    // Appended at the tail on purpose: the Pd external exposes parameters as
+    // inlets in this order, so inserting anything earlier would renumber the
+    // inlets of every existing patch. versionHint 2: these arrived after the
+    // original parameter set, which read the delay times as beats.
+    params.push_back(std::make_unique<juce::AudioParameterChoice>(
+        juce::ParameterID { prefix + "_Del_ModeL", 2 }, prefix + " Del Mode L",
+        delayModeChoices(), (int) fxme::DelayTimeMode::seconds));
+    params.push_back(std::make_unique<juce::AudioParameterChoice>(
+        juce::ParameterID { prefix + "_Del_ModeR", 2 }, prefix + " Del Mode R",
+        delayModeChoices(), (int) fxme::DelayTimeMode::seconds));
 }
 
 void StereoDelay::assignParameters(juce::AudioProcessorValueTreeState& apvts, const juce::String& prefix)
@@ -100,20 +132,34 @@ void StereoDelay::assignParameters(juce::AudioProcessorValueTreeState& apvts, co
     dryGainParam = apvts.getRawParameterValue(prefix + "_Del_DryGain");
     wetGainParam = apvts.getRawParameterValue(prefix + "_Del_WetGain");
     onParam = apvts.getRawParameterValue(prefix + "_Del_On");
+    modeLParam = apvts.getRawParameterValue(prefix + "_Del_ModeL");
+    modeRParam = apvts.getRawParameterValue(prefix + "_Del_ModeR");
 }
 
 void StereoDelay::checkParameters()
 {
     if (delayLParam && *delayLParam != lastDelayL)
     {
-        delayTimeLMs = *delayLParam;
-        lastDelayL = delayTimeLMs;
+        delayValueL = *delayLParam;
+        lastDelayL = delayValueL;
         updateDelayTimes();
     }
     if (delayRParam && *delayRParam != lastDelayR)
     {
-        delayTimeRMs = *delayRParam;
-        lastDelayR = delayTimeRMs;
+        delayValueR = *delayRParam;
+        lastDelayR = delayValueR;
+        updateDelayTimes();
+    }
+    if (modeLParam && *modeLParam != lastModeL)
+    {
+        lastModeL = *modeLParam;
+        modeL = (fxme::DelayTimeMode) juce::jlimit (0, 2, (int) lastModeL);
+        updateDelayTimes();
+    }
+    if (modeRParam && *modeRParam != lastModeR)
+    {
+        lastModeR = *modeRParam;
+        modeR = (fxme::DelayTimeMode) juce::jlimit (0, 2, (int) lastModeR);
         updateDelayTimes();
     }
     if (fdbkLParam && *fdbkLParam != lastFdbkL)
@@ -174,18 +220,77 @@ void StereoDelay::setBPM(double bpm)
     }
 }
 
+fxme::DelayTimeResolver StereoDelay::makeResolver() const
+{
+    fxme::DelayTimeResolver resolver;
+    resolver.bpm        = currentBPM > 0.0 ? currentBPM : 120.0;
+    resolver.noteHz     = lastNoteHz.load();
+    resolver.maxSeconds = maxDelaySeconds;
+    return resolver;
+}
+
+float StereoDelay::resolvedSeconds (bool rightSide) const
+{
+    const auto resolver = makeResolver();
+    return rightSide ? resolver.toSeconds (delayValueR, modeR)
+                     : resolver.toSeconds (delayValueL, modeL);
+}
+
 void StereoDelay::updateDelayTimes()
 {
-    if (currentBPM <= 0.0) currentBPM = 120.0;
-    double secondsPerBeat = 60.0 / currentBPM;
+    const auto resolver = makeResolver();
 
-    delaySamplesL = (int)(delayTimeLMs * secondsPerBeat * currentSampleRate);
-    if (delaySamplesL < 1) delaySamplesL = 1;
-    if (delaySamplesL >= maxDelaySamples) delaySamplesL = maxDelaySamples - 1;
+    const auto toSamples = [this, &resolver] (float value, fxme::DelayTimeMode mode)
+    {
+        const int samples = (int) (resolver.toSeconds (value, mode) * currentSampleRate);
+        return juce::jlimit (1, juce::jmax (1, maxDelaySamples - 1), samples);
+    };
 
-    delaySamplesR = (int)(delayTimeRMs * secondsPerBeat * currentSampleRate);
-    if (delaySamplesR < 1) delaySamplesR = 1;
-    if (delaySamplesR >= maxDelaySamples) delaySamplesR = maxDelaySamples - 1;
+    delaySamplesL = toSamples (delayValueL, modeL);
+    delaySamplesR = toSamples (delayValueR, modeR);
+}
+
+void StereoDelay::setLastNoteHz (float hz)
+{
+    if (hz <= 0.0f || hz == lastNoteHz.load())
+        return;
+
+    lastNoteHz.store (hz);
+
+    // Only the note mode reads the pitch, so nothing else has to be recomputed.
+    if (modeL == fxme::DelayTimeMode::notePeriod || modeR == fxme::DelayTimeMode::notePeriod)
+        updateDelayTimes();
+}
+
+void StereoDelay::migrateLegacyState (juce::XmlElement& state, const juce::String& prefix)
+{
+    const auto modeLId = prefix + "_Del_ModeL";
+    const auto modeRId = prefix + "_Del_ModeR";
+
+    // A state that already carries the modes has been through this once.
+    for (auto* param : state.getChildWithTagNameIterator ("PARAM"))
+    {
+        const auto id = param->getStringAttribute ("id");
+        if (id == modeLId || id == modeRId)
+            return;
+    }
+
+    // Version 1 read both time values as beats. The sync mode reads them as a
+    // proportion of a whole note, so a quarter of the old number is the same
+    // delay: 0.5 beats and 0.125 whole notes are both an eighth note.
+    for (auto* param : state.getChildWithTagNameIterator ("PARAM"))
+    {
+        const auto id = param->getStringAttribute ("id");
+        if (id == prefix + "_Del_DelayL" || id == prefix + "_Del_DelayR")
+            param->setAttribute ("value", param->getDoubleAttribute ("value", 0.0) * 0.25);
+    }
+
+    for (const auto& id : { modeLId, modeRId })
+    {
+        auto* param = state.createNewChildElement ("PARAM");
+        param->setAttribute ("id", id);
+        param->setAttribute ("value", (int) fxme::DelayTimeMode::tempoSync);
+    }
 }
 
 void StereoDelay::updateGains()
