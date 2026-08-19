@@ -67,9 +67,9 @@ function(fxme_add_pd_external target)
     # JUCE plugin: nothing is instantiated GUI-wise (hasEditor() == false in
     # PD builds), the modules are just present for link.
     # We omit juce_audio_plugin_client (we are not a plugin) and the FxmeTools
-    # JUCE module (its GUI controls are not referenced by the DSP path; any
-    # header-only DSP helper needed, e.g. <FxmeTools/dsp/VuMeter.h>, is pulled
-    # in via the lib/FxmeTools include dir passed in INCLUDES).
+    # JUCE module (its GUI controls are not referenced by the DSP path). The
+    # header-only DSP helpers the externals do use — <FxmeTools/dsp/VuMeter.h>
+    # and friends — now come from FxmeCore instead; see below.
     target_link_libraries(${target} PRIVATE
         juce::juce_audio_basics
         juce::juce_audio_formats
@@ -87,6 +87,19 @@ function(fxme_add_pd_external target)
         juce::juce_recommended_config_flags
         juce::juce_recommended_warning_flags
     )
+
+    # FxmeTools is split in two, and the JUCE-free half — FxmeCore — is exactly
+    # what a Pd external wants: the DSP without the framework. Linking it brings
+    # its include root along, so <FxmeTools/...> resolves whichever side of the
+    # split a header ended up on. Without this the externals still find the
+    # module-side headers through the lib/FxmeTools include dir passed in
+    # INCLUDES, but not the migrated ones — VuMeter.h moved, and that is what
+    # broke the Pd builds.
+    #
+    # Not guarded by if(TARGET FxmeCore): if core is missing, the build should
+    # say so loudly rather than fall back to an include path that no longer
+    # covers half the library.
+    target_link_libraries(${target} PRIVATE FxmeCore)
 
     if(ARG_LINK_LIBRARIES)
         target_link_libraries(${target} PRIVATE ${ARG_LINK_LIBRARIES})

@@ -81,8 +81,8 @@ ChorusComponent::ChorusComponent (Chorus& c,
                                   "musical division on the right, and the sweep is re-anchored to "
                                   "the timeline on every block while the transport rolls.");
 
-    setupCombo (shapeBox, shapeLabel, "Shape", fxme::Lfo::shapeChoices());
-    setupCombo (divBox,   divLabel,   "Div",   fxme::Lfo::syncDivisionChoices());
+    setupCombo (shapeBox, shapeLabel, "Shape", juce::StringArray (fxme::Lfo::shapeNames, fxme::Lfo::numShapes));
+    setupCombo (divBox,   divLabel,   "Div",   juce::StringArray (fxme::Lfo::syncDivisionNames, fxme::Lfo::numSyncDivisions));
     shapeAtt = std::make_unique<ComboBoxAttachment> (apvts, prefix + "_Chorus_Shape", shapeBox);
     divAtt   = std::make_unique<ComboBoxAttachment> (apvts, prefix + "_Chorus_Div",   divBox);
 

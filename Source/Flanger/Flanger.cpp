@@ -88,11 +88,11 @@ void Flanger::addParameters (std::vector<std::unique_ptr<juce::RangedAudioParame
 
     params.push_back (std::make_unique<juce::AudioParameterChoice> (
         juce::ParameterID { prefix + "_Flanger_Div", 1 }, prefix + " Flanger Division",
-        fxme::Lfo::syncDivisionChoices(), fxme::Lfo::defaultSyncDivision));
+        juce::StringArray (fxme::Lfo::syncDivisionNames, fxme::Lfo::numSyncDivisions), fxme::Lfo::defaultSyncDivision));
 
     params.push_back (std::make_unique<juce::AudioParameterChoice> (
         juce::ParameterID { prefix + "_Flanger_Shape", 1 }, prefix + " Flanger Shape",
-        fxme::Lfo::shapeChoices(), fxme::Lfo::sine));
+        juce::StringArray (fxme::Lfo::shapeNames, fxme::Lfo::numShapes), fxme::Lfo::sine));
 
     params.push_back (std::make_unique<juce::AudioParameterFloat> (
         juce::ParameterID { prefix + "_Flanger_Depth", 1 }, prefix + " Flanger Depth",

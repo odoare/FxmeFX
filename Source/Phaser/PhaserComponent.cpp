@@ -81,9 +81,9 @@ PhaserComponent::PhaserComponent (Phaser& p,
                                   "musical division on the right, and the sweep is re-anchored to "
                                   "the timeline on every block while the transport rolls.");
 
-    setupCombo (shapeBox,  shapeLabel,  "Shape",  fxme::Lfo::shapeChoices());
+    setupCombo (shapeBox,  shapeLabel,  "Shape",  juce::StringArray (fxme::Lfo::shapeNames, fxme::Lfo::numShapes));
     setupCombo (stagesBox, stagesLabel, "Stages", Phaser::stageChoices());
-    setupCombo (divBox,    divLabel,    "Div",    fxme::Lfo::syncDivisionChoices());
+    setupCombo (divBox,    divLabel,    "Div",    juce::StringArray (fxme::Lfo::syncDivisionNames, fxme::Lfo::numSyncDivisions));
     stagesBox.setTooltip ("Stages. \n Allpass sections in the chain. Each pair puts one notch "
                           "in the sum with the dry signal: 4 is the familiar pedal voice, "
                           "10 or 12 the thick resonant sweep.");

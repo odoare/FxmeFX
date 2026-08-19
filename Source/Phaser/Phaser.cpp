@@ -75,11 +75,11 @@ void Phaser::addParameters (std::vector<std::unique_ptr<juce::RangedAudioParamet
 
     params.push_back (std::make_unique<juce::AudioParameterChoice> (
         juce::ParameterID { prefix + "_Phaser_Div", 1 }, prefix + " Phaser Division",
-        fxme::Lfo::syncDivisionChoices(), fxme::Lfo::defaultSyncDivision));
+        juce::StringArray (fxme::Lfo::syncDivisionNames, fxme::Lfo::numSyncDivisions), fxme::Lfo::defaultSyncDivision));
 
     params.push_back (std::make_unique<juce::AudioParameterChoice> (
         juce::ParameterID { prefix + "_Phaser_Shape", 1 }, prefix + " Phaser Shape",
-        fxme::Lfo::shapeChoices(), fxme::Lfo::sine));
+        juce::StringArray (fxme::Lfo::shapeNames, fxme::Lfo::numShapes), fxme::Lfo::sine));
 
     params.push_back (std::make_unique<juce::AudioParameterChoice> (
         juce::ParameterID { prefix + "_Phaser_Stages", 1 }, prefix + " Phaser Stages",
