@@ -8,6 +8,7 @@
 
 #include "ConvolReverb.h"
 #include <FxmeTools/presets/EmbeddedAudio.h>
+#include <FxmeTools/dsp/ImpulseEnergy.h>
 #include <resample.h>
 
 ConvolReverb::ConvolReverb()
@@ -291,6 +292,16 @@ void ConvolReverb::loadIRFromReader (juce::AudioFormatReader& reader)
         originalIR.setSize ((int) reader.numChannels, (int) reader.lengthInSamples);
         reader.read (&originalIR, 0, (int) reader.lengthInSamples, 0, true, true);
     }
+
+    // Every IR at unit energy (mean over its channels, one gain for all so
+    // a stereo IR keeps its balance): a long, dense hall is no louder than a
+    // small room. Length, shape and offset then act on the normalised IR,
+    // so shortening it still makes the tail quieter, as it should. A state
+    // saved before this existed keeps the IR's own level.
+    normalisedIR = normaliseIRs.load();
+    if (normalisedIR)
+        fxme::ImpulseEnergy::normalise (originalIR.getArrayOfWritePointers(),
+                                        originalIR.getNumChannels(), originalIR.getNumSamples());
 }
 
 void ConvolReverb::loadExternalIR()
@@ -585,6 +596,17 @@ void ConvolReverb::serviceParameters()
     // data changed: if the External slot is and stays selected, the selection
     // parameter doesn't move, so force a reload of the (possibly different)
     // embedded IR here.
+    // Normalisation switched (a session of an older version restored, or
+    // the reverse): reload the IR in place, from the same source.
+    if (normaliseIRs.load() != normalisedIR && currentIndex >= 0)
+    {
+        if (currentIndex == getExternalIndex())
+            loadExternalIR();
+        else if (currentIndex < irResources.size())
+            loadResource (irResources[currentIndex]);
+        updateModifiedIR();
+    }
+
     if (externalStateChanged.exchange (false))
     {
         const int paramIndex = irParam ? (int) *irParam - 1 : -1;

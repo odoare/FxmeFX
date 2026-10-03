@@ -59,6 +59,29 @@ public:
     static juce::String externalIRSlotId (const juce::String& prefix)
         { return prefix + "_Rev_ExtIR"; }
 
+    // IR loudness. Every IR is normalised to unit energy when loaded (see
+    // fxme::ImpulseEnergy), so all of them play at a comparable level.
+    // States saved before that existed are marked (markLegacyIRLevel) and
+    // keep the IR's own level, so an old session sounds as it did.
+    /** Normalise IRs (the default), or keep their own level. Any thread:
+        the loader thread reloads the current IR when it changes. */
+    void setIRNormalisation (bool shouldNormalise) noexcept { normaliseIRs = shouldNormalise; }
+    bool isNormalisingIRs() const noexcept                  { return normaliseIRs.load(); }
+
+    /** The state property that keeps a session at its IRs' own level. */
+    static juce::Identifier legacyIRLevelPropertyId (const juce::String& prefix)
+        { return juce::Identifier (prefix + "_Rev_LegacyIRLevel"); }
+
+    /** Marks a state saved before IR normalisation (call it on the XML in
+        setStateInformation() before replaceState()): it then keeps the IRs'
+        own level, now and in every later save of that session. */
+    static void markLegacyIRLevel (juce::XmlElement& state, const juce::String& prefix)
+        { state.setAttribute (legacyIRLevelPropertyId (prefix), 1); }
+
+    /** Whether `state` (the APVTS state) asks for the IRs' own level. */
+    static bool hasLegacyIRLevel (const juce::ValueTree& state, const juce::String& prefix)
+        { return (bool) state.getProperty (legacyIRLevelPropertyId (prefix), false); }
+
     // APVTS integration
     void assignParameters (juce::AudioProcessorValueTreeState& apvts, const juce::String& prefix);
     static void addParameters (std::vector<std::unique_ptr<juce::RangedAudioParameter>>& params, const juce::String& prefix, int numIRs = 0);
@@ -165,6 +188,9 @@ private:
     // external IR data changes, so checkParameters() reloads the external IR
     // even though the IR-selection parameter value itself didn't move.
     std::atomic<bool> externalStateChanged { false };
+
+    std::atomic<bool> normaliseIRs { true };   // asked for (setIRNormalisation)
+    bool normalisedIR = true;                  // what the loaded IR was given (under lock)
     void valueTreeRedirected (juce::ValueTree&) override;
     void valueTreePropertyChanged (juce::ValueTree&, const juce::Identifier&) override;
     void valueTreeChildAdded (juce::ValueTree&, juce::ValueTree&) override;

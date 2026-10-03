@@ -151,7 +151,10 @@ juce::AudioProcessorEditor* FxmeConvolReverbAudioProcessor::createEditor()
 // whenever this plugin's state layout changes and branch on it in
 // setStateInformation to migrate older sessions — a version cannot be added
 // retroactively to states that are already out there.
-static constexpr int kStateVersion = 1;
+//   1: the original layout (also what states written before versioning report)
+//   2: IRs normalised to unit energy on load; version-1 states are marked to
+//      keep the IRs' own level (ConvolReverb::markLegacyIRLevel)
+static constexpr int kStateVersion = 2;
 
 void FxmeConvolReverbAudioProcessor::getStateInformation (juce::MemoryBlock& destData)
 {
@@ -168,11 +171,15 @@ void FxmeConvolReverbAudioProcessor::setStateInformation (const void* data, int 
     if (auto xml = getXmlFromBinary (data, sizeInBytes))
         if (xml->hasTagName (apvts.state.getType()))
         {
-            // States written before versioning report 1. Nothing to migrate yet.
+            // States written before versioning report 1.
             const int stateVersion = xml->getIntAttribute ("stateVersion", 1);
-            juce::ignoreUnused (stateVersion);
+
+            // Saved before IRs were normalised: keep the level they had.
+            if (stateVersion < 2)
+                ConvolReverb::markLegacyIRLevel (*xml, parameterPrefix);
 
             apvts.replaceState (juce::ValueTree::fromXml (*xml));
+            reverb.setIRNormalisation (! ConvolReverb::hasLegacyIRLevel (apvts.state, parameterPrefix));
         }
 }
 

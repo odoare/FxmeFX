@@ -8,6 +8,7 @@
 
 #include "Cab.h"
 #include <resample.h>
+#include <FxmeTools/dsp/ImpulseEnergy.h>
 
 Cab::Cab()
 {
@@ -277,8 +278,20 @@ void Cab::loadIRFromReader (int channel, juce::AudioFormatReader& reader)
     for (int c = 0; c < inChannels; ++c)
         mono.addFrom (0, 0, temp, c, 0, inSamples, 1.0f / (float) juce::jmax (1, inChannels));
 
+    // Each slot's IR at unit energy, so every cabinet plays at the same
+    // level whatever its file's own gain (the Gain knobs then trim from
+    // there). A state saved before this existed keeps the IR's own level.
+    const bool shouldNormalise = normaliseIRs.load();
+    normalisedIR[(size_t) channel] = shouldNormalise;
+    const auto normalise = [shouldNormalise] (juce::AudioBuffer<float>& ir)
+    {
+        if (shouldNormalise)
+            fxme::ImpulseEnergy::normalise (ir.getArrayOfWritePointers(), ir.getNumChannels(), ir.getNumSamples());
+    };
+
     if (! needsResample)
     {
+        normalise (mono);
         dest = std::move (mono);
         return;
     }
@@ -300,6 +313,7 @@ void Cab::loadIRFromReader (int channel, juce::AudioFormatReader& reader)
     dest.setSize (1, outSamples);
     for (int i = 0; i < outSamples; ++i)
         dest.setSample (0, i, (float) wdlOut[(size_t) i]);
+    normalise (dest);
 }
 
 void Cab::rebuildEngineImpulse()
@@ -365,6 +379,21 @@ void Cab::publishStage (std::unique_ptr<Stage> next)
 void Cab::serviceParameters()
 {
     const juce::ScopedLock sl (lock);
+
+    // Normalisation switched (a session of an older version restored, or
+    // the reverse): reload the slots' IRs in place.
+    bool reloaded = false;
+    for (int c = 0; c < NumSlots; ++c)
+    {
+        const int idx = currentIndex[(size_t) c];
+        if (normaliseIRs.load() != normalisedIR[(size_t) c] && idx >= 0 && idx < irResources.size())
+        {
+            loadResource (c, irResources[idx]);
+            reloaded = true;
+        }
+    }
+    if (reloaded)
+        rebuildEngineImpulse();
 
     if (irLParam && (int) *irLParam != lastIRL)
     {

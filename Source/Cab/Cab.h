@@ -72,6 +72,29 @@ public:
         the XML in setStateInformation() before replaceState(). */
     static void migrateLegacyState (juce::XmlElement& state, const juce::String& prefix);
 
+    // IR loudness. Every IR is normalised to unit energy when loaded (see
+    // fxme::ImpulseEnergy), so all cabinets play at the same level. States
+    // saved before that existed are marked (markLegacyIRLevel) and keep the
+    // IRs' own level, so an old session sounds as it did.
+    /** Normalise IRs (the default), or keep their own level. Any thread:
+        the loader thread reloads the current IRs when it changes. */
+    void setIRNormalisation (bool shouldNormalise) noexcept { normaliseIRs = shouldNormalise; }
+    bool isNormalisingIRs() const noexcept                  { return normaliseIRs.load(); }
+
+    /** The state property that keeps a session at its IRs' own level. */
+    static juce::Identifier legacyIRLevelPropertyId (const juce::String& prefix)
+        { return juce::Identifier (prefix + "_Cab_LegacyIRLevel"); }
+
+    /** Marks a state saved before IR normalisation (call it on the XML in
+        setStateInformation() before replaceState()): it then keeps the IRs'
+        own level, now and in every later save of that session. */
+    static void markLegacyIRLevel (juce::XmlElement& state, const juce::String& prefix)
+        { state.setAttribute (legacyIRLevelPropertyId (prefix), 1); }
+
+    /** Whether `state` (the APVTS state) asks for the IRs' own level. */
+    static bool hasLegacyIRLevel (const juce::ValueTree& state, const juce::String& prefix)
+        { return (bool) state.getProperty (legacyIRLevelPropertyId (prefix), false); }
+
 private:
     // WDL engine — single engine driven by a 2-channel impulse buffer where
     // ch 0 = left IR and ch 1 = right IR. The engine then convolves each
@@ -131,6 +154,9 @@ private:
     juce::StringArray irResources;
     std::array<juce::AudioBuffer<float>, NumSlots> monoIR;
     std::array<int, NumSlots> currentIndex { -1, -1 };
+
+    std::atomic<bool> normaliseIRs { true };                // asked for (setIRNormalisation)
+    std::array<bool, NumSlots> normalisedIR { true, true }; // what each loaded IR was given (under lock)
 
     std::array<float, NumSlots> gaindB     { 0.0f, 0.0f };
     std::array<float, NumSlots> gainLinear { 1.0f, 1.0f };

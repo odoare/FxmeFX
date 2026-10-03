@@ -123,9 +123,10 @@ juce::AudioProcessorEditor* FxmeCabAudioProcessor::createEditor()
 
 // State format version, written as an attribute on the saved XML. Version 1 is
 // the single-gain layout (one _Cab_Gain); version 2 split it into per-channel
-// gains. States written before versioning existed report 1, which is what the
-// migration below keys off.
-static constexpr int kStateVersion = 2;
+// gains; version 3 normalises IRs to unit energy on load (older states are
+// marked to keep the IRs' own level, Cab::markLegacyIRLevel). States written
+// before versioning existed report 1, which is what the migrations key off.
+static constexpr int kStateVersion = 3;
 
 void FxmeCabAudioProcessor::getStateInformation (juce::MemoryBlock& destData)
 {
@@ -149,7 +150,12 @@ void FxmeCabAudioProcessor::setStateInformation (const void* data, int sizeInByt
             if (stateVersion < 2)
                 Cab::migrateLegacyState (*xml, parameterPrefix);
 
+            // Saved before IRs were normalised: keep the level they had.
+            if (stateVersion < 3)
+                Cab::markLegacyIRLevel (*xml, parameterPrefix);
+
             apvts.replaceState (juce::ValueTree::fromXml (*xml));
+            cab.setIRNormalisation (! Cab::hasLegacyIRLevel (apvts.state, parameterPrefix));
         }
 }
 
