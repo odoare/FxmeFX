@@ -9,11 +9,22 @@
 # Builds a Pd external as a MODULE library. Links the JUCE modules needed for
 # headless AudioProcessor hosting, but deliberately omits juce_audio_plugin_client
 # (would inject a plugin entry point) and the GUI-only utility modules.
+#
+# FXMEFX_BUILD_PD (ON by default) switches the externals off altogether:
+#     cmake -B build -DFXMEFX_BUILD_PD=OFF
+# then fxme_add_pd_external() creates nothing, so only the plugins are built
+# (and Windows needs no FXME_PD_LIB).
 # ─────────────────────────────────────────────────────────────────────────────
 
 include_guard(GLOBAL)
 
+option(FXMEFX_BUILD_PD "Build the Pure Data externals alongside the plugins" ON)
+
 function(fxme_add_pd_external target)
+    if(NOT FXMEFX_BUILD_PD)
+        return()
+    endif()
+
     cmake_parse_arguments(ARG "" "LIBNAME" "SOURCES;INCLUDES;DEFINES;LINK_LIBRARIES" ${ARGN})
 
     if(NOT ARG_LIBNAME)

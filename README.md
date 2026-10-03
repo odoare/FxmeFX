@@ -470,6 +470,20 @@ cmake -S Source/Compressor -B Source/Compressor/build -DCMAKE_BUILD_TYPE=Release
 cmake --build Source/Compressor/build --parallel
 ```
 
+### Plugins only, without the Pure Data externals
+
+The externals are built alongside the plugins by default. To build only the
+plugins (VST3 / AU), switch them off at configure time; this works with
+`PLUGIN` and with a single plugin's own `CMakeLists.txt` too:
+
+```bash
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DFXMEFX_BUILD_PD=OFF
+cmake --build build --parallel
+```
+
+On Windows this also removes the need for `FXME_PD_LIB` (below). The option
+is cached: pass `-DFXMEFX_BUILD_PD=ON` to bring the externals back.
+
 ### Pure Data externals on Windows
 
 On Linux and macOS the Pd externals link with undefined symbols and Pd
