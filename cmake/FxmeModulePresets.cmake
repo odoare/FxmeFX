@@ -18,20 +18,31 @@
 # <Effect>_<Preset name>.xml: two effects may then have presets of the
 # same name side by side in one host.
 #
-# A host outside this repository sets FXMEFX_ROOT to its FxmeFX checkout
-# before including this file.
+# The effects' folders are found from this file's own location (the FxmeFX
+# checkout it belongs to); a host may point elsewhere by setting FXMEFX_ROOT
+# before calling the function.
+#
+# The root is resolved inside the function, at each call, on purpose: a
+# variable set here at include time would only exist in the directory that
+# included the file first (include_guard stops the others from running it),
+# and every other plugin would then glob an empty path and embed nothing.
 # ─────────────────────────────────────────────────────────────────────────────
 
 include_guard(GLOBAL)
 
-if(NOT DEFINED FXMEFX_ROOT)
-    set(FXMEFX_ROOT ${CMAKE_CURRENT_LIST_DIR}/..)
-endif()
-
 function(fxmefx_add_module_presets target)
+    if(DEFINED FXMEFX_ROOT)
+        set(_root ${FXMEFX_ROOT})
+    else()
+        get_filename_component(_root ${CMAKE_CURRENT_FUNCTION_LIST_DIR}/.. ABSOLUTE)
+    endif()
+
     set(_files)
     foreach(_effect IN LISTS ARGN)
-        file(GLOB _effect_files CONFIGURE_DEPENDS ${FXMEFX_ROOT}/Source/${_effect}/Presets/*.xml)
+        file(GLOB _effect_files CONFIGURE_DEPENDS ${_root}/Source/${_effect}/Presets/*.xml)
+        if(NOT _effect_files)
+            message(STATUS "${target}: no factory presets in ${_root}/Source/${_effect}/Presets")
+        endif()
         list(APPEND _files ${_effect_files})
     endforeach()
 
