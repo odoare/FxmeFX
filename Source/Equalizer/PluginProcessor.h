@@ -9,6 +9,9 @@
 #pragma once
 
 #include <JuceHeader.h>
+#ifndef FXME_PD_BUILD
+ #include "../Common/EffectPresets.h"
+#endif
 #include "Equalizer.h"
 
 class FxmeEqualizerAudioProcessor  : public juce::AudioProcessor
@@ -49,12 +52,22 @@ public:
     void setStateInformation (const void* data, int sizeInBytes) override;
 
     juce::AudioProcessorValueTreeState& getApvts() { return apvts; }
+
+   #ifndef FXME_PD_BUILD
+    /** The effect's presets (module presets, shared with every plugin
+        embedding it; see Common/EffectPresets.h). */
+    fxme::ModulePresetTarget& getPresets() noexcept { return presets.target; }
+   #endif
     Equalizer& getEqualizer() { return equalizer; }
 
 private:
     static juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
 
     juce::AudioProcessorValueTreeState apvts;
+
+   #ifndef FXME_PD_BUILD
+    fxmefx::EffectPresets presets { apvts, "Equalizer", juce::String (parameterPrefix) + "_EQ_" };
+   #endif
     // Standalone EQ effect: 6 bands and a live spectrum overlay.
     Equalizer equalizer { kNumBands, true };
 

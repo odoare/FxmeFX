@@ -9,6 +9,9 @@
 #pragma once
 
 #include <JuceHeader.h>
+#ifndef FXME_PD_BUILD
+ #include "../Common/EffectPresets.h"
+#endif
 #include "Transient.h"
 
 class FxmeTransientAudioProcessor  : public juce::AudioProcessor
@@ -47,12 +50,22 @@ public:
     void setStateInformation (const void* data, int sizeInBytes) override;
 
     juce::AudioProcessorValueTreeState& getApvts() { return apvts; }
+
+   #ifndef FXME_PD_BUILD
+    /** The effect's presets (module presets, shared with every plugin
+        embedding it; see Common/EffectPresets.h). */
+    fxme::ModulePresetTarget& getPresets() noexcept { return presets.target; }
+   #endif
     Transient& getTransient() { return transientFx; }
 
 private:
     static juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
 
     juce::AudioProcessorValueTreeState apvts;
+
+   #ifndef FXME_PD_BUILD
+    fxmefx::EffectPresets presets { apvts, "Transient", juce::String (parameterPrefix) + "_Trans_" };
+   #endif
     Transient transientFx;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (FxmeTransientAudioProcessor)

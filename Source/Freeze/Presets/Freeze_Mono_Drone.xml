@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<FxmeModulePreset module="Freeze" version="1" name="Mono Drone">
+  <Param key="Mix" value="60"/>
+  <Param key="Width" value="0"/>
+</FxmeModulePreset>

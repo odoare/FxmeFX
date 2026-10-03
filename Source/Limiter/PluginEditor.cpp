@@ -15,6 +15,7 @@ FxmeLimiterAudioProcessorEditor::FxmeLimiterAudioProcessorEditor (FxmeLimiterAud
       topBar (JucePlugin_Name, "FX-Mechanics look-ahead limiter / maximizer", juce::Colours::orange),
       limiterComponent (p.getLimiter(), p.getApvts(), FxmeLimiterAudioProcessor::parameterPrefix, false)
 {
+    topBar.setPresetBank (p.getPresets());
     addAndMakeVisible (topBar);
     addAndMakeVisible (limiterComponent);
     setResizable (true, true);

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<FxmeModulePreset module="Phaser" version="1" name="Synced Pulse">
+  <Param key="On" value="1"/>
+  <Param key="Rate" value="0.3"/>
+  <Param key="Sync" value="1"/>
+  <Param key="Div" value="6"/>
+  <Param key="Shape" value="3"/>
+  <Param key="Stages" value="2"/>
+  <Param key="Depth" value="60"/>
+  <Param key="Freq" value="1000"/>
+  <Param key="Feedback" value="-40"/>
+  <Param key="Width" value="100"/>
+  <Param key="Mix" value="50"/>
+  <Param key="Out" value="0"/>
+</FxmeModulePreset>

@@ -15,6 +15,7 @@ FxmeOctAudioProcessorEditor::FxmeOctAudioProcessorEditor (FxmeOctAudioProcessor&
       topBar (JucePlugin_Name, "FX-Mechanics Octaver", juce::Colour::fromRGB (140, 100, 220)),
       octComponent (p.getOct(), p.getApvts(), FxmeOctAudioProcessor::parameterPrefix, false)
 {
+    topBar.setPresetBank (p.getPresets());
     addAndMakeVisible (topBar);
     addAndMakeVisible (octComponent);
     setResizable (true, true);

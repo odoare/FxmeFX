@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<FxmeModulePreset module="Flanger" version="1" name="Classic Jet">
+  <Param key="On" value="1"/>
+  <Param key="Rate" value="0.15"/>
+  <Param key="Sync" value="0"/>
+  <Param key="Div" value="3"/>
+  <Param key="Shape" value="1"/>
+  <Param key="Depth" value="80"/>
+  <Param key="Delay" value="1.5"/>
+  <Param key="Feedback" value="70"/>
+  <Param key="Width" value="100"/>
+  <Param key="Mix" value="50"/>
+  <Param key="Out" value="0"/>
+</FxmeModulePreset>

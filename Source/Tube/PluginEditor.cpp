@@ -15,6 +15,7 @@ FxmeTubeAudioProcessorEditor::FxmeTubeAudioProcessorEditor (FxmeTubeAudioProcess
       topBar (JucePlugin_Name, "FX-Mechanics Tube saturation", juce::Colours::orange),
       tubeComponent (p.getTube(), p.getApvts(), FxmeTubeAudioProcessor::parameterPrefix, false)
 {
+    topBar.setPresetBank (p.getPresets());
     addAndMakeVisible (topBar);
     addAndMakeVisible (tubeComponent);
     setResizable (true, true);

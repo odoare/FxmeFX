@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<FxmeModulePreset module="Freeze" version="1" name="Full Wash">
+  <Param key="Mix" value="100"/>
+  <Param key="Width" value="100"/>
+</FxmeModulePreset>

@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<FxmeModulePreset module="Equalizer" version="1" name="Vocal Presence">
+  <Param key="On" value="1"/>
+  <Param key="PostGain" value="0"/>
+  <Param key="LS_On" value="1"/>
+  <Param key="LS_Type" value="3"/>
+  <Param key="LS_Freq" value="120"/>
+  <Param key="LS_Q" value="0.707"/>
+  <Param key="LS_Gain" value="-2"/>
+  <Param key="B1_On" value="1"/>
+  <Param key="B1_Type" value="2"/>
+  <Param key="B1_Freq" value="300"/>
+  <Param key="B1_Q" value="1.2"/>
+  <Param key="B1_Gain" value="-2"/>
+  <Param key="B2_On" value="1"/>
+  <Param key="B2_Type" value="2"/>
+  <Param key="B2_Freq" value="3000"/>
+  <Param key="B2_Q" value="1.0"/>
+  <Param key="B2_Gain" value="2.5"/>
+  <Param key="HS_On" value="1"/>
+  <Param key="HS_Type" value="4"/>
+  <Param key="HS_Freq" value="10000"/>
+  <Param key="HS_Q" value="0.707"/>
+  <Param key="HS_Gain" value="2"/>
+</FxmeModulePreset>

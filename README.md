@@ -93,6 +93,36 @@ Hosts do not route MIDI to an audio effect by default:
   no MIDI input at all, so the MIDI-note mode is unavailable there. The
   seconds and DAW-sync modes work normally. Use the VST3 if you need it.
 
+## Presets
+
+Each effect has its own presets, in the bar at the right of its title bar:
+`<` and `>` step through them, `...` opens the browser (save, rename,
+delete). They are the effect's presets rather than the plugin's: the same
+files serve the effect wherever it runs, in its own plugin here and inside
+FX-Mechanics plugins that embed it (FxmeSampler, MechanOdd). User presets
+are stored in
+
+| OS | Folder |
+|---|---|
+| Linux | `~/.config/FX-Mechanics/Modules/<Effect>/Presets/` |
+| macOS | `~/Library/Application Support/FX-Mechanics/Modules/<Effect>/Presets/` |
+| Windows | `%APPDATA%\FX-Mechanics\Modules\<Effect>\Presets\` |
+
+where `<Effect>` is the effect's name without the `Fxme` prefix
+(`Compressor`, `StereoDelay`, ...). A preset holds every parameter of the
+effect; ConvolReverb's also remembers an external IR by its file path (the
+IR itself is embedded in the session, not in the preset).
+
+For developers: factory presets go in `Source/<Effect>/Presets/`, one
+`FxmeModulePreset` XML file each, named `<Effect>_<Preset_Name>.xml` (the
+file name becomes a binary-data symbol, so it must be unique across
+effects). A parameter a file leaves out loads its default. They are
+embedded by `fxmefx_add_module_presets()` (`cmake/FxmeModulePresets.cmake`),
+which a host embedding several effects calls once with all of them. The
+runtime side is `Source/Common/EffectPresets.h` (FxmeTools module presets;
+see FxmeTools' `doc/local-presets-plan.md`). The Pure Data externals have no
+presets.
+
 ## Pure Data externals
 
 Each plugin also ships as a Pd signal external that reuses the exact same DSP
@@ -350,9 +380,13 @@ fixed 120 BPM** — in Pd, drive the rate in Hz and leave Sync at 0.
 ```
 FxmeFX/
 ├── CMakeLists.txt              # root: builds every plugin
+├── cmake/
+│   └── FxmeModulePresets.cmake # fxmefx_add_module_presets(): embeds Source/<Effect>/Presets
 ├── Source/
+│   ├── Common/                 # TopBar (title + preset bar), EffectPresets.h, shared assets
 │   ├── Compressor/             # Compressor.{h,cpp} + CompressorComponent.{h,cpp}
 │   │                           # + PluginProcessor / PluginEditor / CMakeLists.txt
+│   │   └── Presets/            # factory presets (FxmeModulePreset XML), embedded
 │   ├── Equalizer/
 │   ├── Tube/
 │   │   └── img/                # tube.png / tube_bw.png (embedded as binary data)

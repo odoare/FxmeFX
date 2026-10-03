@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<FxmeModulePreset module="Oct" version="1" name="Guitar Synth Bass">
+  <Param key="On" value="1"/>
+  <Param key="Dry" value="-60"/>
+  <Param key="Oct1" value="0"/>
+  <Param key="Oct2" value="-8"/>
+  <Param key="Detect" value="500"/>
+  <Param key="Tone" value="2500"/>
+</FxmeModulePreset>

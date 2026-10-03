@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<FxmeModulePreset module="Cab" version="1" name="Wide V30 Pair">
+  <Param key="On" value="1"/>
+  <Param key="IRL" value="5"/>
+  <Param key="IRR" value="16"/>
+  <Param key="GainL" value="0"/>
+  <Param key="GainR" value="0"/>
+</FxmeModulePreset>

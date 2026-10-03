@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<FxmeModulePreset module="Compressor" version="1" name="Gentle Glue">
+  <Param key="On" value="1"/>
+  <Param key="PreGain" value="0"/>
+  <Param key="Attack" value="30"/>
+  <Param key="Release" value="200"/>
+  <Param key="Thresh" value="-18"/>
+  <Param key="Ratio" value="2"/>
+  <Param key="Knee" value="6"/>
+  <Param key="RelMode" value="1"/>
+  <Param key="PeakRms" value="0.7"/>
+  <Param key="Gain" value="3"/>
+</FxmeModulePreset>

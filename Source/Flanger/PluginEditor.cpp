@@ -20,6 +20,7 @@ FxmeFlangerAudioProcessorEditor::FxmeFlangerAudioProcessorEditor (FxmeFlangerAud
       topBar (JucePlugin_Name, "FX-Mechanics Stereo Flanger", flangerTint),
       flangerComponent (p.getFlanger(), p.getApvts(), FxmeFlangerAudioProcessor::parameterPrefix, false)
 {
+    topBar.setPresetBank (p.getPresets());
     addAndMakeVisible (topBar);
     addAndMakeVisible (flangerComponent);
     setResizable (true, true);

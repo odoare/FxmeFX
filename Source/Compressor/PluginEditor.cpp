@@ -15,6 +15,7 @@ FxmeCompressorAudioProcessorEditor::FxmeCompressorAudioProcessorEditor (FxmeComp
       topBar (JucePlugin_Name, "FX-Mechanics Compressor", juce::Colours::red),
       compressorComponent (p.getCompressor(), p.getApvts(), FxmeCompressorAudioProcessor::parameterPrefix, false)
 {
+    topBar.setPresetBank (p.getPresets());
     addAndMakeVisible (topBar);
     addAndMakeVisible (compressorComponent);
     setResizable (true, true);

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<FxmeModulePreset module="Flanger" version="1" name="Hollow Negative">
+  <Param key="On" value="1"/>
+  <Param key="Rate" value="0.3"/>
+  <Param key="Sync" value="0"/>
+  <Param key="Div" value="3"/>
+  <Param key="Shape" value="0"/>
+  <Param key="Depth" value="70"/>
+  <Param key="Delay" value="2.5"/>
+  <Param key="Feedback" value="-65"/>
+  <Param key="Width" value="100"/>
+  <Param key="Mix" value="50"/>
+  <Param key="Out" value="0"/>
+</FxmeModulePreset>

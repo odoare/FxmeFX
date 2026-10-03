@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<FxmeModulePreset module="Transient" version="1" name="Soften Attack">
+  <Param key="On" value="1"/>
+  <Param key="PreGain" value="0"/>
+  <Param key="Attack" value="-50"/>
+  <Param key="Sustain" value="15"/>
+  <Param key="Gain" value="0"/>
+  <Param key="Character" value="0"/>
+</FxmeModulePreset>

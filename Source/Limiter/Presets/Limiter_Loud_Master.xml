@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<FxmeModulePreset module="Limiter" version="1" name="Loud Master">
+  <Param key="On" value="1"/>
+  <Param key="Drive" value="6"/>
+  <Param key="Ceiling" value="-0.5"/>
+  <Param key="Release" value="50"/>
+</FxmeModulePreset>

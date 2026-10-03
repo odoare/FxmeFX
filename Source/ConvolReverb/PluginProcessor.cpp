@@ -65,6 +65,25 @@ FxmeConvolReverbAudioProcessor::FxmeConvolReverbAudioProcessor()
     juce::StringArray names, resources;
     getBuiltInIRList (names, resources);
     reverb.setImpulseList (names, resources);
+
+   #ifndef FXME_PD_BUILD
+    // A preset keeps the external IR as its file's path (not the audio,
+    // which the session embeds but which would make preset files heavy).
+    // Loading one puts that file back in the External slot if it is still
+    // there; if not, the reverb falls back to its first built-in IR, as it
+    // does for a missing file anywhere else.
+    presets.target.onWriteExtra = [this] (juce::XmlElement& extra)
+    {
+        if (reverb.hasExternalIR() && reverb.getExternalIRPath().isNotEmpty())
+            extra.setAttribute ("externalIR", reverb.getExternalIRPath());
+    };
+    presets.target.onReadExtra = [this] (const juce::XmlElement* extra)
+    {
+        const juce::File file (extra != nullptr ? extra->getStringAttribute ("externalIR") : juce::String());
+        if (file != juce::File() && file.existsAsFile())
+            reverb.setExternalIRFile (file);
+    };
+   #endif
 }
 
 FxmeConvolReverbAudioProcessor::~FxmeConvolReverbAudioProcessor() = default;

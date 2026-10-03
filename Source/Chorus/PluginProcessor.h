@@ -9,6 +9,9 @@
 #pragma once
 
 #include <JuceHeader.h>
+#ifndef FXME_PD_BUILD
+ #include "../Common/EffectPresets.h"
+#endif
 #include "Chorus.h"
 
 class FxmeChorusAudioProcessor  : public juce::AudioProcessor
@@ -47,12 +50,22 @@ public:
     void setStateInformation (const void* data, int sizeInBytes) override;
 
     juce::AudioProcessorValueTreeState& getApvts() { return apvts; }
+
+   #ifndef FXME_PD_BUILD
+    /** The effect's presets (module presets, shared with every plugin
+        embedding it; see Common/EffectPresets.h). */
+    fxme::ModulePresetTarget& getPresets() noexcept { return presets.target; }
+   #endif
     Chorus& getChorus() { return chorus; }
 
 private:
     static juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
 
     juce::AudioProcessorValueTreeState apvts;
+
+   #ifndef FXME_PD_BUILD
+    fxmefx::EffectPresets presets { apvts, "Chorus", juce::String (parameterPrefix) + "_Chorus_" };
+   #endif
     Chorus chorus;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (FxmeChorusAudioProcessor)

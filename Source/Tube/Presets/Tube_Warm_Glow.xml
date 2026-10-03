@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<FxmeModulePreset module="Tube" version="1" name="Warm Glow">
+  <Param key="On" value="1"/>
+  <Param key="Model" value="0"/>
+  <Param key="Drive" value="6"/>
+  <Param key="Bias" value="0.1"/>
+  <Param key="Tone" value="0.1"/>
+  <Param key="Sag" value="0.4"/>
+  <Param key="Out" value="-2"/>
+</FxmeModulePreset>

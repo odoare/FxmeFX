@@ -20,6 +20,7 @@ FxmePhaserAudioProcessorEditor::FxmePhaserAudioProcessorEditor (FxmePhaserAudioP
       topBar (JucePlugin_Name, "FX-Mechanics Stereo Phaser", phaserTint),
       phaserComponent (p.getPhaser(), p.getApvts(), FxmePhaserAudioProcessor::parameterPrefix, false)
 {
+    topBar.setPresetBank (p.getPresets());
     addAndMakeVisible (topBar);
     addAndMakeVisible (phaserComponent);
     setResizable (true, true);

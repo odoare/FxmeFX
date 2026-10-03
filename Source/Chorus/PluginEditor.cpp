@@ -20,6 +20,7 @@ FxmeChorusAudioProcessorEditor::FxmeChorusAudioProcessorEditor (FxmeChorusAudioP
       topBar (JucePlugin_Name, "FX-Mechanics Stereo Chorus", chorusTint),
       chorusComponent (p.getChorus(), p.getApvts(), FxmeChorusAudioProcessor::parameterPrefix, false)
 {
+    topBar.setPresetBank (p.getPresets());
     addAndMakeVisible (topBar);
     addAndMakeVisible (chorusComponent);
     setResizable (true, true);

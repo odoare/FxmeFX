@@ -15,6 +15,7 @@ FxmeConvolReverbAudioProcessorEditor::FxmeConvolReverbAudioProcessorEditor (Fxme
       topBar (JucePlugin_Name, "FX-Mechanics Convolution Reverb", juce::Colours::yellowgreen),
       reverbComponent (p.getConvolReverb(), p.getApvts(), FxmeConvolReverbAudioProcessor::parameterPrefix, false)
 {
+    topBar.setPresetBank (p.getPresets());
     addAndMakeVisible (topBar);
     addAndMakeVisible (reverbComponent);
     setResizable (true, true);

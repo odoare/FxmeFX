@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<FxmeModulePreset module="Equalizer" version="1" name="Low Cut and Air">
+  <Param key="On" value="1"/>
+  <Param key="PostGain" value="0"/>
+  <Param key="LS_On" value="1"/>
+  <Param key="LS_Type" value="1"/>
+  <Param key="LS_Freq" value="80"/>
+  <Param key="LS_Q" value="0.707"/>
+  <Param key="LS_Gain" value="0"/>
+  <Param key="HS_On" value="1"/>
+  <Param key="HS_Type" value="4"/>
+  <Param key="HS_Freq" value="12000"/>
+  <Param key="HS_Q" value="0.707"/>
+  <Param key="HS_Gain" value="3"/>
+</FxmeModulePreset>

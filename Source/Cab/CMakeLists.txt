@@ -96,6 +96,11 @@ target_compile_definitions(FxmeCab
 
 include(${CMAKE_CURRENT_SOURCE_DIR}/../Common/CommonAssets.cmake)
 
+# Factory presets of the effect (Presets/*.xml), shared with every plugin
+# embedding it; see Common/EffectPresets.h.
+include(${CMAKE_CURRENT_SOURCE_DIR}/../../cmake/FxmeModulePresets.cmake)
+fxmefx_add_module_presets(FxmeCab Cab)
+
 target_link_libraries(FxmeCab
     PRIVATE
         FxmeCabBinaryData

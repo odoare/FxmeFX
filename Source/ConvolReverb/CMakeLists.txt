@@ -81,6 +81,11 @@ target_compile_definitions(FxmeConvolReverb
 
 include(${CMAKE_CURRENT_SOURCE_DIR}/../Common/CommonAssets.cmake)
 
+# Factory presets of the effect (Presets/*.xml), shared with every plugin
+# embedding it; see Common/EffectPresets.h.
+include(${CMAKE_CURRENT_SOURCE_DIR}/../../cmake/FxmeModulePresets.cmake)
+fxmefx_add_module_presets(FxmeConvolReverb ConvolReverb)
+
 target_link_libraries(FxmeConvolReverb
     PRIVATE
         FxmeConvolReverbBinaryData

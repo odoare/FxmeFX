@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<FxmeModulePreset module="Oct" version="1" name="Bass Octave">
+  <Param key="On" value="1"/>
+  <Param key="Dry" value="0"/>
+  <Param key="Oct1" value="-3"/>
+  <Param key="Oct2" value="-60"/>
+  <Param key="Detect" value="250"/>
+  <Param key="Tone" value="1200"/>
+</FxmeModulePreset>

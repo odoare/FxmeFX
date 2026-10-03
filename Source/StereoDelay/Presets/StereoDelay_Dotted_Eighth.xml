@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<FxmeModulePreset module="StereoDelay" version="1" name="Dotted Eighth">
+  <Param key="On" value="1"/>
+  <Param key="ModeL" value="1"/>
+  <Param key="ModeR" value="1"/>
+  <Param key="DelayL" value="0.375"/>
+  <Param key="DelayR" value="0.375"/>
+  <Param key="FdbkL" value="-8"/>
+  <Param key="FdbkR" value="-8"/>
+  <Param key="CrossFdbk" value="-60"/>
+  <Param key="FilterCutoff" value="5000"/>
+  <Param key="FilterQ" value="0.707"/>
+  <Param key="DryGain" value="0"/>
+  <Param key="WetGain" value="-6"/>
+</FxmeModulePreset>

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<FxmeModulePreset module="Limiter" version="1" name="Brickwall Smash">
+  <Param key="On" value="1"/>
+  <Param key="Drive" value="14"/>
+  <Param key="Ceiling" value="-1.0"/>
+  <Param key="Release" value="20"/>
+</FxmeModulePreset>

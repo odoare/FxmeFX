@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<FxmeModulePreset module="Transient" version="1" name="Tighten Room">
+  <Param key="On" value="1"/>
+  <Param key="PreGain" value="0"/>
+  <Param key="Attack" value="0"/>
+  <Param key="Sustain" value="-60"/>
+  <Param key="Gain" value="2"/>
+  <Param key="Character" value="1"/>
+</FxmeModulePreset>

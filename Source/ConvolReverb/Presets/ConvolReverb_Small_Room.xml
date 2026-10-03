@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<FxmeModulePreset module="ConvolReverb" version="1" name="Small Room">
+  <Param key="On" value="1"/>
+  <Param key="IR" value="4"/>
+  <Param key="Length" value="1.0"/>
+  <Param key="Shape" value="0"/>
+  <Param key="StartOffset" value="0"/>
+  <Param key="DryGain" value="0"/>
+  <Param key="WetGain" value="-12"/>
+</FxmeModulePreset>

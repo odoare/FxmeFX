@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<FxmeModulePreset module="Cab" version="1" name="Marshall Mic Blend">
+  <Param key="On" value="1"/>
+  <Param key="IRL" value="13"/>
+  <Param key="IRR" value="14"/>
+  <Param key="GainL" value="-1.5"/>
+  <Param key="GainR" value="-1.5"/>
+</FxmeModulePreset>

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<FxmeModulePreset module="Limiter" version="1" name="Transparent Ceiling">
+  <Param key="On" value="1"/>
+  <Param key="Drive" value="0"/>
+  <Param key="Ceiling" value="-0.3"/>
+  <Param key="Release" value="80"/>
+</FxmeModulePreset>

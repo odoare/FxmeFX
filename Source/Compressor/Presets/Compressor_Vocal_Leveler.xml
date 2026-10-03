@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<FxmeModulePreset module="Compressor" version="1" name="Vocal Leveler">
+  <Param key="On" value="1"/>
+  <Param key="PreGain" value="0"/>
+  <Param key="Attack" value="8"/>
+  <Param key="Release" value="150"/>
+  <Param key="Thresh" value="-24"/>
+  <Param key="Ratio" value="4"/>
+  <Param key="Knee" value="9"/>
+  <Param key="RelMode" value="2"/>
+  <Param key="PeakRms" value="0.5"/>
+  <Param key="Gain" value="5"/>
+</FxmeModulePreset>

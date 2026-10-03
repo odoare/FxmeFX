@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<FxmeModulePreset module="Compressor" version="1" name="Drum Smash">
+  <Param key="On" value="1"/>
+  <Param key="PreGain" value="0"/>
+  <Param key="Attack" value="1"/>
+  <Param key="Release" value="60"/>
+  <Param key="Thresh" value="-30"/>
+  <Param key="Ratio" value="8"/>
+  <Param key="Knee" value="0"/>
+  <Param key="RelMode" value="0"/>
+  <Param key="PeakRms" value="0"/>
+  <Param key="Gain" value="8"/>
+</FxmeModulePreset>

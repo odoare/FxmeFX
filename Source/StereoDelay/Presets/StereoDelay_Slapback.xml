@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<FxmeModulePreset module="StereoDelay" version="1" name="Slapback">
+  <Param key="On" value="1"/>
+  <Param key="ModeL" value="0"/>
+  <Param key="ModeR" value="0"/>
+  <Param key="DelayL" value="0.09"/>
+  <Param key="DelayR" value="0.11"/>
+  <Param key="FdbkL" value="-30"/>
+  <Param key="FdbkR" value="-30"/>
+  <Param key="CrossFdbk" value="-60"/>
+  <Param key="FilterCutoff" value="6000"/>
+  <Param key="FilterQ" value="0.707"/>
+  <Param key="DryGain" value="0"/>
+  <Param key="WetGain" value="-8"/>
+</FxmeModulePreset>
