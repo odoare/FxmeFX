@@ -23,7 +23,15 @@ public:
     void prepare (double sampleRate, int samplesPerBlock);
     void process (juce::AudioBuffer<float>& buffer);
 
-    void setImpulseList (const juce::StringArray& names, const juce::StringArray& resourceNames);
+    /** The built-in IRs. `midSideResources` lists those (by resource name)
+        stored as omni / side channels rather than left / right (W and Y of a
+        B-format recording, or M and S): they are decoded to left / right
+        when loaded, L = (M + S) / sqrt 2, R = (M - S) / sqrt 2. Otherwise
+        the engine would convolve the input's left with the omni channel,
+        direct sound and all, and its right with the faint side channel: a
+        loud, lopsided left. */
+    void setImpulseList (const juce::StringArray& names, const juce::StringArray& resourceNames,
+                         const juce::StringArray& midSideResources = {});
     void selectImpulse (int index);
     void setLengthRatio (float ratio); // 0.0 to 1.0
     void setShapeType (int type); // 0: Exp, 1: Lin, 2: Log
@@ -148,6 +156,8 @@ private:
 
     juce::StringArray irNames;
     juce::StringArray irResources;
+    juce::StringArray midSideIRs;     // resources stored as M / S, see setImpulseList
+    bool decodeMidSide = false;       // for the IR being loaded (under lock)
     juce::AudioBuffer<float> originalIR; // Stores the raw loaded IR
     juce::AudioBuffer<float> modifiedIR; // Stores the IR after length/shape modifications
 

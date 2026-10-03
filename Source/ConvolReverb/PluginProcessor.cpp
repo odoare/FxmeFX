@@ -16,16 +16,24 @@ namespace
     // Display name (.wav filename) → BinaryData resource symbol.
     // Symbols are produced by juce_add_binary_data: non-alphanumeric chars
     // become underscores, so "Council Chamber.wav" → "Council_Chamber_wav".
-    struct IRMapping { const char* display; const char* resource; };
+    //
+    // midSide: the file holds omni / side channels (W and Y of a B-format
+    // recording) rather than left / right, and is decoded on load (see
+    // ConvolReverb::setImpulseList). Measured 2026-10-03: in these three the
+    // second channel has next to no direct sound (14 to 15 dB under the
+    // first in the first 5 ms) and E(first + second) ~ E(first - second),
+    // the signature of a side channel; the rectangular rooms are true
+    // left / right pairs.
+    struct IRMapping { const char* display; const char* resource; bool midSide; };
 
     static const IRMapping kBuiltInIRs[] =
     {
-        { "Council Chamber.wav",         "Council_Chamber_wav"        },
-        { "Forest short.wav",            "Forest_short_wav"           },
-        { "Forest long.wav",             "Forest_long_wav"            },
-        { "Rectangular room small.wav",  "Rectangular_room_small_wav" },
-        { "Rectangular room medium.wav", "Rectangular_room_medium_wav"},
-        { "Rectangular room large.wav",  "Rectangular_room_large_wav" },
+        { "Council Chamber.wav",         "Council_Chamber_wav",         true  },
+        { "Forest short.wav",            "Forest_short_wav",            true  },
+        { "Forest long.wav",             "Forest_long_wav",             true  },
+        { "Rectangular room small.wav",  "Rectangular_room_small_wav",  false },
+        { "Rectangular room medium.wav", "Rectangular_room_medium_wav", false },
+        { "Rectangular room large.wav",  "Rectangular_room_large_wav",  false },
     };
 }
 
@@ -62,9 +70,12 @@ FxmeConvolReverbAudioProcessor::FxmeConvolReverbAudioProcessor()
 {
     reverb.assignParameters (apvts, parameterPrefix);
 
-    juce::StringArray names, resources;
+    juce::StringArray names, resources, midSide;
     getBuiltInIRList (names, resources);
-    reverb.setImpulseList (names, resources);
+    for (const auto& ir : kBuiltInIRs)
+        if (ir.midSide)
+            midSide.add (ir.resource);
+    reverb.setImpulseList (names, resources, midSide);
 
    #ifndef FXME_PD_BUILD
     // A preset keeps the external IR as its file's path (not the audio,

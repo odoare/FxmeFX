@@ -278,15 +278,19 @@ void Cab::loadIRFromReader (int channel, juce::AudioFormatReader& reader)
     for (int c = 0; c < inChannels; ++c)
         mono.addFrom (0, 0, temp, c, 0, inSamples, 1.0f / (float) juce::jmax (1, inChannels));
 
-    // Each slot's IR at unit energy, so every cabinet plays at the same
-    // level whatever its file's own gain (the Gain knobs then trim from
-    // there). A state saved before this existed keeps the IR's own level.
+    // Each slot's IR at the same loudness (pink noise, roughly music, out
+    // as loud as in; see fxme::ImpulseEnergy::normaliseLoudness), so every
+    // cabinet plays at the same level whatever its file's own gain and
+    // tone (the Gain knobs then trim from there). A state saved before this
+    // existed keeps the IR's own level.
     const bool shouldNormalise = normaliseIRs.load();
     normalisedIR[(size_t) channel] = shouldNormalise;
-    const auto normalise = [shouldNormalise] (juce::AudioBuffer<float>& ir)
+    const double irRate = needsResample || reader.sampleRate <= 0 ? currentSampleRate : reader.sampleRate;
+    const auto normalise = [shouldNormalise, irRate] (juce::AudioBuffer<float>& ir)
     {
-        if (shouldNormalise)
-            fxme::ImpulseEnergy::normalise (ir.getArrayOfWritePointers(), ir.getNumChannels(), ir.getNumSamples());
+        if (shouldNormalise && irRate > 0)
+            fxme::ImpulseEnergy::normaliseLoudness (ir.getArrayOfWritePointers(), ir.getNumChannels(),
+                                                    ir.getNumSamples(), irRate);
     };
 
     if (! needsResample)

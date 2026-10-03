@@ -125,10 +125,12 @@ void ConvolReverb::process (juce::AudioBuffer<float>& buffer)
     engine.Advance (toCopy);
 }
 
-void ConvolReverb::setImpulseList (const juce::StringArray& names, const juce::StringArray& resources)
+void ConvolReverb::setImpulseList (const juce::StringArray& names, const juce::StringArray& resources,
+                                   const juce::StringArray& midSideResources)
 {
     irNames = names;
     irResources = resources;
+    midSideIRs = midSideResources;
     if (!irResources.isEmpty())
         selectImpulse (0); // Select the first one by default
 }
@@ -244,10 +246,12 @@ void ConvolReverb::loadResource (const juce::String& resourceName)
         juce::WavAudioFormat wavFormat;
         std::unique_ptr<juce::AudioFormatReader> reader (wavFormat.createReaderFor (stream, true));
 
+        decodeMidSide = midSideIRs.contains (resourceName);
         if (reader)
             loadIRFromReader (*reader);
         else
             originalIR.clear();
+        decodeMidSide = false;
     }
     else
     {
@@ -293,15 +297,35 @@ void ConvolReverb::loadIRFromReader (juce::AudioFormatReader& reader)
         reader.read (&originalIR, 0, (int) reader.lengthInSamples, 0, true, true);
     }
 
-    // Every IR at unit energy (mean over its channels, one gain for all so
-    // a stereo IR keeps its balance): a long, dense hall is no louder than a
-    // small room. Length, shape and offset then act on the normalised IR,
-    // so shortening it still makes the tail quieter, as it should. A state
-    // saved before this existed keeps the IR's own level.
+    // A built-in IR stored as mid / side: back to left / right. The 1/sqrt 2
+    // keeps the total energy, so the level is the same with or without the
+    // normalisation below.
+    if (decodeMidSide && originalIR.getNumChannels() == 2)
+    {
+        auto* l = originalIR.getWritePointer (0);
+        auto* r = originalIR.getWritePointer (1);
+        constexpr float g = 0.70710678f;
+        for (int i = 0; i < originalIR.getNumSamples(); ++i)
+        {
+            const float m = l[i], s = r[i];
+            l[i] = g * (m + s);
+            r[i] = g * (m - s);
+        }
+    }
+
+    // Every IR at the same loudness: pink noise (roughly, music) comes out
+    // of it as loud as it went in, one gain for all channels so a stereo IR
+    // keeps its balance. Pink-weighted rather than flat: these reverbs
+    // boost the lows and mids (the forests by 10 to 19 dB around 100 Hz),
+    // so a flat unit energy still left them 5 to 11 dB too loud on music.
+    // Length, shape and offset then act on the normalised IR, so shortening
+    // it still makes the tail quieter, as it should. A state saved before
+    // this existed keeps the IR's own level.
     normalisedIR = normaliseIRs.load();
     if (normalisedIR)
-        fxme::ImpulseEnergy::normalise (originalIR.getArrayOfWritePointers(),
-                                        originalIR.getNumChannels(), originalIR.getNumSamples());
+        fxme::ImpulseEnergy::normaliseLoudness (originalIR.getArrayOfWritePointers(),
+                                                originalIR.getNumChannels(), originalIR.getNumSamples(),
+                                                currentSampleRate > 0 ? currentSampleRate : reader.sampleRate);
 }
 
 void ConvolReverb::loadExternalIR()
