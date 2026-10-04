@@ -1,6 +1,6 @@
 # FxmeFX
 
-A small collection of JUCE audio-effect plugins by **FX-Mechanics**.
+A small collection of classical effect plugins by **FX-Mechanics**.
 
 Each effect is a self-contained DSP class plus a matching GUI component, wrapped
 in a minimal `AudioProcessor` / `AudioProcessorEditor` so they can be used both
@@ -41,6 +41,12 @@ and also as headless **Pure Data externals** — see the dedicated section below
 | ![FxmeStereoDelay](doc/FxmeStereoDelay.png) | ![FxmeConvolReverb](doc/FxmeConvolReverb.png) |
 | **FxmeCab** | **FxmeOct** |
 | ![FxmeCab](doc/FxmeCab.png) | ![FxmeOct](doc/FxmeOct.png) |
+| **FxmeLimiter** | **FxmeFreeze** |
+| ![FxmeLimiter](doc/FxmeLimiter.png) | ![FxmeFreeze](doc/FxmeFreeze.png) |
+| **FxmeChorus** | **FxmeFlanger** |
+| ![FxmeChorus](doc/FxmeChorus.png) | ![FxmeFlanger](doc/FxmeFlanger.png) |
+| **FxmePhaser** | |
+| ![FxmePhaser](doc/FxmePhaser.png) | |
 
 ## Installing
 
