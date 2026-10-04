@@ -216,7 +216,7 @@ ConvolReverbComponent::ConvolReverbComponent (ConvolReverb& r, juce::AudioProces
     for (int i = 0; i < names.size(); ++i)
         irBox.addItem (juce::File (names[i]).getFileNameWithoutExtension(), i + 1);
     externalSlotId = names.size() + 1;
-    irBox.addItem ("External\xe2\x80\xa6", externalSlotId); // U+2026 horizontal ellipsis
+    irBox.addItem ("External file", externalSlotId); // U+2026 horizontal ellipsis
     refreshExternalItemText();
 
     irBox.addMouseListener (&irBoxClickWatcher, true);
