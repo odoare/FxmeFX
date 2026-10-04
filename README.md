@@ -505,27 +505,24 @@ cmake --build build --config Release --target FxmeCompressor_pd
 
 CI fetches Pd-vanilla automatically; only local Windows builds need this.
 
-## Releases
-
-Pushing a version tag like `v0.1.0` triggers
-[`release.yml`](.github/workflows/release.yml), which builds every plugin on
-Linux (x86_64), macOS (universal arm64+x86_64) and Windows (x86_64),
-zips them per platform, and publishes a GitHub Release with the artefacts
-attached.
-
-```bash
-git tag v0.1.0
-git push origin v0.1.0
-```
-
 ## License
 
-FxmeFX is released under the **GNU Lesser General Public License, version 3**
-(LGPL-3.0) - see [LICENSE](LICENSE).
+FxmeFX is dual-licensed, like the JUCE framework and the FxmeTools module it is
+built on: under the **GNU Affero General Public License, version 3 or later**
+(AGPL-3.0-or-later, see [LICENSE](LICENSE)), or under commercial terms
+available from the author for anyone holding a commercial JUCE licence.
+[LICENSE.md](LICENSE.md) explains what applies where and why, including the
+Pure Data externals and the third-party material.
+
+Releases up to and including 0.3.0 were published under the GNU LGPL 3.0 and
+keep those terms; the terms above apply from 0.4.0 on.
 
 Vendored / external code keeps its own terms:
 
-- [FxmeTools](https://github.com/odoare/FxmeTools) - LGPL-3.0-or-later; bundles
-  [WDL](lib/FxmeTools/WDL/) (zlib-style license) as a nested submodule.
-- [JUCE](https://juce.com/) - used per its end-user license; the GPL build is
-  the one exercised here.
+- [FxmeTools](https://github.com/odoare/FxmeTools): its framework-free `core/`
+  is LGPL-3.0-or-later, its JUCE module AGPL-3.0-or-later or commercial; it
+  bundles [WDL](lib/FxmeTools/WDL/) (zlib licence) as a nested submodule.
+- [JUCE](https://juce.com/): AGPLv3 or a commercial JUCE licence; the AGPLv3
+  option is the one these builds use.
+- The built-in impulse responses and Pure Data's `m_pd.h`: their authors'
+  terms (see [LICENSE.md](LICENSE.md)).
