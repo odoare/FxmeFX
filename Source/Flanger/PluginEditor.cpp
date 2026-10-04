@@ -17,7 +17,7 @@ namespace
 FxmeFlangerAudioProcessorEditor::FxmeFlangerAudioProcessorEditor (FxmeFlangerAudioProcessor& p)
     : AudioProcessorEditor (&p),
       audioProcessor (p),
-      topBar (JucePlugin_Name, "FX-Mechanics Stereo Flanger", flangerTint),
+      topBar (JucePlugin_Name, flangerTint),
       flangerComponent (p.getFlanger(), p.getApvts(), FxmeFlangerAudioProcessor::parameterPrefix, false)
 {
     topBar.setPresetBank (p.getPresets());

@@ -17,7 +17,7 @@ namespace
 FxmeChorusAudioProcessorEditor::FxmeChorusAudioProcessorEditor (FxmeChorusAudioProcessor& p)
     : AudioProcessorEditor (&p),
       audioProcessor (p),
-      topBar (JucePlugin_Name, "FX-Mechanics Stereo Chorus", chorusTint),
+      topBar (JucePlugin_Name, chorusTint),
       chorusComponent (p.getChorus(), p.getApvts(), FxmeChorusAudioProcessor::parameterPrefix, false)
 {
     topBar.setPresetBank (p.getPresets());

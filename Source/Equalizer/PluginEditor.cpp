@@ -12,7 +12,7 @@
 FxmeEqualizerAudioProcessorEditor::FxmeEqualizerAudioProcessorEditor (FxmeEqualizerAudioProcessor& p)
     : AudioProcessorEditor (&p),
       audioProcessor (p),
-      topBar (JucePlugin_Name, "FX-Mechanics 5-band Equalizer", juce::Colours::cyan),
+      topBar (JucePlugin_Name, juce::Colours::cyan),
       equalizerComponent (p.getEqualizer(), p.getApvts(), FxmeEqualizerAudioProcessor::parameterPrefix, false)
 {
     topBar.setPresetBank (p.getPresets());

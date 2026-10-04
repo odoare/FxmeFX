@@ -17,7 +17,7 @@ namespace
 FxmePhaserAudioProcessorEditor::FxmePhaserAudioProcessorEditor (FxmePhaserAudioProcessor& p)
     : AudioProcessorEditor (&p),
       audioProcessor (p),
-      topBar (JucePlugin_Name, "FX-Mechanics Stereo Phaser", phaserTint),
+      topBar (JucePlugin_Name, phaserTint),
       phaserComponent (p.getPhaser(), p.getApvts(), FxmePhaserAudioProcessor::parameterPrefix, false)
 {
     topBar.setPresetBank (p.getPresets());

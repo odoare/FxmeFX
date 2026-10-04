@@ -4,9 +4,11 @@
     TopBar.h
 
     Shared plugin header bar for the standalone VST3/AU FxmeFX plugins: dark
-    background, the FX-Mechanics logo, the plugin name, a short description,
-    and the version number, with an accent hairline in the plugin's own base
-    colour. Same pattern as Spread and the other FX-Mechanics products.
+    background, the FX-Mechanics logo, the plugin name, then
+    "v<version> - FX-Mechanics" (the company name a link to fx-mechanics.com,
+    underlined under the pointer), and the preset bar at the right end, with
+    an accent hairline in the plugin's own base colour. The same in every
+    plugin of the collection.
 
     Deliberately lives outside the embeddable *Component classes — those are
     shared with the FX-Mechanics host bundle, which draws its own chrome.
@@ -14,8 +16,8 @@
 
     setPresetBank() adds the effect's preset bar (FxmeTools module presets,
     shared with every plugin that embeds the effect) at the right end, with
-    its "..." browser. It has priority over the text: in a narrow window the
-    version and then the description give way to it.
+    its "..." browser. In a narrow window the bar narrows (down to 150 px)
+    to keep the version line; only below that does the version give way.
 
   ==============================================================================
 */
@@ -44,8 +46,8 @@ constexpr float kOnButtonWidth   = 60.0f;
 class TopBar : public juce::Component
 {
 public:
-    TopBar (juce::String pluginName, juce::String description, juce::Colour accentColour)
-        : name (std::move (pluginName)), blurb (std::move (description)), accent (accentColour)
+    TopBar (juce::String pluginName, juce::Colour accentColour)
+        : name (std::move (pluginName)), accent (accentColour)
     {
         logo = juce::ImageCache::getFromMemory (FxmeCommonBinaryData::logo_png,
                                                 FxmeCommonBinaryData::logo_pngSize);
@@ -89,36 +91,82 @@ public:
         g.setFont (nameFont());
         g.drawText (name, parts.name, juce::Justification::centredLeft);
 
-        g.setColour (juce::Colours::lightgrey);
+        // "v<version> - FX-Mechanics", the company name a link (brighter and
+        // underlined under the pointer).
+        companyHit = {};
         if (! parts.version.isEmpty())
         {
-            g.setFont (juce::Font (juce::FontOptions (11.0f)));
-            g.drawText ("v" FXMEFX_VERSION_STRING "  -  FX-Mechanics",
-                        parts.version, juce::Justification::centredRight);
-        }
+            const auto font = versionFont();
+            g.setFont (font);
+            auto r = parts.version;
 
-        if (! parts.blurb.isEmpty())
-        {
-            g.setFont (juce::Font (juce::FontOptions ((float) getHeight() * 0.24f)));
-            g.drawText (blurb, parts.blurb, juce::Justification::centredLeft);
+            g.setColour (juce::Colours::lightgrey);
+            g.drawText (versionPrefix(), r.removeFromLeft (textWidth (font, versionPrefix())),
+                        juce::Justification::centredLeft, false);
+
+            const int companyW = textWidth (font, companyName);
+            auto company = r.removeFromLeft (companyW);
+            companyHit = company.withSizeKeepingCentre (companyW, (int) font.getHeight() + 4);
+
+            g.setColour (companyHot ? juce::Colours::white : juce::Colours::lightgrey);
+            g.drawText (companyName, company, juce::Justification::centredLeft, false);
+            if (companyHot)
+                g.fillRect (company.getX(), company.getCentreY() + (int) (font.getHeight() * 0.5f),
+                            companyW - 1, 1);
         }
     }
 
+    void mouseMove (const juce::MouseEvent& e) override
+    {
+        const bool over = companyHit.contains (e.getPosition());
+        if (over != companyHot)
+        {
+            companyHot = over;
+            repaint (companyHit.expanded (2));
+        }
+        setMouseCursor (over ? juce::MouseCursor::PointingHandCursor : juce::MouseCursor::NormalCursor);
+    }
+
+    void mouseExit (const juce::MouseEvent&) override
+    {
+        if (companyHot)
+        {
+            companyHot = false;
+            repaint (companyHit.expanded (2));
+        }
+    }
+
+    void mouseUp (const juce::MouseEvent& e) override
+    {
+        if (companyHit.contains (e.getPosition()))
+            juce::URL (companyUrl).launchInDefaultBrowser();
+    }
+
 private:
-    static constexpr int versionWidth   = 140;
-    static constexpr int presetBarWidth = 210;
-    static constexpr int minBlurbWidth  = 60;
+    static constexpr const char* companyName = "FX-Mechanics";
+    static constexpr const char* companyUrl  = "https://fx-mechanics.com";
+    static constexpr int presetBarWidth    = 210;
+    static constexpr int minPresetBarWidth = 150;   // it shrinks this far before the version goes
+
+    static juce::String versionPrefix()  { return "v" FXMEFX_VERSION_STRING " - "; }
+
+    static int textWidth (const juce::Font& f, const juce::String& t)
+    {
+        return juce::GlyphArrangement::getStringWidthInt (f, t) + 1;
+    }
 
     juce::Font nameFont() const
     {
         return juce::Font (juce::FontOptions ((float) getHeight() * 0.48f, juce::Font::bold));
     }
 
-    struct Layout { juce::Rectangle<int> logo, name, preset, version, blurb; };
+    static juce::Font versionFont() { return juce::Font (juce::FontOptions (12.0f)); }
 
-    /** Left to right: logo, name, description; at the right end the preset
-        bar, then the version left of it. The bar comes first, then the
-        version, then the description, each only if there is room. */
+    struct Layout { juce::Rectangle<int> logo, name, version, preset; };
+
+    /** Left to right: logo, name, "v<version> - FX-Mechanics"; the preset bar
+        at the right end. In a narrow window the bar gives up width (down to
+        minPresetBarWidth) before the version line goes. */
     Layout layout() const
     {
         Layout parts;
@@ -132,29 +180,35 @@ private:
 
         const int nameWidth = juce::GlyphArrangement::getStringWidthInt (nameFont(), name) + 8;
         parts.name = area.removeFromLeft (nameWidth);
+        area.removeFromLeft (10);
 
+        const auto font = versionFont();
+        const int versionW = textWidth (font, versionPrefix()) + textWidth (font, companyName);
+        constexpr int gap = 12;
+
+        int barW = 0;
         if (presetBar != nullptr)
         {
-            area.removeFromLeft (6);
-            const int w = juce::jmin (presetBarWidth, area.getWidth());
-            parts.preset = area.removeFromRight (w).withSizeKeepingCentre (w, juce::jmin (24, area.getHeight()));
-            area.removeFromRight (10);
+            const int roomForBar = area.getWidth() - versionW - gap;
+            barW = roomForBar >= minPresetBarWidth ? juce::jmin (presetBarWidth, roomForBar)
+                                                   : juce::jmin (presetBarWidth, area.getWidth());
+            parts.preset = area.removeFromRight (barW)
+                               .withSizeKeepingCentre (barW, juce::jmin (24, area.getHeight()));
+            area.removeFromRight (gap);
         }
 
-        if (area.getWidth() >= versionWidth)
-            parts.version = area.removeFromRight (versionWidth);
-
-        area.removeFromLeft (10);
-        if (area.getWidth() >= minBlurbWidth)
-            parts.blurb = area;
+        if (area.getWidth() >= versionW)
+            parts.version = area.removeFromLeft (versionW);
 
         return parts;
     }
 
-    juce::String name, blurb;
+    juce::String name;
     juce::Colour accent;
     juce::Image logo;
     std::unique_ptr<fxme::PresetBarComponent> presetBar;
+    juce::Rectangle<int> companyHit;   // as last painted
+    bool companyHot = false;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (TopBar)
 };
