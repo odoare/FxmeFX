@@ -208,6 +208,7 @@ private:
 
     void loadResource (const juce::String& resourceName);
     void loadExternalIR(); // Loads the external IR file from externalPath
+    void reloadCurrentIR(); // Loads the selected IR again from its source, at the current rate (into originalIR)
     void loadIRFromReader (juce::AudioFormatReader& reader);
     void updateModifiedIR(); // Applies length/shape to originalIR and installs it
     void installStage (const juce::AudioBuffer<float>& buffer);

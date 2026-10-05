@@ -27,9 +27,6 @@ ConvolReverb::~ConvolReverb()
 
 void ConvolReverb::prepare (double sampleRate, int samplesPerBlock)
 {
-    const bool rateChanged = (currentSampleRate != sampleRate);
-    currentSampleRate = sampleRate;
-
     {
         const juce::ScopedLock sl (stageLock);
         if (stage != nullptr)
@@ -43,12 +40,23 @@ void ConvolReverb::prepare (double sampleRate, int samplesPerBlock)
     wdlInputBuffer.setSize(maxChannels, juce::jmax (4096, samplesPerBlock), false, true, true);
     wdlInputPtrs.resize(maxChannels);
 
-    // The impulse is resampled to the session rate, so a rate change has to
-    // rebuild it. Safe to do inline: the host is not calling process() yet.
-    if (rateChanged || stage == nullptr)
+    // The impulse is resampled to the session rate when it is loaded, so a
+    // rate change has to reload it from its source: rebuilding the engine from
+    // the buffer resampled for the old rate plays it at the wrong speed. That
+    // includes the first prepare, since the IR is usually loaded before it
+    // (setImpulseList, at construction, at the 44.1 kHz default): a built-in
+    // IR then played about 9 % fast in a 48 kHz session.
+    // Under `lock`, which the loader thread holds while it reads the rate.
+    // Safe to do inline: the host is not calling process() yet.
     {
         const juce::ScopedLock sl (lock);
-        updateModifiedIR();
+        const bool rateChanged = (currentSampleRate != sampleRate);
+        currentSampleRate = sampleRate;
+
+        if (rateChanged)
+            reloadCurrentIR();
+        if (rateChanged || stage == nullptr)
+            updateModifiedIR();
     }
 
     if (! poller.isThreadRunning())
@@ -326,6 +334,18 @@ void ConvolReverb::loadIRFromReader (juce::AudioFormatReader& reader)
         fxme::ImpulseEnergy::normaliseLoudness (originalIR.getArrayOfWritePointers(),
                                                 originalIR.getNumChannels(), originalIR.getNumSamples(),
                                                 currentSampleRate > 0 ? currentSampleRate : reader.sampleRate);
+}
+
+void ConvolReverb::reloadCurrentIR()
+{
+    const juce::ScopedLock sl (lock);
+    if (currentIndex < 0)
+        return;
+
+    if (currentIndex == getExternalIndex())
+        loadExternalIR();
+    else if (currentIndex < irResources.size())
+        loadResource (irResources[currentIndex]);
 }
 
 void ConvolReverb::loadExternalIR()
@@ -624,10 +644,7 @@ void ConvolReverb::serviceParameters()
     // the reverse): reload the IR in place, from the same source.
     if (normaliseIRs.load() != normalisedIR && currentIndex >= 0)
     {
-        if (currentIndex == getExternalIndex())
-            loadExternalIR();
-        else if (currentIndex < irResources.size())
-            loadResource (irResources[currentIndex]);
+        reloadCurrentIR();
         updateModifiedIR();
     }
 

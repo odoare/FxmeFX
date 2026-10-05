@@ -23,8 +23,6 @@ Cab::~Cab()
 
 void Cab::prepare (double sampleRate, int samplesPerBlock)
 {
-    currentSampleRate = sampleRate;
-
     {
         const juce::ScopedLock sl (stageLock);
         if (stage != nullptr)
@@ -38,10 +36,26 @@ void Cab::prepare (double sampleRate, int samplesPerBlock)
     wdlInputBuffer.setSize (maxChannels, juce::jmax (4096, samplesPerBlock), false, true, true);
     wdlInputPtrs.resize (maxChannels);
 
-    // The IRs are resampled to the session rate, so rebuild for the new one.
+    // The IRs are resampled to the session rate when they are loaded, so a
+    // rate change has to reload them from their source: rebuilding the engine
+    // from buffers resampled for the old rate plays them at the wrong speed.
+    // That includes the first prepare, since the IRs are usually loaded
+    // before it (setImpulseList, at construction, at the 44.1 kHz default):
+    // they then played about 9 % fast in a 48 kHz session.
+    // Under `lock`, which the loader thread holds while it reads the rate.
     // Safe to do inline: the host is not calling process() yet.
     {
         const juce::ScopedLock sl (lock);
+        const bool rateChanged = (currentSampleRate != sampleRate);
+        currentSampleRate = sampleRate;
+
+        if (rateChanged)
+            for (int c = 0; c < NumSlots; ++c)
+            {
+                const int idx = currentIndex[(size_t) c];
+                if (idx >= 0 && idx < irResources.size())
+                    loadResource (c, irResources[idx]);
+            }
         rebuildEngineImpulse();
     }
 
