@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<FxmeModulePreset module="Reverb" version="1" name="Wide Hall">
+  <Param key="On" value="1"/>
+  <Param key="PreDelay" value="25"/>
+  <Param key="Size" value="80"/>
+  <Param key="Damp" value="45"/>
+  <Param key="Width" value="100"/>
+  <Param key="LowCut" value="180"/>
+  <Param key="HighCut" value="10000"/>
+  <Param key="Mix" value="30"/>
+  <Param key="Out" value="0"/>
+</FxmeModulePreset>

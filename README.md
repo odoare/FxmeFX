@@ -24,6 +24,7 @@ drum kits).
 | FxmeFreeze       | `FRZE`      | Spectral freeze (paulstretch-style FFT wash). Engaging it freezes the window of input *preceding* the switch, so the wash starts in the very next block. Mix and stereo Width. |
 | FxmeChorus       | `CHOR`      | Stereo chorus. Two to four modulated delay taps per channel, spread evenly around one LFO cycle, no feedback. Rate / Depth / Delay / Voices / Width / Mix, free-running or tempo-synced. |
 | FxmeFlanger      | `FLNG`      | Stereo flanger. One very short modulated delay per channel with bipolar feedback - positive sharpens the comb into the jet whoosh, negative inverts it for the hollow variant. Delay places the comb, Depth sets the sweep. Free-running or tempo-synced. |
+| FxmeReverb       | `FVRB`      | Algorithmic stereo reverb (WDL's Freeverb-derived engine). Pre-delay, Size, Damping and Width of the tail, Low cut and High cut on the reverb only, Mix and Output; the On switch fades and clears the tail. |
 | FxmePhaser       | `PHSR`      | Stereo phaser. 2 to 12 first-order allpass sections per channel swept by one LFO, with bipolar feedback. Freq is the sweep centre, Depth the excursion in octaves (up to 2.5 either way). Free-running or tempo-synced. |
 
 All plugins build as **VST3**, **AU** (macOS) and a **Standalone** application,
@@ -118,6 +119,14 @@ where `<Effect>` is the effect's name without the `Fxme` prefix
 (`Compressor`, `StereoDelay`, ...). A preset holds every parameter of the
 effect; ConvolReverb's also remembers an external IR by its file path (the
 IR itself is embedded in the session, not in the preset).
+
+For developers embedding an effect: every effect component takes, after the
+effect, the APVTS and the parameter prefix, `showTitle` (the plugins pass
+false, their title bar shows the name) and `compact` (Tube: after
+`knobsInSingleRow`). Compact is for a wide, short slot in a host: no title,
+flat knobs (`FxmeLookAndFeel::KnobStyle::flat`), the switches and menus on one
+line over one row of knobs (the Equalizer: its response graph beside one
+band's controls at a time). Camshaft uses it.
 
 For developers: factory presets go in `Source/<Effect>/Presets/`, one
 `FxmeModulePreset` XML file each, named `<Effect>_<Preset_Name>.xml` (the
@@ -408,6 +417,7 @@ FxmeFX/
 │   ├── Chorus/                 # stereo chorus (tempo-syncable LFO)
 │   ├── Flanger/                # stereo flanger (tempo-syncable LFO)
 │   ├── Phaser/                 # stereo phaser  (tempo-syncable LFO)
+│   ├── Reverb/                 # algorithmic reverb (WDL Freeverb engine)
 │   └── VuMeter/                # re-export shims for fxme::VuMeter / fxme::VuMeterComponent
 ├── lib/
 │   └── FxmeTools/              # submodule: shared GUI/DSP + nested WDL submodule
@@ -464,7 +474,7 @@ cmake --build build --parallel
 
 `PLUGIN` accepts: `Compressor`, `Equalizer`, `Tube`, `Transient`,
 `StereoDelay`, `ConvolReverb`, `Cab`, `Oct`, `Limiter`, `Freeze`, `Chorus`,
-`Flanger`, `Phaser`.
+`Flanger`, `Phaser`, `Reverb`.
 
 ### A single plugin standalone
 

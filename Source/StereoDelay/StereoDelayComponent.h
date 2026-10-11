@@ -15,7 +15,7 @@
 class StereoDelayComponent : public juce::Component, public juce::Timer
 {
 public:
-    StereoDelayComponent(StereoDelay& delayToControl, juce::AudioProcessorValueTreeState& apvts, const juce::String& prefix, bool showTitle = true);
+    StereoDelayComponent(StereoDelay& delayToControl, juce::AudioProcessorValueTreeState& apvts, const juce::String& prefix, bool showTitle = true, bool compact = false);
     ~StereoDelayComponent() override;
 
     void paint(juce::Graphics& g) override;
@@ -25,6 +25,7 @@ public:
 private:
     StereoDelay& delay;
     juce::AudioProcessorValueTreeState& apvts;
+    const bool compact;     // a wide, short slot: no title, flat knobs, one row of controls
 
     juce::Label titleLabel;
     fxme::FxmeButton onButton;

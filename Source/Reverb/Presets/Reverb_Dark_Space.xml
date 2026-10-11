@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<FxmeModulePreset module="Reverb" version="1" name="Dark Space">
+  <Param key="On" value="1"/>
+  <Param key="PreDelay" value="60"/>
+  <Param key="Size" value="95"/>
+  <Param key="Damp" value="85"/>
+  <Param key="Width" value="100"/>
+  <Param key="LowCut" value="100"/>
+  <Param key="HighCut" value="4000"/>
+  <Param key="Mix" value="40"/>
+  <Param key="Out" value="0"/>
+</FxmeModulePreset>

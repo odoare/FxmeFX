@@ -18,7 +18,8 @@ public:
     FlangerComponent (Flanger& flangerToControl,
                       juce::AudioProcessorValueTreeState& apvts,
                       const juce::String& prefix,
-                      bool showTitle = true);
+                      bool showTitle = true,
+                      bool compact = false);
     ~FlangerComponent() override;
 
     void paint (juce::Graphics& g) override;
@@ -35,6 +36,7 @@ private:
 
     Flanger& flanger;
     juce::AudioProcessorValueTreeState& apvts;
+    const bool compact;     // a wide, short slot: no title, flat knobs, one row of knobs
 
     juce::Label        titleLabel;
     fxme::FxmeButton onButton, syncButton;

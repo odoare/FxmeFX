@@ -57,8 +57,9 @@ void ChorusComponent::setupCombo (juce::ComboBox& box, juce::Label& label,
 ChorusComponent::ChorusComponent (Chorus& c,
                                   juce::AudioProcessorValueTreeState& state,
                                   const juce::String& prefix,
-                                  bool showTitle)
-    : chorus (c), apvts (state),
+                                  bool showTitle,
+                                  bool compactLayout)
+    : chorus (c), apvts (state), compact (compactLayout),
       onButton   (state, prefix + "_Chorus_On",   "On",   chorusTint),
       syncButton (state, prefix + "_Chorus_Sync", "Sync", chorusTint)
 {
@@ -66,8 +67,11 @@ ChorusComponent::ChorusComponent (Chorus& c,
     // and cannot see the box that opened it.
     fxmeLookAndFeel.setAccentColour (chorusTint);
 
+    if (compact)
+        fxmeLookAndFeel.setKnobStyle (fxme::FxmeLookAndFeel::KnobStyle::flat);
+
     addChildComponent (titleLabel);
-    titleLabel.setVisible (showTitle);
+    titleLabel.setVisible (showTitle && ! compact);
     titleLabel.setText ("Chorus", juce::NotificationType::dontSendNotification);
     titleLabel.setJustificationType (juce::Justification::centred);
     titleLabel.setFont (juce::Font (juce::FontOptions (16.0f, juce::Font::bold)));
@@ -140,6 +144,32 @@ void ChorusComponent::resized()
 {
     using fi = juce::FlexItem;
     auto area = getLocalBounds().reduced (5);
+
+    if (compact)
+    {
+        // One line of switches and menus, one row of every knob.
+        juce::FlexBox top, knobs, column;
+        top.flexDirection    = juce::FlexBox::Direction::row;
+        knobs.flexDirection  = juce::FlexBox::Direction::row;
+        column.flexDirection = juce::FlexBox::Direction::column;
+        top.items.add (fi (onButton).withWidth (fxmefx::kOnButtonWidth).withMargin (juce::FlexItem::Margin (0.f, 8.f, 0.f, 0.f)));
+        top.items.add (fi (shapeLabel).withWidth (44.0f));
+        top.items.add (fi (shapeBox)  .withFlex (1.0f).withMargin (juce::FlexItem::Margin (0.f, 8.f, 0.f, 4.f)));
+        top.items.add (fi (divLabel)  .withWidth (30.0f));
+        top.items.add (fi (divBox)    .withFlex (0.9f).withMargin (juce::FlexItem::Margin (0.f, 8.f, 0.f, 4.f)));
+        top.items.add (fi (syncButton).withWidth (66.0f));
+        knobs.items.add (fi (rateSlider).withFlex (1.0f));
+        knobs.items.add (fi (depthSlider).withFlex (1.0f));
+        knobs.items.add (fi (delaySlider).withFlex (1.0f));
+        knobs.items.add (fi (voicesSlider).withFlex (1.0f));
+        knobs.items.add (fi (widthSlider).withFlex (1.0f));
+        knobs.items.add (fi (mixSlider).withFlex (1.0f));
+        knobs.items.add (fi (outSlider).withFlex (1.0f));
+        column.items.add (fi (top).withHeight (24.0f).withMargin (juce::FlexItem::Margin (0.f, 0.f, 4.f, 0.f)));
+        column.items.add (fi (knobs).withFlex (1.0f));
+        column.performLayout (area);
+        return;
+    }
 
     juce::FlexBox top, comboRow, knobRow1, knobRow2, fMain;
     top     .flexDirection = juce::FlexBox::Direction::row;

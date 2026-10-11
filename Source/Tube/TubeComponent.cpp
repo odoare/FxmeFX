@@ -16,8 +16,8 @@ void TubeComponent::setSliderColours (juce::Slider& s, juce::Colour c)
     s.setColour (juce::Slider::rotarySliderOutlineColourId, c.darker (2.0f));
 }
 
-TubeComponent::TubeComponent (Tube& t, juce::AudioProcessorValueTreeState& state, const juce::String& prefix, bool showTitle, bool singleRow)
-    : tube (t), apvts (state), knobsInSingleRow (singleRow),
+TubeComponent::TubeComponent (Tube& t, juce::AudioProcessorValueTreeState& state, const juce::String& prefix, bool showTitle, bool singleRow, bool compactLayout)
+    : tube (t), apvts (state), knobsInSingleRow (singleRow || compactLayout), compact (compactLayout),
       onButton (state, prefix + "_Tube_On", "On", juce::Colours::orange)
 {
     // Tints this component's combo-box drop-downs; a menu is its own window
@@ -55,7 +55,9 @@ TubeComponent::TubeComponent (Tube& t, juce::AudioProcessorValueTreeState& state
     modelAtt = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (apvts, prefix + "_Tube_Model", modelBox);
 
     addChildComponent (titleLabel);
-    titleLabel.setVisible (showTitle);
+    if (compact)
+        fxmeLookAndFeel.setKnobStyle (fxme::FxmeLookAndFeel::KnobStyle::flat);
+    titleLabel.setVisible (showTitle && ! compact);
     titleLabel.setText ("Tube Saturation", juce::NotificationType::dontSendNotification);
     titleLabel.setJustificationType (juce::Justification::centred);
     titleLabel.setFont (juce::Font (juce::FontOptions (16.0f, juce::Font::bold)));
@@ -138,13 +140,14 @@ void TubeComponent::resized()
     // In a wide but short slot every vertical pixel counts, so the header keeps
     // its height (the button and combo still need it) but gives back its
     // margins.
-    const float headerTopMargin    = knobsInSingleRow ?  2.f :  5.f;
+    const float headerTopMargin    = compact ? 0.f : (knobsInSingleRow ?  2.f :  5.f);
     const float headerBottomMargin = knobsInSingleRow ?  4.f : 10.f;
+    const float headerHeight       = compact ? 24.f : fxmefx::kHeaderRowHeight;
 
     // The tube artwork spans the full content height at its native aspect
     // ratio; the header (plus its vertical margins) is what it can't have.
     const float contentHeight = juce::jmax (0.0f, (float) area.getHeight()
-                                                  - fxmefx::kHeaderRowHeight
+                                                  - headerHeight
                                                   - headerTopMargin - headerBottomMargin);
     float imageWidth = 0.0f;
     if (auto img = tubeImage.getImage(); img.isValid() && img.getHeight() > 0)
@@ -176,8 +179,8 @@ void TubeComponent::resized()
     f2.items.add(fi(knobs).withFlex(1.f));
     f2.items.add(fi(outSlider).withWidth(60.f).withMargin(juce::FlexItem::Margin(0.f, 0.f, 0.f, 5.f)));
 
-    fMain.items.add(fi(f1).withHeight(fxmefx::kHeaderRowHeight)
-                          .withMinHeight(fxmefx::kHeaderRowHeight)
+    fMain.items.add(fi(f1).withHeight(headerHeight)
+                          .withMinHeight(headerHeight)
                           .withMargin(juce::FlexItem::Margin(headerTopMargin, 0.f, headerBottomMargin, 0.f)));
     fMain.items.add(fi(f2).withFlex(1.f));
 

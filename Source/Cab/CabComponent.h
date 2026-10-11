@@ -34,7 +34,8 @@ public:
     CabComponent (Cab& cabToControl,
                       juce::AudioProcessorValueTreeState& apvts,
                       const juce::String& prefix,
-                      bool showTitle = true);
+                      bool showTitle = true,
+                      bool compact = false);
     ~CabComponent() override;
 
     void paint (juce::Graphics& g) override;
@@ -44,6 +45,7 @@ public:
 private:
     Cab& cab;
     juce::AudioProcessorValueTreeState& apvts;
+    const bool compact;     // a wide, short slot: no title, flat knobs, one row of controls
 
     juce::Label        titleLabel;
     fxme::FxmeButton onButton;

@@ -18,7 +18,8 @@ public:
     PhaserComponent (Phaser& phaserToControl,
                      juce::AudioProcessorValueTreeState& apvts,
                      const juce::String& prefix,
-                     bool showTitle = true);
+                     bool showTitle = true,
+                     bool compact = false);
     ~PhaserComponent() override;
 
     void paint (juce::Graphics& g) override;
@@ -35,6 +36,7 @@ private:
 
     Phaser& phaser;
     juce::AudioProcessorValueTreeState& apvts;
+    const bool compact;     // a wide, short slot: no title, flat knobs, one row of knobs
 
     juce::Label        titleLabel;
     fxme::FxmeButton onButton, syncButton;

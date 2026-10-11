@@ -108,7 +108,8 @@ public:
     EqualizerComponent (Equalizer& equalizerToControl,
                         juce::AudioProcessorValueTreeState& apvts,
                         const juce::String& prefix,
-                        bool showTitle = true);
+                        bool showTitle = true,
+                        bool compact = false);
     ~EqualizerComponent() override;
 
     void paint (juce::Graphics&) override;
@@ -118,6 +119,12 @@ private:
     Equalizer& equalizer;
     juce::AudioProcessorValueTreeState& apvts;
     const int numBands;
+    // A wide, short slot: no title, flat knobs, the response graph on the left
+    // and one band's controls at a time on the right, chosen by bandSelect.
+    const bool compact;
+    int selectedBand = 0;
+    std::array<juce::TextButton, Equalizer::MaxBands> bandSelect;
+    void selectBand (int band);
 
     fxme::FxmeButton onButton;
     juce::Label      titleLabel;

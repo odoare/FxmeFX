@@ -16,8 +16,8 @@ void CompressorComponent::setSliderColours (juce::Slider& s, juce::Colour c)
     s.setColour (juce::Slider::rotarySliderOutlineColourId, c.darker (2.0f));
 }
 
-CompressorComponent::CompressorComponent (Compressor& comp, juce::AudioProcessorValueTreeState& state, const juce::String& prefix, bool showTitle)
-    : compressor (comp), apvts (state),
+CompressorComponent::CompressorComponent (Compressor& comp, juce::AudioProcessorValueTreeState& state, const juce::String& prefix, bool showTitle, bool compactLayout)
+    : compressor (comp), apvts (state), compact (compactLayout),
       onButton (state, prefix + "_Comp_On", "On", juce::Colours::red)
 {
     // Tints this component's combo-box drop-downs; a menu is its own window
@@ -28,7 +28,9 @@ CompressorComponent::CompressorComponent (Compressor& comp, juce::AudioProcessor
     onButton.setLookAndFeel(&fxmeLookAndFeel);
 
     addChildComponent (titleLabel);
-    titleLabel.setVisible (showTitle);
+    if (compact)
+        fxmeLookAndFeel.setKnobStyle (fxme::FxmeLookAndFeel::KnobStyle::flat);
+    titleLabel.setVisible (showTitle && ! compact);
     titleLabel.setText ("Compressor", juce::NotificationType::dontSendNotification);
     titleLabel.setJustificationType (juce::Justification::centred);
     titleLabel.setFont (juce::Font (juce::FontOptions (16.0f, juce::Font::bold)));
@@ -116,6 +118,30 @@ void CompressorComponent::resized()
 {
     auto area = getLocalBounds().reduced (5.f);
     using fi = juce::FlexItem;
+
+    if (compact)
+    {
+        // The switch and the release mode on one line; the input bar, the six
+        // knobs, the reduction meter and the output bar on one row.
+        juce::FlexBox top, row, column;
+        top.flexDirection    = juce::FlexBox::Direction::row;
+        row.flexDirection    = juce::FlexBox::Direction::row;
+        column.flexDirection = juce::FlexBox::Direction::column;
+        top.items.add (fi (onButton).withWidth (fxmefx::kOnButtonWidth).withMargin (juce::FlexItem::Margin (0.f, 8.f, 0.f, 0.f)));
+        top.items.add (fi().withFlex (1.0f));
+        top.items.add (fi (relModeBox).withWidth (140.0f));
+
+        row.items.add (fi (preGainSlider).withWidth (40.0f).withMargin (juce::FlexItem::Margin (0.f, 6.f, 0.f, 0.f)));
+        for (auto* s : { &attackSlider, &releaseSlider, &kneeSlider, &threshSlider, &ratioSlider, &peakRmsSlider })
+            row.items.add (fi (*s).withFlex (1.0f));
+        row.items.add (fi (grMeter).withWidth (14.0f).withMargin (juce::FlexItem::Margin (0.f, 6.f, 0.f, 6.f)));
+        row.items.add (fi (gainSlider).withWidth (40.0f));
+
+        column.items.add (fi (top).withHeight (24.0f).withMargin (juce::FlexItem::Margin (0.f, 0.f, 4.f, 0.f)));
+        column.items.add (fi (row).withFlex (1.0f));
+        column.performLayout (area);
+        return;
+    }
     juce::FlexBox f1, f2, f3, f4, f5, fMain;
     f1.flexDirection = juce::FlexBox::Direction::row;
     f2.flexDirection = juce::FlexBox::Direction::row;

@@ -30,8 +30,10 @@ public:
      *        strip, say), where halving the height makes the knobs tiny.
      *        Leave false for roughly square slots — the standalone plugin and
      *        every other host keep the original layout.
+     * @param compact A wide, short slot: no title, flat knobs, knobs in one
+     *        row (implies knobsInSingleRow) under a short header.
      */
-    TubeComponent (Tube& tube, juce::AudioProcessorValueTreeState& apvts, const juce::String& prefix, bool showTitle = true, bool knobsInSingleRow = false);
+    TubeComponent (Tube& tube, juce::AudioProcessorValueTreeState& apvts, const juce::String& prefix, bool showTitle = true, bool knobsInSingleRow = false, bool compact = false);
     ~TubeComponent() override;
 
     void paint (juce::Graphics&) override;
@@ -41,6 +43,7 @@ private:
     Tube& tube;
     juce::AudioProcessorValueTreeState& apvts;
     const bool knobsInSingleRow;
+    const bool compact;
 
     fxme::FxmeButton onButton;
     juce::ComboBox modelBox;

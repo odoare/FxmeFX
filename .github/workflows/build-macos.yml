@@ -37,7 +37,7 @@ jobs:
 
       - name: Build (one plugin at a time)
         run: |
-          for plugin in Compressor Equalizer Tube Transient StereoDelay ConvolReverb Cab Oct Limiter Freeze Chorus Flanger Phaser; do
+          for plugin in Compressor Equalizer Tube Transient StereoDelay ConvolReverb Cab Oct Limiter Freeze Chorus Flanger Phaser Reverb; do
             echo "::group::Build Fxme${plugin}"
             cmake --build FxmeFX/build --config Release --target "Fxme${plugin}_All" --parallel 2
             echo "::endgroup::"
@@ -45,7 +45,7 @@ jobs:
 
       - name: Build Pure Data externals
         run: |
-          for plugin in Compressor Equalizer Tube Transient StereoDelay ConvolReverb Cab Oct Limiter Freeze Chorus Flanger Phaser; do
+          for plugin in Compressor Equalizer Tube Transient StereoDelay ConvolReverb Cab Oct Limiter Freeze Chorus Flanger Phaser Reverb; do
             echo "::group::Build Fxme${plugin} (Pd)"
             cmake --build FxmeFX/build --config Release --target "Fxme${plugin}_pd" --parallel 2
             echo "::endgroup::"
@@ -56,7 +56,7 @@ jobs:
         # single-slice build as a success and ships it.
         run: |
           fail=0
-          for plugin in Compressor Equalizer Tube Transient StereoDelay ConvolReverb Cab Oct Limiter Freeze Chorus Flanger Phaser; do
+          for plugin in Compressor Equalizer Tube Transient StereoDelay ConvolReverb Cab Oct Limiter Freeze Chorus Flanger Phaser Reverb; do
             bin="FxmeFX/build/Source/${plugin}/Fxme${plugin}_artefacts/Release/VST3/Fxme${plugin}.vst3/Contents/MacOS/Fxme${plugin}"
             if [ ! -f "$bin" ]; then
               echo "::error::Fxme${plugin}: binary not found at $bin"

@@ -86,8 +86,8 @@ juce::String StereoDelayComponent::resolvedTimeText() const
     return text;
 }
 
-StereoDelayComponent::StereoDelayComponent(StereoDelay& d, juce::AudioProcessorValueTreeState& state, const juce::String& prefix, bool showTitle)
-    : delay(d), apvts(state),
+StereoDelayComponent::StereoDelayComponent(StereoDelay& d, juce::AudioProcessorValueTreeState& state, const juce::String& prefix, bool showTitle, bool compactLayout)
+    : delay(d), apvts(state), compact (compactLayout),
       onButton (state, prefix + "_Del_On", "On", juce::Colours::green)
 {
     // Tints this component's drop-down menus and tooltips; both are their own
@@ -95,7 +95,9 @@ StereoDelayComponent::StereoDelayComponent(StereoDelay& d, juce::AudioProcessorV
     fxmeLookAndFeel.setAccentColour (juce::Colours::green);
 
     addChildComponent(titleLabel);
-    titleLabel.setVisible(showTitle);
+    if (compact)
+        fxmeLookAndFeel.setKnobStyle (fxme::FxmeLookAndFeel::KnobStyle::flat);
+    titleLabel.setVisible(showTitle && ! compact);
     titleLabel.setText("Stereo Delay", juce::NotificationType::dontSendNotification);
     titleLabel.setJustificationType(juce::Justification::centred);
     titleLabel.setFont(juce::Font (juce::FontOptions (16.0f, juce::Font::bold)));
@@ -170,6 +172,39 @@ void StereoDelayComponent::resized()
 {
     auto area = getLocalBounds().reduced(5);
     using fi = juce::FlexItem;
+
+    if (compact)
+    {
+        // The switch and the time modes on one line, every knob and the two
+        // level bars on one row.
+        juce::FlexBox top, row, column, dry, wet;
+        top.flexDirection    = juce::FlexBox::Direction::row;
+        row.flexDirection    = juce::FlexBox::Direction::row;
+        column.flexDirection = juce::FlexBox::Direction::column;
+        top.items.add (fi (onButton).withWidth (fxmefx::kOnButtonWidth).withMargin (juce::FlexItem::Margin (0.f, 8.f, 0.f, 0.f)));
+        top.items.add (fi (modeLLabel).withWidth (46.0f));
+        top.items.add (fi (modeLBox).withFlex (1.0f).withMargin (juce::FlexItem::Margin (0.f, 8.f, 0.f, 4.f)));
+        top.items.add (fi (modeRLabel).withWidth (46.0f));
+        top.items.add (fi (modeRBox).withFlex (1.0f).withMargin (juce::FlexItem::Margin (0.f, 8.f, 0.f, 4.f)));
+        top.items.add (fi (resolvedLabel).withFlex (1.2f));
+        top.items.add (fi (bpmLabel).withWidth (70.0f));
+
+        for (auto* s : { &delayLSlider, &delayRSlider, &fdbkLSlider, &fdbkRSlider, &crossFdbkSlider, &cutoffSlider, &qSlider })
+            row.items.add (fi (*s).withFlex (1.0f));
+        dry.flexDirection = juce::FlexBox::Direction::column;
+        wet.flexDirection = juce::FlexBox::Direction::column;
+        dry.items.add (fi (dryGainLabel).withHeight (16.0f));
+        dry.items.add (fi (dryGainSlider).withFlex (1.0f));
+        wet.items.add (fi (wetGainLabel).withHeight (16.0f));
+        wet.items.add (fi (wetGainSlider).withFlex (1.0f));
+        row.items.add (fi (dry).withWidth (40.0f).withMargin (juce::FlexItem::Margin (0.f, 3.f, 0.f, 3.f)));
+        row.items.add (fi (wet).withWidth (40.0f).withMargin (juce::FlexItem::Margin (0.f, 3.f, 0.f, 3.f)));
+
+        column.items.add (fi (top).withHeight (24.0f).withMargin (juce::FlexItem::Margin (0.f, 0.f, 4.f, 0.f)));
+        column.items.add (fi (row).withFlex (1.0f));
+        column.performLayout (area);
+        return;
+    }
     juce::FlexBox fMain, fTop, fModes, fSliders1, fSliders2;
     fMain.flexDirection = juce::FlexBox::Direction::column;
     fTop.flexDirection = juce::FlexBox::Direction::row;

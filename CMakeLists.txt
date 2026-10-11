@@ -45,6 +45,7 @@ set(_all_plugins
     Chorus
     Flanger
     Phaser
+    Reverb
 )
 
 if(PLUGIN STREQUAL "")

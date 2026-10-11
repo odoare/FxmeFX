@@ -89,8 +89,9 @@ void CabComponent::setupGainSlider (fxme::FxmeSlider& slider, juce::Label& label
 CabComponent::CabComponent (Cab& c,
                                     juce::AudioProcessorValueTreeState& state,
                                     const juce::String& prefix,
-                                    bool showTitle)
-    : cab (c), apvts (state),
+                                    bool showTitle,
+                                    bool compactLayout)
+    : cab (c), apvts (state), compact (compactLayout),
       onButton (state, prefix + "_Cab_On", "On", cabTint),
       irLPlot (c, 0, cabTint),
       irRPlot (c, 1, cabTint.brighter (0.4f))
@@ -100,7 +101,9 @@ CabComponent::CabComponent (Cab& c,
     fxmeLookAndFeel.setAccentColour (cabTint);
 
     addChildComponent (titleLabel);
-    titleLabel.setVisible (showTitle);
+    if (compact)
+        fxmeLookAndFeel.setKnobStyle (fxme::FxmeLookAndFeel::KnobStyle::flat);
+    titleLabel.setVisible (showTitle && ! compact);
     titleLabel.setText ("Cab", juce::NotificationType::dontSendNotification);
     titleLabel.setJustificationType (juce::Justification::centred);
     titleLabel.setFont (juce::Font (juce::FontOptions (16.0f, juce::Font::bold)));
@@ -218,9 +221,10 @@ void CabComponent::resized()
     cols.items.add (fi (colL).withFlex (1.0f).withMargin (juce::FlexItem::Margin (0.f, 5.f, 0.f, 0.f)));
     cols.items.add (fi (colR).withFlex (1.0f).withMargin (juce::FlexItem::Margin (0.f, 0.f, 0.f, 5.f)));
 
-    fMain.items.add (fi (top).withHeight (fxmefx::kHeaderRowHeight)
-                             .withMinHeight (fxmefx::kHeaderRowHeight)
-                             .withMargin (juce::FlexItem::Margin (5.f, 0.f, 8.f, 0.f)));
+    const float headerHeight = compact ? 24.0f : fxmefx::kHeaderRowHeight;
+    fMain.items.add (fi (top).withHeight (headerHeight)
+                             .withMinHeight (headerHeight)
+                             .withMargin (juce::FlexItem::Margin (compact ? 0.f : 5.f, 0.f, compact ? 4.f : 8.f, 0.f)));
     fMain.items.add (fi (cols).withFlex (1.0f));
 
     fMain.performLayout (area);

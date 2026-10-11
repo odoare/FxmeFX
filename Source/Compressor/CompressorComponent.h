@@ -16,7 +16,7 @@ class CompressorComponent : public juce::Component,
                             public juce::Timer
 {
 public:
-    CompressorComponent (Compressor& compressorToControl, juce::AudioProcessorValueTreeState& apvts, const juce::String& prefix, bool showTitle = true);
+    CompressorComponent (Compressor& compressorToControl, juce::AudioProcessorValueTreeState& apvts, const juce::String& prefix, bool showTitle = true, bool compact = false);
     ~CompressorComponent() override;
 
     void paint (juce::Graphics&) override;
@@ -26,6 +26,7 @@ public:
 private:
     Compressor& compressor;
     juce::AudioProcessorValueTreeState& apvts;
+    const bool compact;     // a wide, short slot: no title, flat knobs, one row of controls
 
     fxme::FxmeButton onButton;
     juce::Label titleLabel;

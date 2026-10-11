@@ -514,13 +514,29 @@ bool EqualizerComponent::bandShowsGain (int i) const
 
 void EqualizerComponent::updateBandVisibility (int i)
 {
-    bandFreq[i].setVisible (true);
-    bandQ[i]   .setVisible (bandShowsQ    (i));
-    bandGain[i].setVisible (bandShowsGain (i));
+    // Compact: only the selected band's controls are shown.
+    const bool shown = ! compact || i == selectedBand;
+    if (bandOnButton[i] != nullptr)
+        bandOnButton[i]->setVisible (shown);
+    bandType[i].setVisible (shown);
+    bandFreq[i].setVisible (shown);
+    bandQ[i]   .setVisible (shown && bandShowsQ    (i));
+    bandGain[i].setVisible (shown && bandShowsGain (i));
 }
 
-EqualizerComponent::EqualizerComponent (Equalizer& eq, juce::AudioProcessorValueTreeState& state, const juce::String& prefix, bool showTitle)
-    : equalizer (eq), apvts (state), numBands (eq.getNumBands()),
+void EqualizerComponent::selectBand (int band)
+{
+    selectedBand = juce::jlimit (0, numBands - 1, band);
+    for (int i = 0; i < numBands; ++i)
+    {
+        bandSelect[i].setToggleState (i == selectedBand, juce::dontSendNotification);
+        updateBandVisibility (i);
+    }
+    resized();
+}
+
+EqualizerComponent::EqualizerComponent (Equalizer& eq, juce::AudioProcessorValueTreeState& state, const juce::String& prefix, bool showTitle, bool compactLayout)
+    : equalizer (eq), apvts (state), numBands (eq.getNumBands()), compact (compactLayout),
       onButton (state, prefix + "_EQ_On", "On", juce::Colours::cyan)
 {
     // Tints this component's combo-box drop-downs; a menu is its own window
@@ -531,8 +547,11 @@ EqualizerComponent::EqualizerComponent (Equalizer& eq, juce::AudioProcessorValue
     onButton.setLookAndFeel (&fxmeLookAndFeel);
     onButton.button.onClick = [this] { responseGraph.updateCurve(); };
 
+    if (compact)
+        fxmeLookAndFeel.setKnobStyle (fxme::FxmeLookAndFeel::KnobStyle::flat);
+
     addChildComponent (titleLabel);
-    titleLabel.setVisible (showTitle);
+    titleLabel.setVisible (showTitle && ! compact);
     titleLabel.setText ("Equalizer", juce::NotificationType::dontSendNotification);
     titleLabel.setJustificationType (juce::Justification::centred);
     titleLabel.setFont (juce::Font (juce::FontOptions (16.0f, juce::Font::bold)));
@@ -611,7 +630,23 @@ EqualizerComponent::EqualizerComponent (Equalizer& eq, juce::AudioProcessorValue
         bandGain[i].setAttachment (new SliderAttachment (apvts, pid + "_Gain", bandGain[i]));
 
         updateBandVisibility (i);
+
+        if (compact)
+        {
+            auto& sel = bandSelect[i];
+            sel.setButtonText (bandLabel (i));
+            sel.setClickingTogglesState (false);
+            sel.setColour (juce::TextButton::buttonOnColourId, bandColours[i].withAlpha (0.8f));
+            sel.setColour (juce::TextButton::textColourOnId, juce::Colours::black);
+            sel.setTooltip ("Show the " + juce::String (cfg.suffix) + " band's controls");
+            sel.setMouseClickGrabsKeyboardFocus (false);
+            sel.setLookAndFeel (&fxmeLookAndFeel);
+            sel.onClick = [this, i] { selectBand (i); };
+            addAndMakeVisible (sel);
+        }
     }
+    if (compact)
+        selectBand (0);
 
     addAndMakeVisible (postGainSlider);
     postGainSlider.setSliderStyle (juce::Slider::LinearBarVertical);
@@ -654,6 +689,39 @@ void EqualizerComponent::resized()
 {
     auto area = getLocalBounds().reduced (5);
     using fi = juce::FlexItem;
+
+    if (compact)
+    {
+        // The response graph on the left (its handles drag the bands); on the
+        // right, the band selectors, then the selected band's switch and
+        // type, its knobs, and the output bar.
+        responseGraph.setBounds (area.removeFromLeft ((int) ((float) area.getWidth() * 0.55f)));
+        area.removeFromLeft (8);
+        postGainSlider.setBounds (area.removeFromRight (40));
+        area.removeFromRight (6);
+
+        auto line = area.removeFromTop (24);
+        onButton.setBounds (line.removeFromLeft ((int) fxmefx::kOnButtonWidth));
+        line.removeFromLeft (6);
+        const int w = line.getWidth() / juce::jmax (1, numBands);
+        for (int i = 0; i < numBands; ++i)
+            bandSelect[i].setBounds (line.removeFromLeft (w).reduced (1, 0));
+        area.removeFromTop (4);
+
+        const int b = selectedBand;
+        line = area.removeFromTop (24);
+        if (bandOnButton[b] != nullptr)
+            bandOnButton[b]->setBounds (line.removeFromLeft (44));
+        line.removeFromLeft (6);
+        bandType[b].setBounds (line);
+        area.removeFromTop (4);
+
+        const int kw = area.getWidth() / 3;
+        bandFreq[b].setBounds (area.removeFromLeft (kw));
+        bandQ[b]   .setBounds (area.removeFromLeft (kw));
+        bandGain[b].setBounds (area);
+        return;
+    }
 
     juce::FlexBox fmain;
     fmain.flexDirection = juce::FlexBox::Direction::column;
