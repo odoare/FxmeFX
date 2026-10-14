@@ -420,6 +420,7 @@ FxmeFX/
 │   ├── Reverb/                 # algorithmic reverb (WDL Freeverb engine)
 │   └── VuMeter/                # re-export shims for fxme::VuMeter / fxme::VuMeterComponent
 ├── cmake/                      # version, dependency pins (Dependencies.cmake), helpers
+├── release-notes/              # v<x.y.z>.md: text of each GitHub release (required by release.yml)
 └── .github/workflows/          # CI: per-OS builds + tag-driven release
 ```
 

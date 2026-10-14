@@ -6,8 +6,21 @@ on:
       - 'v[0-9]+.[0-9]+.[0-9]+'
 
 jobs:
+  # ── Release notes ─────────────────────────────────────────────────────────
+  # release-notes/<tag>.md becomes the release text. Checked first, so a tag
+  # pushed without its notes fails in seconds instead of after every build.
+  check-notes:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check release notes
+        run: |
+          f="release-notes/${{ github.ref_name }}.md"
+          test -s "$f" || { echo "::error::$f is missing or empty"; exit 1; }
+
   # ── Linux x86_64 ──────────────────────────────────────────────────────────
   build-linux-x86_64:
+    needs: check-notes
     runs-on: ubuntu-latest
     steps:
       - name: Install system dependencies
@@ -68,6 +81,7 @@ jobs:
 
   # ── Windows x86_64 ────────────────────────────────────────────────────────
   build-windows:
+    needs: check-notes
     # Pin to windows-2022: on windows-latest (windows-2025) the bundled CMake
     # fails to detect the VS 2022 instance for the "Visual Studio 17 2022"
     # generator.
@@ -144,6 +158,7 @@ jobs:
 
   # ── macOS universal (arm64 + x86_64) ──────────────────────────────────────
   build-macos:
+    needs: check-notes
     runs-on: macos-14
     steps:
       - uses: actions/checkout@v4
@@ -236,6 +251,9 @@ jobs:
       contents: write
 
     steps:
+      # For the release notes only: release-notes/<tag>.md is the release body.
+      - uses: actions/checkout@v4
+
       - name: Download all artefacts
         uses: actions/download-artifact@v4
         with:
@@ -247,4 +265,5 @@ jobs:
         with:
           files: |
             artifacts/*.zip
-          generate_release_notes: true
+          body_path: release-notes/${{ github.ref_name }}.md
+          generate_release_notes: false

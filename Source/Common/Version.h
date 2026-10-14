@@ -12,4 +12,4 @@
 
 #pragma once
 
-#define FXMEFX_VERSION_STRING "0.4.2"
+#define FXMEFX_VERSION_STRING "0.5.0"
