@@ -12,6 +12,17 @@ namespace
 {
     constexpr double kSmoothingSeconds = 0.05;
     constexpr double kButterworthK = 1.4142135623730951;   // 1 / Q, Q = 0.707
+
+    // The loudest input the tail takes (+24 dB): anything beyond, or a NaN or
+    // infinity, would sit in the combs for a minute (or for ever, a NaN).
+    constexpr float kMaxInput = 16.0f;
+    // A wet sample beyond this means the tail holds garbage: it is cleared.
+    constexpr float kMaxWet = 1000.0f;
+
+    inline float sanitise (float x) noexcept
+    {
+        return std::isfinite (x) ? juce::jlimit (-kMaxInput, kMaxInput, x) : 0.0f;
+    }
 }
 
 void ReverbEffect::prepare (double sampleRate, int samplesPerBlock, int numChannels)
@@ -37,6 +48,10 @@ void ReverbEffect::prepare (double sampleRate, int samplesPerBlock, int numChann
     updateFilters();
 
     preDelaySamples.reset (currentSampleRate, kSmoothingSeconds);
+    // The pre-delay in samples follows the new rate (a ramp computed at a
+    // higher rate could reach past the ring).
+    if (lastPreDelay >= 0.0f)
+        preDelaySamples.setCurrentAndTargetValue (lastPreDelay * 0.001f * (float) currentSampleRate);
     mixSmooth.reset (currentSampleRate, kSmoothingSeconds);
     outSmooth.reset (currentSampleRate, kSmoothingSeconds);
     mixSmooth.setCurrentAndTargetValue (on ? mix01 : 0.0f);
@@ -183,18 +198,19 @@ void ReverbEffect::process (juce::AudioBuffer<float>& buffer)
         const int n = juce::jmin (maxBlock, buffer.getNumSamples() - start);
 
         // Pre-delay: write the dry signal, read it back late (linear
-        // interpolation, so a moving pre-delay glides).
+        // interpolation, so a moving pre-delay glides). The read index is
+        // integer arithmetic on the write index, so it never leaves the ring.
         for (int i = 0; i < n; ++i)
         {
-            preDelay[0][(size_t) preDelayWrite] = left[start + i];
-            preDelay[1][(size_t) preDelayWrite] = right[start + i];
-            const float d = preDelaySamples.getNextValue();
-            float readPos = (float) preDelayWrite - d;
-            if (readPos < 0.0f)
-                readPos += (float) ringSize;
-            const int r0 = (int) readPos;
-            const int r1 = (r0 + 1) % ringSize;
-            const float f = readPos - (float) r0;
+            preDelay[0][(size_t) preDelayWrite] = sanitise (left[start + i]);
+            preDelay[1][(size_t) preDelayWrite] = sanitise (right[start + i]);
+            const float d = juce::jlimit (0.0f, (float) (ringSize - 2), preDelaySamples.getNextValue());
+            const int whole = (int) d;
+            const float f = d - (float) whole;
+            int r0 = preDelayWrite - whole;
+            if (r0 < 0)
+                r0 += ringSize;
+            const int r1 = r0 > 0 ? r0 - 1 : ringSize - 1;     // one sample older
             wetL[(size_t) i] = preDelay[0][(size_t) r0] + f * (preDelay[0][(size_t) r1] - preDelay[0][(size_t) r0]);
             wetR[(size_t) i] = preDelay[1][(size_t) r0] + f * (preDelay[1][(size_t) r1] - preDelay[1][(size_t) r0]);
             if (++preDelayWrite >= ringSize)
@@ -202,6 +218,18 @@ void ReverbEffect::process (juce::AudioBuffer<float>& buffer)
         }
 
         reverb.process (wetL.data(), wetR.data(), wetL.data(), wetR.data(), n);
+
+        // A tail that went bad (which the input guard should prevent) is
+        // cleared rather than left ringing: a block of silence, then clean.
+        bool healthy = true;
+        for (int i = 0; i < n && healthy; ++i)
+            healthy = std::abs (wetL[(size_t) i]) <= kMaxWet && std::abs (wetR[(size_t) i]) <= kMaxWet;  // false for a NaN
+        if (! healthy)
+        {
+            clearTail();
+            std::fill (wetL.begin(), wetL.begin() + n, 0.0f);
+            std::fill (wetR.begin(), wetR.begin() + n, 0.0f);
+        }
 
         for (int i = 0; i < n; ++i)
         {
@@ -221,11 +249,16 @@ void ReverbEffect::process (juce::AudioBuffer<float>& buffer)
     if (! on && ! mixSmooth.isSmoothing() && ! outSmooth.isSmoothing())
     {
         tailActive = false;
-        reverb.reset();
-        for (auto& line : preDelay)
-            std::fill (line.begin(), line.end(), 0.0f);
-        for (auto* filters : { &lowCut, &highCut })
-            for (auto& f : *filters)
-                f.reset();
+        clearTail();
     }
+}
+
+void ReverbEffect::clearTail()
+{
+    reverb.reset();
+    for (auto& line : preDelay)
+        std::fill (line.begin(), line.end(), 0.0f);
+    for (auto* filters : { &lowCut, &highCut })
+        for (auto& f : *filters)
+            f.reset();
 }

@@ -18,6 +18,12 @@
     tail is cleared once the fade is over, so re-engaging never replays a
     stale tail. No latency.
 
+    Guarded against bad input: a NaN or infinity in the signal (one stray
+    sample from upstream is enough) would stay in the tail for ever, and a
+    huge spike for a minute, as loud noise. The input to the tail is
+    cleaned (non-finite samples to zero, clamped at +24 dB), and a tail
+    whose output goes out of bounds anyway is cleared.
+
     Parameter IDs: "<prefix>_Verb_<Name>".
 
   ==============================================================================
@@ -46,6 +52,7 @@ public:
 
 private:
     void updateFilters();
+    void clearTail();
 
     double currentSampleRate = 44100.0;
     int maxBlock = 512;
