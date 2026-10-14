@@ -17,14 +17,11 @@ project(FxmeFX VERSION ${FXMEFX_VERSION} LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# JUCE is expected as a sibling of this repo:
-#   ../JUCE/   (juce-framework/JUCE checkout)
-add_subdirectory(../JUCE JUCE)
-
-# FxmeTools (shared GUI controls, look-and-feel, DSP, and the WDL convolution
-# engine) ships as a submodule under lib/FxmeTools. Including its .cmake here
-# registers the `FxmeTools` JUCE module and the fxmetools_attach() helper.
-include(${CMAKE_CURRENT_SOURCE_DIR}/lib/FxmeTools/cmake/FxmeTools.cmake)
+# JUCE and FxmeTools (shared GUI controls, look-and-feel, DSP, and the WDL
+# convolution engine): sibling clones ../JUCE and ../FxmeTools when present,
+# otherwise the commits pinned in cmake/Dependencies.cmake. Release builds use
+# -DFXME_USE_SIBLINGS=OFF.
+include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/Dependencies.cmake)
 
 # ── Plugin selection ──────────────────────────────────────────────────────────
 # Build every plugin by default. To build only one:

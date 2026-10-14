@@ -16,8 +16,7 @@ if(NOT COMMAND juce_add_plugin)
     set(CMAKE_CXX_STANDARD 17)
     set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-    add_subdirectory(../../../JUCE JUCE)
-    include(${CMAKE_CURRENT_SOURCE_DIR}/../../lib/FxmeTools/cmake/FxmeTools.cmake)
+    include(${CMAKE_CURRENT_LIST_DIR}/../../cmake/Dependencies.cmake)
 endif()
 
 juce_add_plugin(FxmeCab
@@ -138,12 +137,12 @@ fxme_add_pd_external(FxmeCab_pd
         PdMain.cpp
         PluginProcessor.cpp
         Cab.cpp
-        ../../lib/FxmeTools/WDL/WDL/convoengine.cpp
-        ../../lib/FxmeTools/WDL/WDL/fft.c
-        ../../lib/FxmeTools/WDL/WDL/resample.cpp
+        ${FXMETOOLS_WDL_DIR}/convoengine.cpp
+        ${FXMETOOLS_WDL_DIR}/fft.c
+        ${FXMETOOLS_WDL_DIR}/resample.cpp
     INCLUDES
         ${CMAKE_CURRENT_SOURCE_DIR}
-        ${CMAKE_CURRENT_SOURCE_DIR}/../../lib/FxmeTools/WDL/WDL
+        ${FXMETOOLS_WDL_DIR}
     DEFINES
         JucePlugin_Name="FxmeCab"
     LINK_LIBRARIES

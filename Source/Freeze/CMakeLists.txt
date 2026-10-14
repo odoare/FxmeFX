@@ -16,8 +16,7 @@ if(NOT COMMAND juce_add_plugin)
     set(CMAKE_CXX_STANDARD 17)
     set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-    add_subdirectory(../../../JUCE JUCE)
-    include(${CMAKE_CURRENT_SOURCE_DIR}/../../lib/FxmeTools/cmake/FxmeTools.cmake)
+    include(${CMAKE_CURRENT_LIST_DIR}/../../cmake/Dependencies.cmake)
 endif()
 
 juce_add_plugin(FxmeFreeze
@@ -101,11 +100,11 @@ fxme_add_pd_external(FxmeFreeze_pd
         PdMain.cpp
         PluginProcessor.cpp
         Freeze.cpp
-        ../../lib/FxmeTools/WDL/WDL/fft.c
+        ${FXMETOOLS_WDL_DIR}/fft.c
     INCLUDES
         ${CMAKE_CURRENT_SOURCE_DIR}
-        ${CMAKE_CURRENT_SOURCE_DIR}/../../lib/FxmeTools
-        ${CMAKE_CURRENT_SOURCE_DIR}/../../lib/FxmeTools/WDL/WDL
+        ${FXMETOOLS_ROOT}
+        ${FXMETOOLS_WDL_DIR}
     DEFINES
         JucePlugin_Name="FxmeFreeze"
 )

@@ -1,10 +1,10 @@
 # Licensing
 
 FxmeFX is a set of JUCE plugins built on [FxmeTools](https://github.com/odoare/FxmeTools)
-(vendored as the `lib/FxmeTools` submodule), which is itself split into a
+(fetched at build time, pinned in `cmake/Dependencies.cmake`), which is itself split into a
 framework-free half and a JUCE half under different licences. This document
 explains which terms apply to FxmeFX and why, mirroring
-`lib/FxmeTools/LICENSE.md`.
+FxmeTools' own `LICENSE.md`.
 
 ```
 Everything in Source/ and cmake/   AGPL-3.0-or-later, or commercial terms
@@ -20,7 +20,7 @@ first line.
 
 Every effect (its DSP class, its GUI component, its processor and editor) and
 the shared code in `Source/Common` compile against JUCE and against
-`lib/FxmeTools/FxmeTools/`, FxmeTools' own JUCE module. JUCE 8 is itself
+`FxmeTools/`, FxmeTools' own JUCE module. JUCE 8 is itself
 dual-licensed (AGPLv3, or a commercial JUCE licence), and FxmeTools' JUCE
 module mirrors that shape rather than fighting it. Distributing FxmeFX, or any
 of its effects inside another plugin, therefore means one of:
@@ -39,7 +39,7 @@ of its effects inside another plugin, therefore means one of:
   licence; that is separate, from Raw Material Software.
 
 The Pure Data externals are in this half too. They are not the "FxmeCore
-only" case `lib/FxmeTools/LICENSE.md` describes (a tool that links only the
+only" case FxmeTools' `LICENSE.md` describes (a tool that links only the
 framework-free half and needs only the LGPL): each external hosts the effect's
 JUCE `AudioProcessor` headlessly and links the JUCE modules it needs, so it
 derives from JUCE like the plugins do.
@@ -65,10 +65,10 @@ on the reworked FxmeTools licensing.
   under their authors' terms. The cabinet IRs come from free IR packs (see
   `Source/Cab/IR/Readme.txt`); the authors of the reverb IRs are to be listed
   here with their terms.
-- **`lib/FxmeTools/WDL/`** is a submodule from Cockos Incorporated under the
+- **WDL** (`WDL/` inside FxmeTools) is a submodule from Cockos Incorporated under the
   zlib licence. It supplies the convolution engine of ConvolReverb and Cab.
 
-The shared FX-Mechanics code itself lives in the `lib/FxmeTools` submodule
+The shared FX-Mechanics code itself lives in the FxmeTools repository
 under that repository's `LICENSE.md`: its `core/` half is
 `LGPL-3.0-or-later`, its `FxmeTools/` JUCE module AGPL/commercial on the same
 terms as above.

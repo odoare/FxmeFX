@@ -16,8 +16,7 @@ if(NOT COMMAND juce_add_plugin)
     set(CMAKE_CXX_STANDARD 17)
     set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-    add_subdirectory(../../../JUCE JUCE)
-    include(${CMAKE_CURRENT_SOURCE_DIR}/../../lib/FxmeTools/cmake/FxmeTools.cmake)
+    include(${CMAKE_CURRENT_LIST_DIR}/../../cmake/Dependencies.cmake)
 endif()
 
 juce_add_plugin(FxmeOct
@@ -99,7 +98,7 @@ fxme_add_pd_external(FxmeOct_pd
     INCLUDES
         ${CMAKE_CURRENT_SOURCE_DIR}
         # Oct.cpp/.h use header-only <FxmeTools/dsp/Biquad.h>.
-        ${CMAKE_CURRENT_SOURCE_DIR}/../../lib/FxmeTools
+        ${FXMETOOLS_ROOT}
     DEFINES
         JucePlugin_Name="FxmeOct"
 )

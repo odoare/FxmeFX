@@ -419,32 +419,46 @@ FxmeFX/
 │   ├── Phaser/                 # stereo phaser  (tempo-syncable LFO)
 │   ├── Reverb/                 # algorithmic reverb (WDL Freeverb engine)
 │   └── VuMeter/                # re-export shims for fxme::VuMeter / fxme::VuMeterComponent
-├── lib/
-│   └── FxmeTools/              # submodule: shared GUI/DSP + nested WDL submodule
+├── cmake/                      # version, dependency pins (Dependencies.cmake), helpers
 └── .github/workflows/          # CI: per-OS builds + tag-driven release
 ```
 
 ## Prerequisites
 
-JUCE is expected as a **sibling of this repository** (CI mirrors the same
-layout); all other shared code (GUI controls, look-and-feel, DSP, and the WDL
-convolution engine) ships in the **FxmeTools** submodule under `lib/FxmeTools`:
+FxmeFX depends on [JUCE](https://github.com/juce-framework/JUCE) and on
+[FxmeTools](https://github.com/odoare/FxmeTools) (shared GUI controls,
+look-and-feel, DSP, and the WDL convolution engine). Both are pinned to a
+commit in [cmake/Dependencies.cmake](cmake/Dependencies.cmake), and CMake
+resolves each one in this order:
+
+1. a **sibling clone** next to this repository, when it exists — the usual
+   setup when working on FxmeTools and the plugins together:
+
+   ```
+   <workspace>/
+   ├── FxmeFX/        # this repo
+   ├── FxmeTools/     # git clone --recursive https://github.com/odoare/FxmeTools
+   └── JUCE/          # git clone https://github.com/juce-framework/JUCE
+   ```
+
+2. otherwise the **pinned commit**, downloaded by CMake's FetchContent into
+   `build/_deps/` (FxmeTools comes with its WDL submodule).
+
+The configure output says which one was used, and for a sibling clone its
+commit, whether it is dirty and whether it matches the pin:
 
 ```
-<workspace>/
-├── FxmeFX/                                  # this repo (lib/FxmeTools submodule inside)
-├── JUCE/                                    # https://github.com/juce-framework/JUCE
-└── ...
+-- JUCE: local clone /home/me/src/JUCE (29396c22c, = pin)
+-- FxmeTools: pinned b4bb53e78c34261951ca2400932a4dd19f88d327
 ```
 
-Quick setup:
+Release builds ignore sibling clones: configure them with
+`-DFXME_USE_SIBLINGS=OFF` (CI always does). A single dependency can also be
+pointed anywhere with `-DFETCHCONTENT_SOURCE_DIR_FXMETOOLS=<path>` (or
+`_JUCE`).
 
-```bash
-git clone https://github.com/juce-framework/JUCE.git ../JUCE
-
-# Pulls in FxmeTools and its nested WDL submodule.
-git submodule update --init --recursive
-```
+To move FxmeFX to a newer FxmeTools, push the FxmeTools commit and update its
+SHA in `cmake/Dependencies.cmake`.
 
 ### Linux system dependencies
 
@@ -531,7 +545,7 @@ Vendored / external code keeps its own terms:
 
 - [FxmeTools](https://github.com/odoare/FxmeTools): its framework-free `core/`
   is LGPL-3.0-or-later, its JUCE module AGPL-3.0-or-later or commercial; it
-  bundles [WDL](lib/FxmeTools/WDL/) (zlib licence) as a nested submodule.
+  bundles [WDL](https://github.com/odoare/WDL) (zlib licence) as a submodule.
 - [JUCE](https://juce.com/): AGPLv3 or a commercial JUCE licence; the AGPLv3
   option is the one these builds use.
 - The built-in impulse responses and Pure Data's `m_pd.h`: their authors'

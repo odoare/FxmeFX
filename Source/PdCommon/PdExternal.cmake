@@ -103,7 +103,7 @@ function(fxme_add_pd_external target)
     # what a Pd external wants: the DSP without the framework. Linking it brings
     # its include root along, so <FxmeTools/...> resolves whichever side of the
     # split a header ended up on. Without this the externals still find the
-    # module-side headers through the lib/FxmeTools include dir passed in
+    # module-side headers through the FXMETOOLS_ROOT include dir passed in
     # INCLUDES, but not the migrated ones — VuMeter.h moved, and that is what
     # broke the Pd builds.
     #

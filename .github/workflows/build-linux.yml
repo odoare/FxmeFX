@@ -23,17 +23,9 @@ jobs:
         uses: actions/checkout@v4
         with:
           path: FxmeFX
-          submodules: recursive
-
-      - name: Checkout JUCE
-        uses: actions/checkout@v4
-        with:
-          repository: juce-framework/JUCE
-          ref: 8.0.12
-          path: JUCE
 
       - name: Configure
-        run: cmake -B FxmeFX/build -S FxmeFX -DCMAKE_BUILD_TYPE=Release
+        run: cmake -B FxmeFX/build -S FxmeFX -DCMAKE_BUILD_TYPE=Release -DFXME_USE_SIBLINGS=OFF
 
       - name: Build (one plugin at a time)
         # Build each plugin sequentially. Building all six together pulls in
