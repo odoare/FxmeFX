@@ -87,6 +87,12 @@ target_link_libraries(FxmeFlanger
         juce::juce_recommended_warning_flags
 )
 
+# CLAP, beside VST3 and AU (clap-juce-extensions; see fxmetools_add_clap
+# in FxmeTools.cmake). The ID is permanent once released.
+fxmetools_add_clap(FxmeFlanger
+    ID       "com.fx-mechanics.FxmeFlanger"
+    FEATURES audio-effect flanger stereo)
+
 # ── Pure Data external ────────────────────────────────────────────────────────
 include(${CMAKE_CURRENT_LIST_DIR}/../PdCommon/PdExternal.cmake)
 fxme_add_pd_external(FxmeFlanger_pd

@@ -112,6 +112,12 @@ target_link_libraries(FxmeConvolReverb
 # (convoengine.cpp/fft.c/resample.cpp) used via <convoengine.h>/<resample.h>.
 fxmetools_attach(FxmeConvolReverb)
 
+# CLAP, beside VST3 and AU (clap-juce-extensions; see fxmetools_add_clap
+# in FxmeTools.cmake). The ID is permanent once released.
+fxmetools_add_clap(FxmeConvolReverb
+    ID       "com.fx-mechanics.FxmeConvolReverb"
+    FEATURES audio-effect reverb stereo)
+
 # ── Pure Data external ────────────────────────────────────────────────────────
 # Reuses FxmeConvolReverbBinaryData. The Pd build hides the "External IR
 # file" slot — see the FXME_PD_BUILD branch in ConvolReverb::addParameters.

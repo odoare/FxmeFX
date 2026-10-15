@@ -87,6 +87,12 @@ target_link_libraries(FxmeOct
         juce::juce_recommended_warning_flags
 )
 
+# CLAP, beside VST3 and AU (clap-juce-extensions; see fxmetools_add_clap
+# in FxmeTools.cmake). The ID is permanent once released.
+fxmetools_add_clap(FxmeOct
+    ID       "com.fx-mechanics.FxmeOct"
+    FEATURES audio-effect pitch-shifter stereo)
+
 # ── Pure Data external ────────────────────────────────────────────────────────
 include(${CMAKE_CURRENT_LIST_DIR}/../PdCommon/PdExternal.cmake)
 fxme_add_pd_external(FxmeOct_pd

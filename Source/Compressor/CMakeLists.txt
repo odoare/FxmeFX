@@ -94,6 +94,12 @@ target_link_libraries(FxmeCompressor
         juce::juce_recommended_warning_flags
 )
 
+# CLAP, beside VST3 and AU (clap-juce-extensions; see fxmetools_add_clap
+# in FxmeTools.cmake). The ID is permanent once released.
+fxmetools_add_clap(FxmeCompressor
+    ID       "com.fx-mechanics.FxmeCompressor"
+    FEATURES audio-effect compressor stereo)
+
 # ── Pure Data external ────────────────────────────────────────────────────────
 # Shares the DSP source (PluginProcessor + Compressor + VuMeter) with the VST3
 # target; the only divergence is PdMain.cpp (Pd entry points) and the

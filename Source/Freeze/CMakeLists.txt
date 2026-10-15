@@ -92,6 +92,12 @@ target_link_libraries(FxmeFreeze
 # (SpectralFreeze.h needs WDL/fft.c in the target).
 fxmetools_attach(FxmeFreeze)
 
+# CLAP, beside VST3 and AU (clap-juce-extensions; see fxmetools_add_clap
+# in FxmeTools.cmake). The ID is permanent once released.
+fxmetools_add_clap(FxmeFreeze
+    ID       "com.fx-mechanics.FxmeFreeze"
+    FEATURES audio-effect phase-vocoder stereo)
+
 # ── Pure Data external ────────────────────────────────────────────────────────
 include(${CMAKE_CURRENT_LIST_DIR}/../PdCommon/PdExternal.cmake)
 fxme_add_pd_external(FxmeFreeze_pd

@@ -28,7 +28,8 @@ jobs:
           sudo apt update
           sudo apt install -y \
             libasound2-dev libx11-dev libxrandr-dev libxinerama-dev \
-            libxcursor-dev libfreetype-dev libfontconfig1-dev libgl1-mesa-dev
+            libxcursor-dev libfreetype-dev libfontconfig1-dev libgl1-mesa-dev \
+            libxi-dev libegl-dev    # JUCE 9: XInput2 (multi-touch), EGL (OpenGL)
 
       - uses: actions/checkout@v4
         with:
@@ -56,14 +57,16 @@ jobs:
       - name: Package
         shell: bash
         run: |
-          mkdir -p stage/VST3 stage/Pd
+          mkdir -p stage/VST3 stage/CLAP stage/Pd
           cp -r FxmeFX/build/Source/*/Fxme*_artefacts/Release/VST3/*.vst3 stage/VST3/
+          cp FxmeFX/build/Source/*/Fxme*_artefacts/Release/CLAP/*.clap stage/CLAP/
           # Pd externals (fxme*~.pd_linux) — flat list, no per-plugin subdir.
           if compgen -G "FxmeFX/build/Source/*/*.pd_linux" > /dev/null; then
             cp FxmeFX/build/Source/*/*.pd_linux stage/Pd/
           fi
           cd stage
           zip -r "${{ github.workspace }}/FxmeFX-VST3-Linux-x86_64.zip" VST3/
+          zip -r "${{ github.workspace }}/FxmeFX-CLAP-Linux-x86_64.zip" CLAP/
           if [ -d Pd ] && [ -n "$(ls -A Pd)" ]; then
             zip -r "${{ github.workspace }}/FxmeFX-Pd-Linux-x86_64.zip" Pd/
           fi
@@ -72,6 +75,11 @@ jobs:
         with:
           name: linux-x86_64-vst3
           path: FxmeFX-VST3-Linux-x86_64.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-x86_64-clap
+          path: FxmeFX-CLAP-Linux-x86_64.zip
 
       - uses: actions/upload-artifact@v4
         with:
@@ -132,15 +140,18 @@ jobs:
       - name: Package
         shell: bash
         run: |
-          mkdir -p stage/VST3 stage/Pd
+          mkdir -p stage/VST3 stage/CLAP stage/Pd
           # JUCE places .vst3 bundles as directories on Windows under VST3/
           cp -r FxmeFX/build/Source/*/Fxme*_artefacts/Release/VST3/*.vst3 stage/VST3/
+          # A CLAP is a single .clap file (a renamed DLL) on Windows.
+          cp FxmeFX/build/Source/*/Fxme*_artefacts/Release/CLAP/*.clap stage/CLAP/
           # Pd externals build as plain .dll under <plugin>/Release/.
           if compgen -G "FxmeFX/build/Source/*/Release/fxme*.dll" > /dev/null; then
             cp FxmeFX/build/Source/*/Release/fxme*.dll stage/Pd/
           fi
           cd stage
           7z a "${{ github.workspace }}/FxmeFX-VST3-Windows-x86_64.zip" VST3
+          7z a "${{ github.workspace }}/FxmeFX-CLAP-Windows-x86_64.zip" CLAP
           if [ -d Pd ] && [ -n "$(ls -A Pd)" ]; then
             7z a "${{ github.workspace }}/FxmeFX-Pd-Windows-x86_64.zip" Pd
           fi
@@ -149,6 +160,11 @@ jobs:
         with:
           name: windows-x86_64-vst3
           path: FxmeFX-VST3-Windows-x86_64.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-x86_64-clap
+          path: FxmeFX-CLAP-Windows-x86_64.zip
 
       - uses: actions/upload-artifact@v4
         with:
@@ -198,24 +214,27 @@ jobs:
         run: |
           fail=0
           for plugin in Compressor Equalizer Tube Transient StereoDelay ConvolReverb Cab Oct Limiter Freeze Chorus Flanger Phaser Reverb; do
-            bin="FxmeFX/build/Source/${plugin}/Fxme${plugin}_artefacts/Release/VST3/Fxme${plugin}.vst3/Contents/MacOS/Fxme${plugin}"
-            if [ ! -f "$bin" ]; then
-              echo "::error::Fxme${plugin}: binary not found at $bin"
-              fail=1
-              continue
-            fi
-            archs=$(lipo -archs "$bin")
-            echo "Fxme${plugin}: $archs"
-            case " $archs " in *" arm64 "*)  ;; *) echo "::error::Fxme${plugin}: no arm64 slice";  fail=1 ;; esac
-            case " $archs " in *" x86_64 "*) ;; *) echo "::error::Fxme${plugin}: no x86_64 slice"; fail=1 ;; esac
+            for bundle in VST3/Fxme${plugin}.vst3 CLAP/Fxme${plugin}.clap; do
+              bin="FxmeFX/build/Source/${plugin}/Fxme${plugin}_artefacts/Release/${bundle}/Contents/MacOS/Fxme${plugin}"
+              if [ ! -f "$bin" ]; then
+                echo "::error::Fxme${plugin}: binary not found at $bin"
+                fail=1
+                continue
+              fi
+              archs=$(lipo -archs "$bin")
+              echo "${bundle}: $archs"
+              case " $archs " in *" arm64 "*)  ;; *) echo "::error::${bundle}: no arm64 slice";  fail=1 ;; esac
+              case " $archs " in *" x86_64 "*) ;; *) echo "::error::${bundle}: no x86_64 slice"; fail=1 ;; esac
+            done
           done
           exit $fail
 
       - name: Package raw zips
         shell: bash
         run: |
-          mkdir -p stage/VST3 stage/AU stage/Pd
+          mkdir -p stage/VST3 stage/AU stage/CLAP stage/Pd
           cp -r FxmeFX/build/Source/*/Fxme*_artefacts/Release/VST3/*.vst3 stage/VST3/
+          cp -r FxmeFX/build/Source/*/Fxme*_artefacts/Release/CLAP/*.clap stage/CLAP/
           cp -r FxmeFX/build/Source/*/Fxme*_artefacts/Release/AU/*.component stage/AU/
           if compgen -G "FxmeFX/build/Source/*/*.pd_darwin" > /dev/null; then
             cp FxmeFX/build/Source/*/*.pd_darwin stage/Pd/
@@ -223,6 +242,7 @@ jobs:
           cd stage
           zip -r "${{ github.workspace }}/FxmeFX-VST3-macOS-universal.zip" VST3/
           zip -r "${{ github.workspace }}/FxmeFX-AU-macOS-universal.zip"  AU/
+          zip -r "${{ github.workspace }}/FxmeFX-CLAP-macOS-universal.zip" CLAP/
           if [ -d Pd ] && [ -n "$(ls -A Pd)" ]; then
             zip -r "${{ github.workspace }}/FxmeFX-Pd-macOS-universal.zip" Pd/
           fi
@@ -236,6 +256,11 @@ jobs:
         with:
           name: macos-au
           path: FxmeFX-AU-macOS-universal.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos-clap
+          path: FxmeFX-CLAP-macOS-universal.zip
 
       - uses: actions/upload-artifact@v4
         with:

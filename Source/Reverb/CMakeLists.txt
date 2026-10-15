@@ -87,6 +87,12 @@ target_link_libraries(FxmeReverb
         juce::juce_recommended_warning_flags
 )
 
+# CLAP, beside VST3 and AU (clap-juce-extensions; see fxmetools_add_clap
+# in FxmeTools.cmake). The ID is permanent once released.
+fxmetools_add_clap(FxmeReverb
+    ID       "com.fx-mechanics.FxmeReverb"
+    FEATURES audio-effect reverb stereo)
+
 # ── Pure Data external ────────────────────────────────────────────────────────
 include(${CMAKE_CURRENT_LIST_DIR}/../PdCommon/PdExternal.cmake)
 fxme_add_pd_external(FxmeReverb_pd

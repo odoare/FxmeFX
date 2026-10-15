@@ -27,7 +27,7 @@ drum kits).
 | FxmeReverb       | `FVRB`      | Algorithmic stereo reverb (WDL's Freeverb-derived engine). Pre-delay, Size, Damping and Width of the tail, Low cut and High cut on the reverb only, Mix and Output; the On switch fades and clears the tail. |
 | FxmePhaser       | `PHSR`      | Stereo phaser. 2 to 12 first-order allpass sections per channel swept by one LFO, with bipolar feedback. Freq is the sweep centre, Depth the excursion in octaves (up to 2.5 either way). Free-running or tempo-synced. |
 
-All plugins build as **VST3**, **AU** (macOS) and a **Standalone** application,
+All plugins build as **VST3**, **CLAP**, **AU** (macOS) and a **Standalone** application,
 and also as headless **Pure Data externals** — see the dedicated section below.
 
 ## Screenshots
@@ -59,16 +59,19 @@ bundles into the folder your host scans.
 
 ```bash
 unzip FxmeFX-VST3-Linux-x86_64.zip -d ~/.vst3
+unzip FxmeFX-CLAP-Linux-x86_64.zip -d ~/.clap
 ```
 
 ### Windows
 
-Copy the `.vst3` folders into `C:\Program Files\Common Files\VST3\`.
+Copy the `.vst3` folders into `C:\Program Files\Common Files\VST3\` and the
+`.clap` files into `C:\Program Files\Common Files\CLAP\`.
 
 ### macOS
 
-Copy the `.vst3` bundles into `~/Library/Audio/Plug-Ins/VST3/` and the
-`.component` bundles into `~/Library/Audio/Plug-Ins/Components/`.
+Copy the `.vst3` bundles into `~/Library/Audio/Plug-Ins/VST3/`, the `.clap`
+bundles into `~/Library/Audio/Plug-Ins/CLAP/` and the `.component` bundles
+into `~/Library/Audio/Plug-Ins/Components/`.
 
 These builds are **not notarised**, so macOS quarantines anything downloaded
 from a browser and the DAW then skips the plugin without saying why. Clear the
@@ -76,6 +79,7 @@ quarantine flag after copying:
 
 ```bash
 xattr -dr com.apple.quarantine ~/Library/Audio/Plug-Ins/VST3/Fxme*.vst3
+xattr -dr com.apple.quarantine ~/Library/Audio/Plug-Ins/CLAP/Fxme*.clap
 xattr -dr com.apple.quarantine ~/Library/Audio/Plug-Ins/Components/Fxme*.component
 ```
 
@@ -426,10 +430,11 @@ FxmeFX/
 
 ## Prerequisites
 
-FxmeFX depends on [JUCE](https://github.com/juce-framework/JUCE) and on
+FxmeFX depends on [JUCE](https://github.com/juce-framework/JUCE) 9, on
 [FxmeTools](https://github.com/odoare/FxmeTools) (shared GUI controls,
-look-and-feel, DSP, and the WDL convolution engine). Both are pinned to a
-commit in [cmake/Dependencies.cmake](cmake/Dependencies.cmake), and CMake
+look-and-feel, DSP, and the WDL convolution engine) and, for the CLAP format,
+on [clap-juce-extensions](https://github.com/free-audio/clap-juce-extensions).
+Each is pinned to a commit in [cmake/Dependencies.cmake](cmake/Dependencies.cmake), and CMake
 resolves each one in this order:
 
 1. a **sibling clone** next to this repository, when it exists — the usual
@@ -449,8 +454,8 @@ The configure output says which one was used, and for a sibling clone its
 commit, whether it is dirty and whether it matches the pin:
 
 ```
--- JUCE: local clone /home/me/src/JUCE (29396c22c, = pin)
--- FxmeTools: pinned b4bb53e78c34261951ca2400932a4dd19f88d327
+-- JUCE: local clone /home/me/src/JUCE (3fb5cbc03, = pin)
+-- FxmeTools: pinned 0b46947472d10bb044c058d9ddb8b6d38f66050a
 ```
 
 Release builds ignore sibling clones: configure them with
@@ -466,7 +471,8 @@ SHA in `cmake/Dependencies.cmake`.
 ```bash
 sudo apt install -y \
     libasound2-dev libx11-dev libxrandr-dev libxinerama-dev \
-    libxcursor-dev libfreetype-dev libfontconfig1-dev libgl1-mesa-dev
+    libxcursor-dev libfreetype-dev libfontconfig1-dev libgl1-mesa-dev \
+    libxi-dev libegl-dev
 ```
 
 ## Building
@@ -504,7 +510,7 @@ cmake --build Source/Compressor/build --parallel
 ### Plugins only, without the Pure Data externals
 
 The externals are built alongside the plugins by default. To build only the
-plugins (VST3 / AU), switch them off at configure time; this works with
+plugins (VST3 / CLAP / AU), switch them off at configure time; this works with
 `PLUGIN` and with a single plugin's own `CMakeLists.txt` too:
 
 ```bash
@@ -549,5 +555,9 @@ Vendored / external code keeps its own terms:
   bundles [WDL](https://github.com/odoare/WDL) (zlib licence) as a submodule.
 - [JUCE](https://juce.com/): AGPLv3 or a commercial JUCE licence; the AGPLv3
   option is the one these builds use.
+- [clap-juce-extensions](https://github.com/free-audio/clap-juce-extensions)
+  with [clap](https://github.com/free-audio/clap) and
+  [clap-helpers](https://github.com/free-audio/clap-helpers), linked into the
+  CLAP builds: MIT licence.
 - The built-in impulse responses and Pure Data's `m_pd.h`: their authors'
   terms (see [LICENSE.md](LICENSE.md)).

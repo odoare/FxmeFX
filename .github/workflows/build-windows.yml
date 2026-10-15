@@ -68,6 +68,12 @@ jobs:
           name: FxmeFX-VST3-Windows-x86_64
           path: FxmeFX/build/Source/*/Fxme*_artefacts/Release/VST3/
 
+      - name: Upload CLAP artefacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: FxmeFX-CLAP-Windows-x86_64
+          path: FxmeFX/build/Source/*/Fxme*_artefacts/Release/CLAP/
+
       - name: Upload Pd externals
         uses: actions/upload-artifact@v4
         with:

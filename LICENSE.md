@@ -20,8 +20,8 @@ first line.
 
 Every effect (its DSP class, its GUI component, its processor and editor) and
 the shared code in `Source/Common` compile against JUCE and against
-`FxmeTools/`, FxmeTools' own JUCE module. JUCE 8 is itself
-dual-licensed (AGPLv3, or a commercial JUCE licence), and FxmeTools' JUCE
+`FxmeTools/`, FxmeTools' own JUCE module. JUCE (8 and 9
+alike) is itself dual-licensed (AGPLv3, or a commercial JUCE licence), and FxmeTools' JUCE
 module mirrors that shape rather than fighting it. Distributing FxmeFX, or any
 of its effects inside another plugin, therefore means one of:
 
@@ -67,6 +67,9 @@ on the reworked FxmeTools licensing.
   here with their terms.
 - **WDL** (`WDL/` inside FxmeTools) is a submodule from Cockos Incorporated under the
   zlib licence. It supplies the convolution engine of ConvolReverb and Cab.
+- **The CLAP builds** link the CLAP wrapper fetched at build time:
+  clap-juce-extensions (Paul Walker and contributors), clap and clap-helpers
+  (Alexandre Bique and contributors), all three under the MIT licence.
 
 The shared FX-Mechanics code itself lives in the FxmeTools repository
 under that repository's `LICENSE.md`: its `core/` half is

@@ -101,6 +101,12 @@ target_link_libraries(FxmeTube
         juce::juce_recommended_warning_flags
 )
 
+# CLAP, beside VST3 and AU (clap-juce-extensions; see fxmetools_add_clap
+# in FxmeTools.cmake). The ID is permanent once released.
+fxmetools_add_clap(FxmeTube
+    ID       "com.fx-mechanics.FxmeTube"
+    FEATURES audio-effect distortion stereo)
+
 # ── Pure Data external ────────────────────────────────────────────────────────
 # Tube's BinaryData target only holds GUI images, so the Pd build does not
 # link it.

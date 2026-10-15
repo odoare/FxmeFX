@@ -94,6 +94,12 @@ target_link_libraries(FxmeLimiter
         juce::juce_recommended_warning_flags
 )
 
+# CLAP, beside VST3 and AU (clap-juce-extensions; see fxmetools_add_clap
+# in FxmeTools.cmake). The ID is permanent once released.
+fxmetools_add_clap(FxmeLimiter
+    ID       "com.fx-mechanics.FxmeLimiter"
+    FEATURES audio-effect limiter mastering stereo)
+
 # ── Pure Data external ────────────────────────────────────────────────────────
 # Shares the DSP source (PluginProcessor + Limiter + VuMeter) with the VST3
 # target; the only divergence is PdMain.cpp (Pd entry points) and the

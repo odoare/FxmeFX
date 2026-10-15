@@ -127,6 +127,12 @@ target_link_libraries(FxmeCab
 # (convoengine.cpp/fft.c/resample.cpp) used via <convoengine.h>/<resample.h>.
 fxmetools_attach(FxmeCab)
 
+# CLAP, beside VST3 and AU (clap-juce-extensions; see fxmetools_add_clap
+# in FxmeTools.cmake). The ID is permanent once released.
+fxmetools_add_clap(FxmeCab
+    ID       "com.fx-mechanics.FxmeCab"
+    FEATURES audio-effect distortion stereo)
+
 # ── Pure Data external ────────────────────────────────────────────────────────
 # Reuses the same FxmeCabBinaryData target as the VST build, so the Pd
 # external ships the full cabinet IR collection without any file picker.

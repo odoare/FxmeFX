@@ -49,16 +49,18 @@ jobs:
         run: |
           fail=0
           for plugin in Compressor Equalizer Tube Transient StereoDelay ConvolReverb Cab Oct Limiter Freeze Chorus Flanger Phaser Reverb; do
-            bin="FxmeFX/build/Source/${plugin}/Fxme${plugin}_artefacts/Release/VST3/Fxme${plugin}.vst3/Contents/MacOS/Fxme${plugin}"
-            if [ ! -f "$bin" ]; then
-              echo "::error::Fxme${plugin}: binary not found at $bin"
-              fail=1
-              continue
-            fi
-            archs=$(lipo -archs "$bin")
-            echo "Fxme${plugin}: $archs"
-            case " $archs " in *" arm64 "*)  ;; *) echo "::error::Fxme${plugin}: no arm64 slice";  fail=1 ;; esac
-            case " $archs " in *" x86_64 "*) ;; *) echo "::error::Fxme${plugin}: no x86_64 slice"; fail=1 ;; esac
+            for bundle in VST3/Fxme${plugin}.vst3 CLAP/Fxme${plugin}.clap; do
+              bin="FxmeFX/build/Source/${plugin}/Fxme${plugin}_artefacts/Release/${bundle}/Contents/MacOS/Fxme${plugin}"
+              if [ ! -f "$bin" ]; then
+                echo "::error::Fxme${plugin}: binary not found at $bin"
+                fail=1
+                continue
+              fi
+              archs=$(lipo -archs "$bin")
+              echo "${bundle}: $archs"
+              case " $archs " in *" arm64 "*)  ;; *) echo "::error::${bundle}: no arm64 slice";  fail=1 ;; esac
+              case " $archs " in *" x86_64 "*) ;; *) echo "::error::${bundle}: no x86_64 slice"; fail=1 ;; esac
+            done
           done
           exit $fail
 
@@ -67,6 +69,12 @@ jobs:
         with:
           name: FxmeFX-VST3-macOS-universal
           path: FxmeFX/build/Source/*/Fxme*_artefacts/Release/VST3/
+
+      - name: Upload CLAP artefacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: FxmeFX-CLAP-macOS-universal
+          path: FxmeFX/build/Source/*/Fxme*_artefacts/Release/CLAP/
 
       - name: Upload AU artefacts
         uses: actions/upload-artifact@v4

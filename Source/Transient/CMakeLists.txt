@@ -90,6 +90,12 @@ target_link_libraries(FxmeTransient
         juce::juce_recommended_warning_flags
 )
 
+# CLAP, beside VST3 and AU (clap-juce-extensions; see fxmetools_add_clap
+# in FxmeTools.cmake). The ID is permanent once released.
+fxmetools_add_clap(FxmeTransient
+    ID       "com.fx-mechanics.FxmeTransient"
+    FEATURES audio-effect transient-shaper stereo)
+
 # ── Pure Data external ────────────────────────────────────────────────────────
 include(${CMAKE_CURRENT_LIST_DIR}/../PdCommon/PdExternal.cmake)
 fxme_add_pd_external(FxmeTransient_pd
