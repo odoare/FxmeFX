@@ -27,6 +27,9 @@ FxmeCompressorAudioProcessor::FxmeCompressorAudioProcessor()
 #endif
 {
     compressor.assignParameters (apvts, parameterPrefix);
+   #ifndef FXME_PD_BUILD
+    net.telemetry().addMeter ("gr", compressor.getGrMeter());   // FxmeNet: the gain reduction meter
+   #endif
 }
 
 FxmeCompressorAudioProcessor::~FxmeCompressorAudioProcessor()

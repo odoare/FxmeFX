@@ -27,6 +27,9 @@ FxmeFreezeAudioProcessor::FxmeFreezeAudioProcessor()
 #endif
 {
     freeze.assignParameters (apvts, parameterPrefix);
+   #ifndef FXME_PD_BUILD
+    net.telemetry().addTap ("display", freeze.getDisplayTap());   // FxmeNet: the spectrum display
+   #endif
 }
 
 FxmeFreezeAudioProcessor::~FxmeFreezeAudioProcessor() = default;

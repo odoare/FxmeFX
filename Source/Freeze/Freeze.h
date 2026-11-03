@@ -17,8 +17,10 @@
     on/off switch are click-free: switching off ramps the wash out over the
     smoothing time before the synthesis is stopped.
 
-    Also owns a lock-free tap of the mono-summed input (AbstractFifo) that
-    the editor's spectrum display drains from the message thread.
+    Also owns a tap of the mono-summed input (fxme::SpectrumTap) that the
+    editor's spectrum display drains from the message thread. Under
+    FxmeNet the tap travels as telemetry, so the display of the editor in
+    the DAW shows the audio processed on the server.
 
   ==============================================================================
 */
@@ -27,7 +29,9 @@
 
 #include <JuceHeader.h>
 #include <FxmeTools/dsp/SpectralFreeze.h>
+#include <FxmeTools/dsp/SpectrumTap.h>
 #include <atomic>
+#include <cstdint>
 #include <vector>
 
 class Freeze
@@ -42,14 +46,23 @@ public:
                                const juce::String& prefix);
 
     /** True while the freeze switch is on (capture + wash). Safe to read
-        from the message thread — the spectrum display freezes on this. */
-    bool isEngaged() const { return engaged.load (std::memory_order_relaxed); }
+        from the message thread — the spectrum display freezes on this.
+        Read from the parameter itself, so that it is right in an instance
+        that does not process (an FxmeNet mirror). */
+    bool isEngaged() const
+    {
+        return onParam != nullptr ? onParam->load() > 0.5f
+                                  : engaged.load (std::memory_order_relaxed);
+    }
 
     double getSampleRate() const { return currentSampleRate; }
 
     /** Message thread: drains up to maxSamples of the mono-summed input tap.
         Returns the number of samples written to dest. */
     int pullDisplaySamples (float* dest, int maxSamples);
+
+    /** The tap the display drains (registered for FxmeNet telemetry). */
+    fxme::SpectrumTap& getDisplayTap() noexcept { return displayTap; }
 
 private:
     void pushDisplaySamples (const juce::AudioBuffer<float>& buffer);
@@ -73,9 +86,8 @@ private:
     juce::SmoothedValue<float> mixSmooth;   // 0 when off, Mix value when on
     float mixValue = 0.5f;
 
-    static constexpr int kDisplayFifoSize = 4096;
-    juce::AbstractFifo displayFifo { kDisplayFifoSize };
-    std::vector<float> displayRing;
+    fxme::SpectrumTap displayTap;       // written by the audio thread (or FxmeNet telemetry)
+    std::int64_t displayCursor = 0;     // the display's read position (message thread)
 
     // APVTS pointers
     std::atomic<float>* onParam    = nullptr;

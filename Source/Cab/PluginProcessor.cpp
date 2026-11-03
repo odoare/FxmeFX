@@ -58,6 +58,11 @@ FxmeCabAudioProcessor::FxmeCabAudioProcessor()
     juce::StringArray names, resources;
     getBuiltInIRList (names, resources);
     cab.setImpulseList (names, resources);
+
+   #ifndef FXME_PD_BUILD
+    // FxmeNet: nothing to register. The IRs are chosen by parameters, and
+    // the editor plots the IR the plugin loads itself, mirror included.
+   #endif
 }
 
 FxmeCabAudioProcessor::~FxmeCabAudioProcessor() = default;

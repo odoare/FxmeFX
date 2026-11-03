@@ -43,8 +43,8 @@ void Freeze::prepare (double sampleRate, int samplesPerBlock, int numChannels)
     mixSmooth.reset (sampleRate, 0.05);
     mixSmooth.setCurrentAndTargetValue (engaged.load() ? mixValue : 0.0f);
 
-    displayRing.assign ((size_t) kDisplayFifoSize, 0.0f);
-    displayFifo.reset();
+    displayTap.setEnabled (true);
+    displayCursor = displayTap.getTotalPushed();
 
     washActive = engaged.load();
     if (washActive)
@@ -214,37 +214,24 @@ void Freeze::pushDisplaySamples (const juce::AudioBuffer<float>& buffer)
     const int numChannels = juce::jmax (1, buffer.getNumChannels());
     const float chGain    = 1.0f / (float) numChannels;
 
-    int start1, size1, start2, size2;
-    displayFifo.prepareToWrite (numSamples, start1, size1, start2, size2);
-
-    auto writeRun = [&] (int start, int size, int offset)
+    // Mono sum, in chunks on the stack: no allocation on the audio thread.
+    constexpr int chunk = 256;
+    float mono[chunk];
+    for (int offset = 0; offset < numSamples; offset += chunk)
     {
-        for (int i = 0; i < size; ++i)
+        const int n = juce::jmin (chunk, numSamples - offset);
+        for (int i = 0; i < n; ++i)
         {
             float sum = 0.0f;
             for (int ch = 0; ch < buffer.getNumChannels(); ++ch)
                 sum += buffer.getReadPointer (ch)[offset + i];
-            displayRing[(size_t) (start + i)] = sum * chGain;
+            mono[i] = sum * chGain;
         }
-    };
-
-    writeRun (start1, size1, 0);
-    writeRun (start2, size2, size1);
-    displayFifo.finishedWrite (size1 + size2);
+        displayTap.push (mono, n);
+    }
 }
 
 int Freeze::pullDisplaySamples (float* dest, int maxSamples)
 {
-    const int ready = juce::jmin (displayFifo.getNumReady(), maxSamples);
-    if (ready <= 0)
-        return 0;
-
-    int start1, size1, start2, size2;
-    displayFifo.prepareToRead (ready, start1, size1, start2, size2);
-
-    std::copy_n (displayRing.data() + start1, size1, dest);
-    std::copy_n (displayRing.data() + start2, size2, dest + size1);
-
-    displayFifo.finishedRead (size1 + size2);
-    return size1 + size2;
+    return displayTap.readSince (displayCursor, dest, maxSamples);
 }

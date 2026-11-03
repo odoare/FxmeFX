@@ -27,6 +27,11 @@ FxmeEqualizerAudioProcessor::FxmeEqualizerAudioProcessor()
 #endif
 {
     equalizer.assignParameters (apvts, parameterPrefix);
+   #ifndef FXME_PD_BUILD
+    // FxmeNet: the spectra drawn behind the response curve.
+    net.telemetry().addTap ("in",  equalizer.getInputTap());
+    net.telemetry().addTap ("out", equalizer.getOutputTap());
+   #endif
 }
 
 FxmeEqualizerAudioProcessor::~FxmeEqualizerAudioProcessor() = default;
