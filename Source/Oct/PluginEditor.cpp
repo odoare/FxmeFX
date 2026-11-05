@@ -7,12 +7,13 @@
 */
 
 #include "PluginProcessor.h"
+#include "../Common/Theme.h"
 #include "PluginEditor.h"
 
 FxmeOctAudioProcessorEditor::FxmeOctAudioProcessorEditor (FxmeOctAudioProcessor& p)
     : AudioProcessorEditor (&p),
       audioProcessor (p),
-      topBar (JucePlugin_Name, juce::Colour::fromRGB (140, 100, 220)),
+      topBar (JucePlugin_Name, fxmefx::theme::oct),
       octComponent (p.getOct(), p.getApvts(), FxmeOctAudioProcessor::parameterPrefix, false)
 {
     topBar.setPresetBank (p.getPresets());
@@ -27,7 +28,7 @@ FxmeOctAudioProcessorEditor::~FxmeOctAudioProcessorEditor() = default;
 
 void FxmeOctAudioProcessorEditor::paint (juce::Graphics& g)
 {
-    fxme::paintTintedBackground (g, getLocalBounds().toFloat(), juce::Colour::fromRGB (140, 100, 220));
+    fxme::paintTintedBackground (g, getLocalBounds().toFloat(), fxmefx::theme::oct);
 }
 
 void FxmeOctAudioProcessorEditor::resized()

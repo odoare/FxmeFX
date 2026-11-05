@@ -7,11 +7,12 @@
 */
 
 #include "PluginProcessor.h"
+#include "../Common/Theme.h"
 #include "PluginEditor.h"
 
 namespace
 {
-    const auto phaserTint = juce::Colour::fromRGB (230, 100, 180);
+    const auto phaserTint = fxmefx::theme::phaser;
 }
 
 FxmePhaserAudioProcessorEditor::FxmePhaserAudioProcessorEditor (FxmePhaserAudioProcessor& p)

@@ -10,6 +10,7 @@
 
 #include <JuceHeader.h>
 #include "Chorus.h"
+#include <FxmeTools/components/LfoPhaseDisplay.h>
 
 class ChorusComponent : public juce::Component,
                         private juce::Timer
@@ -47,13 +48,23 @@ private:
     fxme::FxmeSlider rateSlider, depthSlider, delaySlider, voicesSlider,
                      widthSlider, mixSlider, outSlider;
 
+    fxme::LfoPhaseDisplay phaseDisplay;   // the LFO's shape, with a dot per voice and channel
+
     using SliderAttachment   = juce::AudioProcessorValueTreeState::SliderAttachment;
     using ComboBoxAttachment = juce::AudioProcessorValueTreeState::ComboBoxAttachment;
 
     std::unique_ptr<ComboBoxAttachment> shapeAtt, divAtt;
 
     std::atomic<float>* syncParam = nullptr;
+    std::atomic<float>* onParam = nullptr;
+    std::atomic<float>* shapeParam = nullptr;
+    std::atomic<float>* voicesParam = nullptr;
+    std::atomic<float>* widthParam = nullptr;
+    std::atomic<float>* rateParam = nullptr;
+    std::atomic<float>* divParam = nullptr;
     bool lastSyncState = false;
+
+    void updatePhaseDisplay();
 
     fxme::FxmeLookAndFeel fxmeLookAndFeel;
 

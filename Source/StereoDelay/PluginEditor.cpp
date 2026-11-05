@@ -7,12 +7,13 @@
 */
 
 #include "PluginProcessor.h"
+#include "../Common/Theme.h"
 #include "PluginEditor.h"
 
 FxmeStereoDelayAudioProcessorEditor::FxmeStereoDelayAudioProcessorEditor (FxmeStereoDelayAudioProcessor& p)
     : AudioProcessorEditor (&p),
       audioProcessor (p),
-      topBar (JucePlugin_Name, juce::Colours::green),
+      topBar (JucePlugin_Name, fxmefx::theme::stereoDelay),
       stereoDelayComponent (p.getStereoDelay(), p.getApvts(), FxmeStereoDelayAudioProcessor::parameterPrefix, false)
 {
     topBar.setPresetBank (p.getPresets());
@@ -27,7 +28,7 @@ FxmeStereoDelayAudioProcessorEditor::~FxmeStereoDelayAudioProcessorEditor() = de
 
 void FxmeStereoDelayAudioProcessorEditor::paint (juce::Graphics& g)
 {
-    fxme::paintTintedBackground (g, getLocalBounds().toFloat(), juce::Colours::green);
+    fxme::paintTintedBackground (g, getLocalBounds().toFloat(), fxmefx::theme::stereoDelay);
 }
 
 void FxmeStereoDelayAudioProcessorEditor::resized()

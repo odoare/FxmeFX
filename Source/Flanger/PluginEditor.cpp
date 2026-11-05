@@ -7,11 +7,12 @@
 */
 
 #include "PluginProcessor.h"
+#include "../Common/Theme.h"
 #include "PluginEditor.h"
 
 namespace
 {
-    const auto flangerTint = juce::Colour::fromRGB (90, 150, 240);
+    const auto flangerTint = fxmefx::theme::flanger;
 }
 
 FxmeFlangerAudioProcessorEditor::FxmeFlangerAudioProcessorEditor (FxmeFlangerAudioProcessor& p)

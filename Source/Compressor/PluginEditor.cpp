@@ -7,12 +7,13 @@
 */
 
 #include "PluginProcessor.h"
+#include "../Common/Theme.h"
 #include "PluginEditor.h"
 
 FxmeCompressorAudioProcessorEditor::FxmeCompressorAudioProcessorEditor (FxmeCompressorAudioProcessor& p)
     : AudioProcessorEditor (&p),
       audioProcessor (p),
-      topBar (JucePlugin_Name, juce::Colours::red),
+      topBar (JucePlugin_Name, fxmefx::theme::compressor),
       compressorComponent (p.getCompressor(), p.getApvts(), FxmeCompressorAudioProcessor::parameterPrefix, false)
 {
     topBar.setPresetBank (p.getPresets());
@@ -29,7 +30,7 @@ FxmeCompressorAudioProcessorEditor::~FxmeCompressorAudioProcessorEditor()
 
 void FxmeCompressorAudioProcessorEditor::paint (juce::Graphics& g)
 {
-    fxme::paintTintedBackground (g, getLocalBounds().toFloat(), juce::Colours::red);
+    fxme::paintTintedBackground (g, getLocalBounds().toFloat(), fxmefx::theme::compressor);
 }
 
 void FxmeCompressorAudioProcessorEditor::resized()

@@ -7,6 +7,7 @@
 */
 
 #include "StereoDelayComponent.h"
+#include "../Common/Theme.h"
 #include "../Common/TopBar.h"
 
 void StereoDelayComponent::setSliderColours(juce::Slider& s, juce::Colour c)
@@ -18,7 +19,7 @@ void StereoDelayComponent::setSliderColours(juce::Slider& s, juce::Colour c)
 
 void StereoDelayComponent::setupSlider(juce::Slider& slider, juce::Label& label, const juce::String& text)
 {
-    juce::Colour color = juce::Colours::green;
+    juce::Colour color = fxmefx::theme::stereoDelay;
 
     juce::ignoreUnused (label);
 
@@ -34,7 +35,7 @@ void StereoDelayComponent::setupSlider(juce::Slider& slider, juce::Label& label,
 
 void StereoDelayComponent::setupBarSlider(juce::Slider& slider, juce::Label& label, const juce::String& text)
 {
-    juce::Colour color = juce::Colours::green;
+    juce::Colour color = fxmefx::theme::stereoDelay;
 
     addAndMakeVisible(label);
     label.setText(text, juce::NotificationType::dontSendNotification);
@@ -61,8 +62,8 @@ void StereoDelayComponent::setupCombo (juce::ComboBox& box, juce::Label& label, 
                     "the delay in seconds. \n DAW sync: a proportion of a whole note, "
                     "so 0.25 is a quarter note. \n MIDI note: a multiple of the period "
                     "of the last note played, so 1 tunes the line to it.");
-    box.setColour (juce::ComboBox::outlineColourId, juce::Colours::green.darker());
-    box.setColour (juce::ComboBox::arrowColourId,   juce::Colours::green.brighter (0.3f));
+    box.setColour (juce::ComboBox::outlineColourId, fxmefx::theme::stereoDelay.darker());
+    box.setColour (juce::ComboBox::arrowColourId,   fxmefx::theme::stereoDelay.brighter (0.3f));
 }
 
 juce::String StereoDelayComponent::resolvedTimeText() const
@@ -88,11 +89,11 @@ juce::String StereoDelayComponent::resolvedTimeText() const
 
 StereoDelayComponent::StereoDelayComponent(StereoDelay& d, juce::AudioProcessorValueTreeState& state, const juce::String& prefix, bool showTitle, bool compactLayout)
     : delay(d), apvts(state), compact (compactLayout),
-      onButton (state, prefix + "_Del_On", "On", juce::Colours::green)
+      onButton (state, prefix + "_Del_On", "On", fxmefx::theme::stereoDelay)
 {
     // Tints this component's drop-down menus and tooltips; both are their own
     // windows and cannot see the widget that opened them.
-    fxmeLookAndFeel.setAccentColour (juce::Colours::green);
+    fxmeLookAndFeel.setAccentColour (fxmefx::theme::stereoDelay);
 
     addChildComponent(titleLabel);
     if (compact)
@@ -165,7 +166,7 @@ StereoDelayComponent::~StereoDelayComponent()
 
 void StereoDelayComponent::paint(juce::Graphics& g)
 {
-    fxme::paintComponentBackground (g, getLocalBounds().toFloat(), juce::Colours::green);
+    fxme::paintComponentBackground (g, getLocalBounds().toFloat(), fxmefx::theme::stereoDelay);
 }
 
 void StereoDelayComponent::resized()

@@ -27,6 +27,9 @@ FxmeChorusAudioProcessor::FxmeChorusAudioProcessor()
 #endif
 {
     chorus.assignParameters (apvts, parameterPrefix);
+   #ifndef FXME_PD_BUILD
+    net.telemetry().addValue ("phase", chorus.getDisplayPhase());   // FxmeNet: the LFO display's phase
+   #endif
 }
 
 FxmeChorusAudioProcessor::~FxmeChorusAudioProcessor() = default;

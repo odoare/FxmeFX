@@ -7,11 +7,12 @@
 */
 
 #include "PluginProcessor.h"
+#include "../Common/Theme.h"
 #include "PluginEditor.h"
 
 namespace
 {
-    const auto chorusTint = juce::Colour::fromRGB (60, 200, 190);
+    const auto chorusTint = fxmefx::theme::chorus;
 }
 
 FxmeChorusAudioProcessorEditor::FxmeChorusAudioProcessorEditor (FxmeChorusAudioProcessor& p)

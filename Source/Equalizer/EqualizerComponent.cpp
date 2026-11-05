@@ -7,6 +7,7 @@
 */
 
 #include "EqualizerComponent.h"
+#include "../Common/Theme.h"
 #include "../Common/TopBar.h"
 
 #include <complex>
@@ -363,7 +364,7 @@ void FrequencyResponseGraph::paint (juce::Graphics& g)
         if (inputTap != nullptr && inputTap->isEnabled())
             drawSpectrum (g, inputDb, juce::Colours::white.withAlpha (0.20f), 1.0f, false);
         if (outputTap != nullptr && outputTap->isEnabled())
-            drawSpectrum (g, outputDb, juce::Colours::cyan.withAlpha (0.55f), 1.2f, true);
+            drawSpectrum (g, outputDb, fxmefx::theme::equalizer.withAlpha (0.55f), 1.2f, true);
 
         bool eqOn = (onBtn && onBtn->getToggleState());
 
@@ -375,7 +376,7 @@ void FrequencyResponseGraph::paint (juce::Graphics& g)
             g.strokePath (bandPaths[i], juce::PathStrokeType (1.0f));
         }
 
-        g.setColour (eqOn ? juce::Colours::cyan : juce::Colours::grey);
+        g.setColour (eqOn ? fxmefx::theme::equalizer : juce::Colours::grey);
         g.strokePath (curvePath, juce::PathStrokeType (2.0f));
 
         for (int i = 0; i < numBands; ++i)
@@ -537,11 +538,11 @@ void EqualizerComponent::selectBand (int band)
 
 EqualizerComponent::EqualizerComponent (Equalizer& eq, juce::AudioProcessorValueTreeState& state, const juce::String& prefix, bool showTitle, bool compactLayout)
     : equalizer (eq), apvts (state), numBands (eq.getNumBands()), compact (compactLayout),
-      onButton (state, prefix + "_EQ_On", "On", juce::Colours::cyan)
+      onButton (state, prefix + "_EQ_On", "On", fxmefx::theme::equalizer)
 {
     // Tints this component's combo-box drop-downs; a menu is its own window
     // and cannot see the box that opened it.
-    fxmeLookAndFeel.setAccentColour (juce::Colours::cyan);
+    fxmeLookAndFeel.setAccentColour (fxmefx::theme::equalizer);
 
     addAndMakeVisible (onButton);
     onButton.setLookAndFeel (&fxmeLookAndFeel);
@@ -575,7 +576,7 @@ EqualizerComponent::EqualizerComponent (Equalizer& eq, juce::AudioProcessorValue
         return juce::String (i);
     };
 
-    juce::Colour color = juce::Colours::cyan;
+    juce::Colour color = fxmefx::theme::equalizer;
     auto typeNames = Equalizer::getBandTypeNames();
 
     auto setupSlider = [&](fxme::FxmeSlider& s, double mn, double mx, double def, const juce::String& tip) {
@@ -682,7 +683,7 @@ EqualizerComponent::~EqualizerComponent()
 
 void EqualizerComponent::paint (juce::Graphics& g)
 {
-    fxme::paintComponentBackground (g, getLocalBounds().toFloat(), juce::Colours::cyan);
+    fxme::paintComponentBackground (g, getLocalBounds().toFloat(), fxmefx::theme::equalizer);
 }
 
 void EqualizerComponent::resized()

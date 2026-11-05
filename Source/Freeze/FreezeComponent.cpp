@@ -7,11 +7,12 @@
 */
 
 #include "FreezeComponent.h"
+#include "../Common/Theme.h"
 #include "../Common/TopBar.h"
 
 namespace
 {
-    const auto freezeTint = juce::Colour::fromRGB (140, 100, 220); // violet, same as Oct
+    const auto freezeTint = fxmefx::theme::freeze; // violet, same as Oct
 }
 
 //==============================================================================

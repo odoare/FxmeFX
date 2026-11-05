@@ -7,12 +7,13 @@
 */
 
 #include "FlangerComponent.h"
+#include "../Common/Theme.h"
 #include "../Common/TopBar.h"
 #include <FxmeTools/dsp/Lfo.h>
 
 namespace
 {
-    const auto flangerTint = juce::Colour::fromRGB (90, 150, 240); // steel blue
+    const auto flangerTint = fxmefx::theme::flanger; // steel blue
 }
 
 void FlangerComponent::setSliderColours (juce::Slider& s, juce::Colour c)

@@ -7,6 +7,7 @@
 */
 
 #include "TubeComponent.h"
+#include "../Common/Theme.h"
 #include "../Common/TopBar.h"
 
 void TubeComponent::setSliderColours (juce::Slider& s, juce::Colour c)
@@ -18,11 +19,11 @@ void TubeComponent::setSliderColours (juce::Slider& s, juce::Colour c)
 
 TubeComponent::TubeComponent (Tube& t, juce::AudioProcessorValueTreeState& state, const juce::String& prefix, bool showTitle, bool singleRow, bool compactLayout)
     : tube (t), apvts (state), knobsInSingleRow (singleRow || compactLayout), compact (compactLayout),
-      onButton (state, prefix + "_Tube_On", "On", juce::Colours::orange)
+      onButton (state, prefix + "_Tube_On", "On", fxmefx::theme::tube)
 {
     // Tints this component's combo-box drop-downs; a menu is its own window
     // and cannot see the box that opened it.
-    fxmeLookAndFeel.setAccentColour (juce::Colours::orange);
+    fxmeLookAndFeel.setAccentColour (fxmefx::theme::tube);
 
     addAndMakeVisible (onButton);
     onButton.setLookAndFeel(&fxmeLookAndFeel);
@@ -45,8 +46,8 @@ TubeComponent::TubeComponent (Tube& t, juce::AudioProcessorValueTreeState& state
 
     addAndMakeVisible (modelBox);
     modelBox.setLookAndFeel (&fxmeLookAndFeel);
-    modelBox.setColour (juce::ComboBox::outlineColourId, juce::Colours::orange.darker());
-    modelBox.setColour (juce::ComboBox::arrowColourId,   juce::Colours::orange.brighter (0.3f));
+    modelBox.setColour (juce::ComboBox::outlineColourId, fxmefx::theme::tube.darker());
+    modelBox.setColour (juce::ComboBox::arrowColourId,   fxmefx::theme::tube.brighter (0.3f));
     modelBox.addItem ("Standard", 1);
     modelBox.addItem ("Dynamic",  2);
     modelBox.addItem ("Triode",   3);
@@ -82,7 +83,7 @@ TubeComponent::~TubeComponent() {}
 
 void TubeComponent::setupSlider (fxme::FxmeSlider& slider, juce::Label& label, const juce::String& text, double min, double max, double def)
 {
-    juce::Colour color = juce::Colours::orange;
+    juce::Colour color = fxmefx::theme::tube;
 
     addAndMakeVisible (label);
     label.setText (text, juce::NotificationType::dontSendNotification);
@@ -103,7 +104,7 @@ void TubeComponent::setupSlider (fxme::FxmeSlider& slider, juce::Label& label, c
 
 void TubeComponent::setupBarSlider (fxme::FxmeSlider& slider, juce::Label& label, const juce::String& text, double min, double max, double def)
 {
-    juce::Colour color = juce::Colours::orange;
+    juce::Colour color = fxmefx::theme::tube;
 
     addAndMakeVisible (slider);
     slider.setSliderStyle (juce::Slider::LinearBarVertical);
@@ -118,7 +119,7 @@ void TubeComponent::setupBarSlider (fxme::FxmeSlider& slider, juce::Label& label
 
 void TubeComponent::paint (juce::Graphics& g)
 {
-    fxme::paintComponentBackground (g, getLocalBounds().toFloat(), juce::Colours::orange);
+    fxme::paintComponentBackground (g, getLocalBounds().toFloat(), fxmefx::theme::tube);
 }
 
 void TubeComponent::resized()

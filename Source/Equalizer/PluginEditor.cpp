@@ -7,12 +7,13 @@
 */
 
 #include "PluginProcessor.h"
+#include "../Common/Theme.h"
 #include "PluginEditor.h"
 
 FxmeEqualizerAudioProcessorEditor::FxmeEqualizerAudioProcessorEditor (FxmeEqualizerAudioProcessor& p)
     : AudioProcessorEditor (&p),
       audioProcessor (p),
-      topBar (JucePlugin_Name, juce::Colours::cyan),
+      topBar (JucePlugin_Name, fxmefx::theme::equalizer),
       equalizerComponent (p.getEqualizer(), p.getApvts(), FxmeEqualizerAudioProcessor::parameterPrefix, false)
 {
     topBar.setPresetBank (p.getPresets());
@@ -27,7 +28,7 @@ FxmeEqualizerAudioProcessorEditor::~FxmeEqualizerAudioProcessorEditor() = defaul
 
 void FxmeEqualizerAudioProcessorEditor::paint (juce::Graphics& g)
 {
-    fxme::paintTintedBackground (g, getLocalBounds().toFloat(), juce::Colours::cyan);
+    fxme::paintTintedBackground (g, getLocalBounds().toFloat(), fxmefx::theme::equalizer);
 }
 
 void FxmeEqualizerAudioProcessorEditor::resized()

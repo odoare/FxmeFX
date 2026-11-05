@@ -7,11 +7,12 @@
 */
 
 #include "OctComponent.h"
+#include "../Common/Theme.h"
 #include "../Common/TopBar.h"
 
 namespace
 {
-    const auto octTint = juce::Colour::fromRGB (140, 100, 220); // violet
+    const auto octTint = fxmefx::theme::oct; // violet
 }
 
 void OctComponent::setSliderColours (juce::Slider& s, juce::Colour c)

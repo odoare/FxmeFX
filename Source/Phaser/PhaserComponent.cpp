@@ -7,12 +7,13 @@
 */
 
 #include "PhaserComponent.h"
+#include "../Common/Theme.h"
 #include "../Common/TopBar.h"
 #include <FxmeTools/dsp/Lfo.h>
 
 namespace
 {
-    const auto phaserTint = juce::Colour::fromRGB (230, 100, 180); // magenta
+    const auto phaserTint = fxmefx::theme::phaser; // magenta
 }
 
 void PhaserComponent::setSliderColours (juce::Slider& s, juce::Colour c)

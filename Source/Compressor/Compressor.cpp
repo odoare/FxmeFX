@@ -84,7 +84,9 @@ void Compressor::setOn (bool shouldBeOn)
 
 bool Compressor::isOn() const
 {
-    return on;
+    // The parameter when there is one: right in a mirror (FxmeNet), which
+    // never processes, and no race with the audio thread.
+    return onParam != nullptr ? onParam->load() > 0.5f : on;
 }
 
 void Compressor::assignParameters (juce::AudioProcessorValueTreeState& apvts, const juce::String& prefix)

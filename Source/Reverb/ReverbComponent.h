@@ -18,6 +18,7 @@
 #pragma once
 
 #include <JuceHeader.h>
+#include "../Common/Theme.h"
 #include "Reverb.h"
 
 class ReverbComponent : public juce::Component
@@ -34,7 +35,7 @@ public:
     void resized() override;
 
     /** The tint the reverb is drawn in (its plugin's editor uses it too). */
-    static juce::Colour tint() { return juce::Colour::fromRGB (150, 125, 235); }
+    static juce::Colour tint() { return fxmefx::theme::reverb; }
 
 private:
     void setupRotary (fxme::FxmeSlider& slider, const juce::String& text, const juce::String& suffix,

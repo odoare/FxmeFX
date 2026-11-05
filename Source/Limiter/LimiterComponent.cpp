@@ -7,6 +7,7 @@
 */
 
 #include "LimiterComponent.h"
+#include "../Common/Theme.h"
 #include "../Common/TopBar.h"
 
 void LimiterComponent::setSliderColours (juce::Slider& s, juce::Colour c)
@@ -18,11 +19,11 @@ void LimiterComponent::setSliderColours (juce::Slider& s, juce::Colour c)
 
 LimiterComponent::LimiterComponent (Limiter& lim, juce::AudioProcessorValueTreeState& state, const juce::String& prefix, bool showTitle)
     : limiter (lim), apvts (state),
-      onButton (state, prefix + "_Lim_On", "On", juce::Colours::orange)
+      onButton (state, prefix + "_Lim_On", "On", fxmefx::theme::limiter)
 {
     // Tints this component's drop-down menus and tooltips; both are their own
     // windows and cannot see the widget that opened them.
-    fxmeLookAndFeel.setAccentColour (juce::Colours::orange);
+    fxmeLookAndFeel.setAccentColour (fxmefx::theme::limiter);
 
     addAndMakeVisible (onButton);
     onButton.setLookAndFeel (&fxmeLookAndFeel);
@@ -42,7 +43,7 @@ LimiterComponent::LimiterComponent (Limiter& lim, juce::AudioProcessorValueTreeS
     releaseSlider.setAttachment (new juce::AudioProcessorValueTreeState::SliderAttachment (apvts, prefix + "_Lim_Release", releaseSlider));
 
     addAndMakeVisible (grMeter);
-    grMeter.setMeterColor (juce::Colours::orange);
+    grMeter.setMeterColor (fxmefx::theme::limiter);
     grMeter.setRange (-30.0f, 0.0f);
     grMeter.setZeroLevel (0.0f);
     startTimerHz (24);
@@ -63,12 +64,12 @@ void LimiterComponent::setupSlider (fxme::FxmeSlider& slider, const juce::String
     slider.setName (text);
     slider.setShowLabel (true);
     slider.setLookAndFeel (&fxmeLookAndFeel);
-    setSliderColours (slider, juce::Colours::orange);
+    setSliderColours (slider, fxmefx::theme::limiter);
 }
 
 void LimiterComponent::paint (juce::Graphics& g)
 {
-    fxme::paintComponentBackground (g, getLocalBounds().toFloat(), juce::Colours::orange);
+    fxme::paintComponentBackground (g, getLocalBounds().toFloat(), fxmefx::theme::limiter);
 }
 
 void LimiterComponent::resized()
@@ -98,6 +99,6 @@ void LimiterComponent::resized()
 
 void LimiterComponent::timerCallback()
 {
-    grMeter.setMeterColor (limiter.isOn() ? juce::Colours::orange : juce::Colours::grey);
+    grMeter.setMeterColor (limiter.isOn() ? fxmefx::theme::limiter : juce::Colours::grey);
     grMeter.setValue (limiter.getGrMeter().getPeak());
 }

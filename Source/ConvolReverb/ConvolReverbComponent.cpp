@@ -7,6 +7,7 @@
 */
 
 #include "ConvolReverbComponent.h"
+#include "../Common/Theme.h"
 #include "../Common/TopBar.h"
 
 void ConvolReverbComponent::setSliderColours (juce::Slider& s, juce::Colour c)
@@ -18,7 +19,7 @@ void ConvolReverbComponent::setSliderColours (juce::Slider& s, juce::Colour c)
 
 void ConvolReverbComponent::setupSlider (juce::Slider& slider, juce::Label& label, const juce::String& text, double min, double max, double def)
 {
-    juce::Colour color = juce::Colours::yellowgreen;
+    juce::Colour color = fxmefx::theme::convolReverb;
 
     juce::ignoreUnused (label);
 
@@ -36,7 +37,7 @@ void ConvolReverbComponent::setupSlider (juce::Slider& slider, juce::Label& labe
 
 void ConvolReverbComponent::setupBarSlider (juce::Slider& slider, juce::Label& label, const juce::String& text, double min, double max, double def)
 {
-    juce::Colour color = juce::Colours::yellowgreen;
+    juce::Colour color = fxmefx::theme::convolReverb;
 
     addAndMakeVisible (label);
     label.setText (text, juce::NotificationType::dontSendNotification);
@@ -182,7 +183,7 @@ void ImpulseResponsePlot::paint(juce::Graphics& g)
     if (!irMaxPathR.isEmpty())
         g.fillPath (irMaxPathR);
 
-    g.setColour (juce::Colours::yellowgreen.withAlpha(0.7f));
+    g.setColour (fxmefx::theme::convolReverb.withAlpha(0.7f));
     g.strokePath (irPlotPathL, juce::PathStrokeType (1.5f));
     if (!irPlotPathR.isEmpty())
         g.strokePath (irPlotPathR, juce::PathStrokeType (1.5f));
@@ -190,11 +191,11 @@ void ImpulseResponsePlot::paint(juce::Graphics& g)
 
 ConvolReverbComponent::ConvolReverbComponent (ConvolReverb& r, juce::AudioProcessorValueTreeState& state, const juce::String& pfx, bool showTitle)
     : reverb (r), apvts (state), irPlot(r), prefix (pfx),
-      onButton (state, pfx + "_Rev_On", "On", juce::Colours::yellow)
+      onButton (state, pfx + "_Rev_On", "On", fxmefx::theme::convolReverb)
 {
     // Tints this component's combo-box drop-downs; a menu is its own window
     // and cannot see the box that opened it.
-    fxmeLookAndFeel.setAccentColour (juce::Colours::yellowgreen);
+    fxmeLookAndFeel.setAccentColour (fxmefx::theme::convolReverb);
 
     addChildComponent (titleLabel);
     titleLabel.setVisible (showTitle);
@@ -210,8 +211,8 @@ ConvolReverbComponent::ConvolReverbComponent (ConvolReverb& r, juce::AudioProces
     irLabel.setJustificationType (juce::Justification::centred);
     addAndMakeVisible (irBox);
     irBox.setLookAndFeel (&fxmeLookAndFeel);
-    irBox.setColour (juce::ComboBox::outlineColourId, juce::Colours::yellowgreen.darker());
-    irBox.setColour (juce::ComboBox::arrowColourId,   juce::Colours::yellowgreen.brighter (0.3f));
+    irBox.setColour (juce::ComboBox::outlineColourId, fxmefx::theme::convolReverb.darker());
+    irBox.setColour (juce::ComboBox::arrowColourId,   fxmefx::theme::convolReverb.brighter (0.3f));
     const auto& names = reverb.getImpulseNames();
     for (int i = 0; i < names.size(); ++i)
         irBox.addItem (juce::File (names[i]).getFileNameWithoutExtension(), i + 1);
@@ -266,8 +267,8 @@ ConvolReverbComponent::ConvolReverbComponent (ConvolReverb& r, juce::AudioProces
     shapeLabel.setJustificationType (juce::Justification::centred);
     addAndMakeVisible (shapeBox);
     shapeBox.setLookAndFeel (&fxmeLookAndFeel);
-    shapeBox.setColour (juce::ComboBox::outlineColourId, juce::Colours::yellowgreen.darker());
-    shapeBox.setColour (juce::ComboBox::arrowColourId,   juce::Colours::yellowgreen.brighter (0.3f));
+    shapeBox.setColour (juce::ComboBox::outlineColourId, fxmefx::theme::convolReverb.darker());
+    shapeBox.setColour (juce::ComboBox::arrowColourId,   fxmefx::theme::convolReverb.brighter (0.3f));
     shapeBox.addItem ("Fast Exp", 1);
     shapeBox.addItem ("Linear", 2);
     shapeBox.addItem ("Slow Log", 3);
@@ -371,7 +372,7 @@ void ConvolReverbComponent::timerCallback()
 
 void ConvolReverbComponent::paint (juce::Graphics& g)
 {
-    fxme::paintComponentBackground (g, getLocalBounds().toFloat(), juce::Colours::yellowgreen);
+    fxme::paintComponentBackground (g, getLocalBounds().toFloat(), fxmefx::theme::convolReverb);
 }
 
 void ConvolReverbComponent::resized()

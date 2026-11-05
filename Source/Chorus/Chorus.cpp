@@ -254,6 +254,7 @@ void Chorus::process (juce::AudioBuffer<float>& buffer)
 
         lfo.advance();
     }
+    displayPhase.store (lfo.phase(), std::memory_order_relaxed);
 
     // The switch-off fade has finished: drop out of the audio path entirely and
     // clear the lines, so re-engaging never replays a stale tail.

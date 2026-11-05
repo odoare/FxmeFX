@@ -7,12 +7,13 @@
 */
 
 #include "PluginProcessor.h"
+#include "../Common/Theme.h"
 #include "PluginEditor.h"
 
 FxmeConvolReverbAudioProcessorEditor::FxmeConvolReverbAudioProcessorEditor (FxmeConvolReverbAudioProcessor& p)
     : AudioProcessorEditor (&p),
       audioProcessor (p),
-      topBar (JucePlugin_Name, juce::Colours::yellowgreen),
+      topBar (JucePlugin_Name, fxmefx::theme::convolReverb),
       reverbComponent (p.getConvolReverb(), p.getApvts(), FxmeConvolReverbAudioProcessor::parameterPrefix, false)
 {
     topBar.setPresetBank (p.getPresets());
@@ -27,7 +28,7 @@ FxmeConvolReverbAudioProcessorEditor::~FxmeConvolReverbAudioProcessorEditor() = 
 
 void FxmeConvolReverbAudioProcessorEditor::paint (juce::Graphics& g)
 {
-    fxme::paintTintedBackground (g, getLocalBounds().toFloat(), juce::Colours::yellowgreen);
+    fxme::paintTintedBackground (g, getLocalBounds().toFloat(), fxmefx::theme::convolReverb);
 }
 
 void FxmeConvolReverbAudioProcessorEditor::resized()

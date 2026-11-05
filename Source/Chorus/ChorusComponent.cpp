@@ -7,12 +7,13 @@
 */
 
 #include "ChorusComponent.h"
+#include "../Common/Theme.h"
 #include "../Common/TopBar.h"
 #include <FxmeTools/dsp/Lfo.h>
 
 namespace
 {
-    const auto chorusTint = juce::Colour::fromRGB (60, 200, 190); // teal
+    const auto chorusTint = fxmefx::theme::chorus; // teal
 }
 
 void ChorusComponent::setSliderColours (juce::Slider& s, juce::Colour c)
@@ -99,6 +100,12 @@ ChorusComponent::ChorusComponent (Chorus& c,
     setupRotary (outSlider,    "Output", -24.0, 24.0,   0.1,   " dB");
     outSlider.setCentralValue (0.0);
 
+    // The output as a console fader, like the dynamics plugins' gains.
+    outSlider.setSliderStyle (juce::Slider::LinearVertical);
+    outSlider.getProperties().set ("linearStyle", "console");
+    outSlider.setNumDecimalPlacesToDisplay (1);
+    outSlider.setColour (juce::Slider::rotarySliderFillColourId, juce::Colour (0xff2b2b2b));   // the cap's body
+
     delaySlider.setTooltip ("Delay. \n Centre of the modulated delay. Short values thin the "
                             "sound out, long ones drift towards a doubling effect.");
     voicesSlider.setTooltip ("Voices. \n Delayed copies per channel, spread evenly around the "
@@ -114,15 +121,28 @@ ChorusComponent::ChorusComponent (Chorus& c,
     mixSlider   .setAttachment (new SliderAttachment (apvts, prefix + "_Chorus_Mix",    mixSlider));
     outSlider   .setAttachment (new SliderAttachment (apvts, prefix + "_Chorus_Out",    outSlider));
 
-    syncParam = apvts.getRawParameterValue (prefix + "_Chorus_Sync");
+    addAndMakeVisible (phaseDisplay);
+    phaseDisplay.setAccentColour (chorusTint);
+    phaseDisplay.setTooltip ("The LFO: its shape, and where each voice of each channel reads it "
+                             "(L and R; the smaller dots are the extra voices).");
+
+    syncParam   = apvts.getRawParameterValue (prefix + "_Chorus_Sync");
+    onParam     = apvts.getRawParameterValue (prefix + "_Chorus_On");
+    shapeParam  = apvts.getRawParameterValue (prefix + "_Chorus_Shape");
+    voicesParam = apvts.getRawParameterValue (prefix + "_Chorus_Voices");
+    widthParam  = apvts.getRawParameterValue (prefix + "_Chorus_Width");
+    rateParam   = apvts.getRawParameterValue (prefix + "_Chorus_Rate");
+    divParam    = apvts.getRawParameterValue (prefix + "_Chorus_Div");
     lastSyncState = ! (syncParam != nullptr && *syncParam > 0.5f);   // force the first update
-    startTimerHz (10);
+    startTimerHz (30);
 }
 
 ChorusComponent::~ChorusComponent() = default;
 
 void ChorusComponent::timerCallback()
 {
+    updatePhaseDisplay();
+
     // Only one of the two rate controls is meaningful at a time; the parameter
     // can also move from host automation, hence polling rather than onClick.
     const bool synced = (syncParam != nullptr && *syncParam > 0.5f);
@@ -133,6 +153,34 @@ void ChorusComponent::timerCallback()
     rateSlider.setEnabled (! synced);
     divBox.setEnabled (synced);
     divLabel.setEnabled (synced);
+}
+
+void ChorusComponent::updatePhaseDisplay()
+{
+    // Everything but the phase comes from the parameters, not from the DSP:
+    // a mirror (FxmeNet) never processes, and only the phase is sent to it.
+    const int voices = voicesParam != nullptr ? juce::jlimit (1, Chorus::maxVoices, (int) voicesParam->load()) : 2;
+    const float width = widthParam != nullptr ? widthParam->load() * 0.01f * 0.5f : 0.5f;   // as Chorus::checkParameters
+
+    std::vector<fxme::LfoPhaseDisplay::Dot> dots;
+    for (int v = 0; v < voices; ++v)
+    {
+        const float spread = (float) v / (float) voices;
+        dots.push_back ({ spread,         v == 0 ? "L" : "", v != 0 });
+        dots.push_back ({ width + spread, v == 0 ? "R" : "", v != 0 });
+    }
+    phaseDisplay.setDots (std::move (dots));
+
+    if (shapeParam != nullptr)
+        phaseDisplay.setShape ((int) shapeParam->load());
+    phaseDisplay.setActive (onParam == nullptr || onParam->load() > 0.5f);
+    phaseDisplay.setPhase (chorus.getDisplayPhase().load (std::memory_order_relaxed));
+
+    const bool synced = syncParam != nullptr && syncParam->load() > 0.5f;
+    if (synced && divParam != nullptr)
+        phaseDisplay.setCaption (fxme::Lfo::syncDivisionNames[juce::jlimit (0, fxme::Lfo::numSyncDivisions - 1, (int) divParam->load())]);
+    else if (rateParam != nullptr)
+        phaseDisplay.setCaption (juce::String (rateParam->load(), 2) + " Hz");
 }
 
 void ChorusComponent::paint (juce::Graphics& g)
@@ -158,24 +206,27 @@ void ChorusComponent::resized()
         top.items.add (fi (divLabel)  .withWidth (30.0f));
         top.items.add (fi (divBox)    .withFlex (0.9f).withMargin (juce::FlexItem::Margin (0.f, 8.f, 0.f, 4.f)));
         top.items.add (fi (syncButton).withWidth (66.0f));
+        knobs.items.add (fi (phaseDisplay).withFlex (1.6f).withMargin (juce::FlexItem::Margin (2.f, 6.f, 2.f, 0.f)));
         knobs.items.add (fi (rateSlider).withFlex (1.0f));
         knobs.items.add (fi (depthSlider).withFlex (1.0f));
         knobs.items.add (fi (delaySlider).withFlex (1.0f));
         knobs.items.add (fi (voicesSlider).withFlex (1.0f));
         knobs.items.add (fi (widthSlider).withFlex (1.0f));
         knobs.items.add (fi (mixSlider).withFlex (1.0f));
-        knobs.items.add (fi (outSlider).withFlex (1.0f));
+        knobs.items.add (fi (outSlider).withWidth (48.0f).withMargin (juce::FlexItem::Margin (0.f, 6.f, 0.f, 6.f)));
         column.items.add (fi (top).withHeight (24.0f).withMargin (juce::FlexItem::Margin (0.f, 0.f, 4.f, 0.f)));
         column.items.add (fi (knobs).withFlex (1.0f));
         column.performLayout (area);
         return;
     }
 
-    juce::FlexBox top, comboRow, knobRow1, knobRow2, fMain;
+    juce::FlexBox top, comboRow, knobRow1, knobRow2, knobs, body, fMain;
     top     .flexDirection = juce::FlexBox::Direction::row;
     comboRow.flexDirection = juce::FlexBox::Direction::row;
     knobRow1.flexDirection = juce::FlexBox::Direction::row;
     knobRow2.flexDirection = juce::FlexBox::Direction::row;
+    knobs   .flexDirection = juce::FlexBox::Direction::column;
+    body    .flexDirection = juce::FlexBox::Direction::row;
     fMain   .flexDirection = juce::FlexBox::Direction::column;
 
     top.items.add (fi (onButton).withWidth (fxmefx::kOnButtonWidth));
@@ -187,26 +238,27 @@ void ChorusComponent::resized()
     comboRow.items.add (fi (divLabel)  .withWidth (34.0f));
     comboRow.items.add (fi (divBox)    .withFlex (1.0f).withMargin (juce::FlexItem::Margin (0.f, 0.f, 0.f, 4.f)));
 
+    // Two rows of three knobs (the LFO, then the voices and the blend), the
+    // output fader on their right.
     knobRow1.items.add (fi (rateSlider)  .withFlex (1.0f));
     knobRow1.items.add (fi (depthSlider) .withFlex (1.0f));
     knobRow1.items.add (fi (delaySlider) .withFlex (1.0f));
-    knobRow1.items.add (fi (voicesSlider).withFlex (1.0f));
-
-    // Half-width spacers either side keep the three knobs of the second row the
-    // same size as the four above them.
-    knobRow2.items.add (fi().withFlex (0.5f));
-    knobRow2.items.add (fi (widthSlider).withFlex (1.0f));
-    knobRow2.items.add (fi (mixSlider)  .withFlex (1.0f));
-    knobRow2.items.add (fi (outSlider)  .withFlex (1.0f));
-    knobRow2.items.add (fi().withFlex (0.5f));
+    knobRow2.items.add (fi (voicesSlider).withFlex (1.0f));
+    knobRow2.items.add (fi (widthSlider) .withFlex (1.0f));
+    knobRow2.items.add (fi (mixSlider)   .withFlex (1.0f));
+    knobs.items.add (fi (knobRow1).withFlex (1.0f));
+    knobs.items.add (fi (knobRow2).withFlex (1.0f));
+    body.items.add (fi (knobs).withFlex (1.0f));
+    body.items.add (fi (outSlider).withWidth (64.0f).withMargin (juce::FlexItem::Margin (0.f, 10.f, 0.f, 8.f)));   // off the right edge
 
     fMain.items.add (fi (top)     .withHeight (fxmefx::kHeaderRowHeight)
                                   .withMinHeight (fxmefx::kHeaderRowHeight)
                                   .withMargin (juce::FlexItem::Margin (5.f, 0.f, 6.f, 0.f)));
     fMain.items.add (fi (comboRow).withHeight (26.0f).withMinHeight (24.0f)
                                   .withMargin (juce::FlexItem::Margin (0.f, 4.f, 6.f, 4.f)));
-    fMain.items.add (fi (knobRow1).withFlex (1.0f));
-    fMain.items.add (fi (knobRow2).withFlex (1.0f));
+    fMain.items.add (fi (phaseDisplay).withFlex (0.55f).withMinHeight (40.0f)
+                                      .withMargin (juce::FlexItem::Margin (0.f, 4.f, 6.f, 4.f)));
+    fMain.items.add (fi (body).withFlex (2.0f));
 
     fMain.performLayout (area);
 }

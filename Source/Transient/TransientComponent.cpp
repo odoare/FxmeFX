@@ -7,6 +7,7 @@
 */
 
 #include "TransientComponent.h"
+#include "../Common/Theme.h"
 #include "../Common/TopBar.h"
 
 void TransientComponent::setSliderColours (juce::Slider& s, juce::Colour c)
@@ -18,11 +19,11 @@ void TransientComponent::setSliderColours (juce::Slider& s, juce::Colour c)
 
 TransientComponent::TransientComponent (Transient& t, juce::AudioProcessorValueTreeState& state, const juce::String& prefix, bool showTitle)
     : transientFx (t), apvts (state),
-      onButton (state, prefix + "_Trans_On", "On", juce::Colours::red)
+      onButton (state, prefix + "_Trans_On", "On", fxmefx::theme::transient)
 {
     // Tints this component's combo-box drop-downs; a menu is its own window
     // and cannot see the box that opened it.
-    fxmeLookAndFeel.setAccentColour (juce::Colours::red);
+    fxmeLookAndFeel.setAccentColour (fxmefx::theme::transient);
 
     addAndMakeVisible (onButton);
     onButton.setLookAndFeel (&fxmeLookAndFeel);
@@ -35,8 +36,8 @@ TransientComponent::TransientComponent (Transient& t, juce::AudioProcessorValueT
 
     addAndMakeVisible (characterBox);
     characterBox.setLookAndFeel (&fxmeLookAndFeel);
-    characterBox.setColour (juce::ComboBox::outlineColourId, juce::Colours::red.darker());
-    characterBox.setColour (juce::ComboBox::arrowColourId,   juce::Colours::red.brighter (0.3f));
+    characterBox.setColour (juce::ComboBox::outlineColourId, fxmefx::theme::transient.darker());
+    characterBox.setColour (juce::ComboBox::arrowColourId,   fxmefx::theme::transient.brighter (0.3f));
     characterBox.addItem ("Soft",     1);
     characterBox.addItem ("Standard", 2);
     characterBox.addItem ("Hard",     3);
@@ -54,7 +55,7 @@ TransientComponent::TransientComponent (Transient& t, juce::AudioProcessorValueT
     gainSlider   .setAttachment (new juce::AudioProcessorValueTreeState::SliderAttachment (apvts, prefix + "_Trans_Gain",    gainSlider));
 
     addAndMakeVisible (gainMeter);
-    gainMeter.setMeterColor (juce::Colours::red);
+    gainMeter.setMeterColor (fxmefx::theme::transient);
     // Modification spans roughly ±18 dB; show that range with 0 dB as "no change".
     gainMeter.setRange (-18.0f, 18.0f);
     gainMeter.setZeroLevel (0.0f);
@@ -67,7 +68,7 @@ TransientComponent::~TransientComponent()
 
 void TransientComponent::setupSlider (fxme::FxmeSlider& slider, juce::Label& label, const juce::String& text, double min, double max, double def)
 {
-    juce::Colour color = juce::Colours::red;
+    juce::Colour color = fxmefx::theme::transient;
 
     addAndMakeVisible (label);
     label.setText (text, juce::NotificationType::dontSendNotification);
@@ -87,7 +88,7 @@ void TransientComponent::setupSlider (fxme::FxmeSlider& slider, juce::Label& lab
 
 void TransientComponent::setupBarSlider (fxme::FxmeSlider& slider, juce::Label& label, const juce::String& text, double min, double max, double def)
 {
-    juce::Colour color = juce::Colours::red;
+    juce::Colour color = fxmefx::theme::transient;
 
     addAndMakeVisible (slider);
     slider.setSliderStyle (juce::Slider::LinearBarVertical);
@@ -102,7 +103,7 @@ void TransientComponent::setupBarSlider (fxme::FxmeSlider& slider, juce::Label& 
 
 void TransientComponent::paint (juce::Graphics& g)
 {
-    fxme::paintComponentBackground (g, getLocalBounds().toFloat(), juce::Colours::red);
+    fxme::paintComponentBackground (g, getLocalBounds().toFloat(), fxmefx::theme::transient);
 }
 
 void TransientComponent::resized()
@@ -138,7 +139,7 @@ void TransientComponent::resized()
 void TransientComponent::timerCallback()
 {
     if (transientFx.isOn())
-        gainMeter.setMeterColor (juce::Colours::red);
+        gainMeter.setMeterColor (fxmefx::theme::transient);
     else
         gainMeter.setMeterColor (juce::Colours::grey);
 

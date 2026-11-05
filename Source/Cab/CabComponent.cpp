@@ -7,11 +7,12 @@
 */
 
 #include "CabComponent.h"
+#include "../Common/Theme.h"
 #include "../Common/TopBar.h"
 
 namespace
 {
-    const auto cabTint = juce::Colours::orange;
+    const auto cabTint = fxmefx::theme::cab;
 }
 
 void CabIRPlot::paint (juce::Graphics& g)

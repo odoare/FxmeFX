@@ -10,7 +10,7 @@
 
 #include <JuceHeader.h>
 #include "Compressor.h"
-#include "VuMeterComponent.h"
+#include <FxmeTools/components/GainReductionMeter.h>
 
 class CompressorComponent : public juce::Component,
                             public juce::Timer
@@ -30,8 +30,8 @@ private:
 
     fxme::FxmeButton onButton;
     juce::Label titleLabel;
-    VuMeterComponent grMeter;
-    juce::Label preGainLabel, attackLabel, releaseLabel, threshLabel, ratioLabel, gainLabel;
+    fxme::GainReductionMeter grMeter;
+    juce::Label attackLabel, releaseLabel, threshLabel, ratioLabel;
     juce::Label kneeLabel, peakRmsLabel;
     fxme::FxmeSlider preGainSlider, attackSlider, releaseSlider, threshSlider, ratioSlider, gainSlider;
     fxme::FxmeSlider kneeSlider, peakRmsSlider;
@@ -42,7 +42,7 @@ private:
     std::unique_ptr<ComboBoxAttachment> relModeAtt;
 
     void setupSlider (fxme::FxmeSlider& slider, juce::Label& label, const juce::String& text, double min, double max, double def);
-    void setupBarSlider (fxme::FxmeSlider& slider, juce::Label& label, const juce::String& text, double min, double max, double def);
+    void setupFader (fxme::FxmeSlider& slider, const juce::String& text, double min, double max, double def);
     void setSliderColours (juce::Slider& s, juce::Colour c);
 
     fxme::FxmeLookAndFeel fxmeLookAndFeel;

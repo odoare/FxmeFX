@@ -7,12 +7,13 @@
 */
 
 #include "PluginProcessor.h"
+#include "../Common/Theme.h"
 #include "PluginEditor.h"
 
 FxmeFreezeAudioProcessorEditor::FxmeFreezeAudioProcessorEditor (FxmeFreezeAudioProcessor& p)
     : AudioProcessorEditor (&p),
       audioProcessor (p),
-      topBar (JucePlugin_Name, juce::Colour::fromRGB (140, 100, 220)),
+      topBar (JucePlugin_Name, fxmefx::theme::freeze),
       freezeComponent (p.getFreeze(), p.getApvts(), FxmeFreezeAudioProcessor::parameterPrefix, false)
 {
     topBar.setPresetBank (p.getPresets());
@@ -27,7 +28,7 @@ FxmeFreezeAudioProcessorEditor::~FxmeFreezeAudioProcessorEditor() = default;
 
 void FxmeFreezeAudioProcessorEditor::paint (juce::Graphics& g)
 {
-    fxme::paintTintedBackground (g, getLocalBounds().toFloat(), juce::Colour::fromRGB (140, 100, 220));
+    fxme::paintTintedBackground (g, getLocalBounds().toFloat(), fxmefx::theme::freeze);
 }
 
 void FxmeFreezeAudioProcessorEditor::resized()

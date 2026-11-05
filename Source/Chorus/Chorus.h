@@ -55,6 +55,11 @@ public:
         Message-thread friendly read for the GUI. */
     float getEffectiveRateHz() const { return lfo.frequencyHz(); }
 
+    /** The LFO's master phase, in cycles, as of the last block: for the
+        phase display. An atomic, so FxmeNet can also carry it from the
+        server to a mirror (telemetry "phase"). */
+    std::atomic<float>& getDisplayPhase() noexcept { return displayPhase; }
+
 private:
     void updateDelayTargets();
 
@@ -68,6 +73,7 @@ private:
 
     std::array<fxme::ModDelayLine, 2> lines;
     fxme::ModLfo lfo;
+    std::atomic<float> displayPhase { 0.0f };
 
     juce::SmoothedValue<float> mixSmooth, outSmooth, centreSmooth, swingSmooth;
 

@@ -17,7 +17,7 @@ class FxmeChorusAudioProcessorEditor  : public juce::AudioProcessorEditor
 {
 public:
     static constexpr int kPreferredWidth  = 560;
-    static constexpr int kPreferredHeight = 340 + fxmefx::kTopBarHeight;
+    static constexpr int kPreferredHeight = 420 + fxmefx::kTopBarHeight;   // room for the LFO display
 
     FxmeChorusAudioProcessorEditor (FxmeChorusAudioProcessor&);
     ~FxmeChorusAudioProcessorEditor() override;

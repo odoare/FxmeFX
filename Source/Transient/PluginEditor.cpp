@@ -7,12 +7,13 @@
 */
 
 #include "PluginProcessor.h"
+#include "../Common/Theme.h"
 #include "PluginEditor.h"
 
 FxmeTransientAudioProcessorEditor::FxmeTransientAudioProcessorEditor (FxmeTransientAudioProcessor& p)
     : AudioProcessorEditor (&p),
       audioProcessor (p),
-      topBar (JucePlugin_Name, juce::Colours::red),
+      topBar (JucePlugin_Name, fxmefx::theme::transient),
       transientComponent (p.getTransient(), p.getApvts(), FxmeTransientAudioProcessor::parameterPrefix, false)
 {
     topBar.setPresetBank (p.getPresets());
@@ -27,7 +28,7 @@ FxmeTransientAudioProcessorEditor::~FxmeTransientAudioProcessorEditor() = defaul
 
 void FxmeTransientAudioProcessorEditor::paint (juce::Graphics& g)
 {
-    fxme::paintTintedBackground (g, getLocalBounds().toFloat(), juce::Colours::red);
+    fxme::paintTintedBackground (g, getLocalBounds().toFloat(), fxmefx::theme::transient);
 }
 
 void FxmeTransientAudioProcessorEditor::resized()

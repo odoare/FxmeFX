@@ -7,12 +7,13 @@
 */
 
 #include "PluginProcessor.h"
+#include "../Common/Theme.h"
 #include "PluginEditor.h"
 
 FxmeTubeAudioProcessorEditor::FxmeTubeAudioProcessorEditor (FxmeTubeAudioProcessor& p)
     : AudioProcessorEditor (&p),
       audioProcessor (p),
-      topBar (JucePlugin_Name, juce::Colours::orange),
+      topBar (JucePlugin_Name, fxmefx::theme::tube),
       tubeComponent (p.getTube(), p.getApvts(), FxmeTubeAudioProcessor::parameterPrefix, false)
 {
     topBar.setPresetBank (p.getPresets());
@@ -27,7 +28,7 @@ FxmeTubeAudioProcessorEditor::~FxmeTubeAudioProcessorEditor() = default;
 
 void FxmeTubeAudioProcessorEditor::paint (juce::Graphics& g)
 {
-    fxme::paintTintedBackground (g, getLocalBounds().toFloat(), juce::Colours::orange);
+    fxme::paintTintedBackground (g, getLocalBounds().toFloat(), fxmefx::theme::tube);
 }
 
 void FxmeTubeAudioProcessorEditor::resized()

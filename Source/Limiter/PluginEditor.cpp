@@ -7,12 +7,13 @@
 */
 
 #include "PluginProcessor.h"
+#include "../Common/Theme.h"
 #include "PluginEditor.h"
 
 FxmeLimiterAudioProcessorEditor::FxmeLimiterAudioProcessorEditor (FxmeLimiterAudioProcessor& p)
     : AudioProcessorEditor (&p),
       audioProcessor (p),
-      topBar (JucePlugin_Name, juce::Colours::orange),
+      topBar (JucePlugin_Name, fxmefx::theme::limiter),
       limiterComponent (p.getLimiter(), p.getApvts(), FxmeLimiterAudioProcessor::parameterPrefix, false)
 {
     topBar.setPresetBank (p.getPresets());
@@ -29,7 +30,7 @@ FxmeLimiterAudioProcessorEditor::~FxmeLimiterAudioProcessorEditor()
 
 void FxmeLimiterAudioProcessorEditor::paint (juce::Graphics& g)
 {
-    fxme::paintTintedBackground (g, getLocalBounds().toFloat(), juce::Colours::orange);
+    fxme::paintTintedBackground (g, getLocalBounds().toFloat(), fxmefx::theme::limiter);
 }
 
 void FxmeLimiterAudioProcessorEditor::resized()
