@@ -8,6 +8,7 @@
 
 #include "CabComponent.h"
 #include "../Common/Theme.h"
+#include "../Common/Controls.h"
 #include "../Common/TopBar.h"
 
 namespace
@@ -73,14 +74,8 @@ void CabComponent::setSliderColours (juce::Slider& s, juce::Colour c)
 void CabComponent::setupGainSlider (fxme::FxmeSlider& slider, juce::Label& label,
                                         const juce::String& text)
 {
-    addAndMakeVisible (slider);
-    slider.setSliderStyle (juce::Slider::LinearHorizontal);
-    slider.setName (text);
-    slider.setTooltip (text);
-    slider.setTextValueSuffix (" dB");
-    slider.setCentralValue (0.0);   // bipolar ±dB: the bar grows from 0 dB
-    slider.setLookAndFeel (&fxmeLookAndFeel);
-    setSliderColours (slider, cabTint);
+    // A horizontal console fader (the range comes from the parameter).
+    fxmefx::setupGainFader (*this, slider, text, cabTint, fxmeLookAndFeel, -24.0, 24.0, false);
 
     addAndMakeVisible (label);
     label.setText ("Gain", juce::NotificationType::dontSendNotification);
@@ -212,7 +207,7 @@ void CabComponent::resized()
                                .withMargin (juce::FlexItem::Margin (4.f, 0.f, 4.f, 0.f)));
         col.items.add (fi (plot).withFlex (1.0f, 4.0f).withMinHeight (0.0f));
         col.items.add (fi (gainRow).withFlex (0.18f, 0.0f)
-                                   .withMinHeight (30.0f).withMaxHeight (36.0f)
+                                   .withMinHeight (40.0f).withMaxHeight (46.0f)   // the fader's scale under it
                                    .withMargin (juce::FlexItem::Margin (8.f, 0.f, 0.f, 0.f)));
     };
 

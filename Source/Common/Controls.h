@@ -12,6 +12,9 @@
       setupGainFader  the same for a ±dB gain (input, output): the fill grows
                       from 0 dB, one decimal, " dB".
 
+    Both are vertical by default; a horizontal one (`vertical` false) has its
+    scale under the slot and its value on the right.
+
     The look-and-feel is the component's own (FxmeFX components set theirs
     per widget). A fader on a panel's right edge wants kEdgeMargin of room on
     its right: the cap reaches the fader's right side.
@@ -34,10 +37,10 @@ namespace fxmefx
     inline constexpr float kEdgeMargin = 10.0f;
 
     inline void setupFader (juce::Component& owner, fxme::FxmeSlider& slider, const juce::String& name,
-                            juce::Colour accent, juce::LookAndFeel& laf)
+                            juce::Colour accent, juce::LookAndFeel& laf, bool vertical = true)
     {
         owner.addAndMakeVisible (slider);
-        slider.setSliderStyle (juce::Slider::LinearVertical);
+        slider.setSliderStyle (vertical ? juce::Slider::LinearVertical : juce::Slider::LinearHorizontal);
         slider.setTextBoxStyle (juce::Slider::NoTextBox, false, 0, 0);
         slider.getProperties().set ("linearStyle", "console");
         slider.setTooltip (name);
@@ -51,9 +54,10 @@ namespace fxmefx
     }
 
     inline void setupGainFader (juce::Component& owner, fxme::FxmeSlider& slider, const juce::String& name,
-                                juce::Colour accent, juce::LookAndFeel& laf, double minDb = -24.0, double maxDb = 24.0)
+                                juce::Colour accent, juce::LookAndFeel& laf, double minDb = -24.0, double maxDb = 24.0,
+                                bool vertical = true)
     {
-        setupFader (owner, slider, name, accent, laf);
+        setupFader (owner, slider, name, accent, laf, vertical);
         slider.setRange (minDb, maxDb);
         slider.setValue (0.0);
         slider.setCentralValue (0.0);   // the fill grows from 0 dB

@@ -301,7 +301,7 @@ void ConvolReverbComponent::refreshExternalItemText()
     if (name.isNotEmpty())
         irBox.changeItemText (externalSlotId, "Ext: " + name);
     else
-        irBox.changeItemText (externalSlotId, "External\xe2\x80\xa6");
+        irBox.changeItemText (externalSlotId, "External file");
 }
 
 void ConvolReverbComponent::openExternalIRChooser()

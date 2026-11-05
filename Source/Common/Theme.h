@@ -16,10 +16,10 @@
 
       Dynamics            brown   to red
       Modulation          teal    to steel blue
-      Distortion and tone orange  to salmon
+      Distortion and tone orange  to apricot
       Equalisation        cyan
       Delay               green   to olive
-      Reverb              yellow  to grey
+      Reverb              yellow  to beige
       Spectral and pitch  violet  to pink
 
     The ends are kept a little short of full saturation: on the near-black
@@ -56,7 +56,7 @@ namespace fxmefx::theme
                              inline const juce::Colour from { 0xff3cc8be }, to { 0xff5a96f0 }; }   // teal, steel blue
 
     namespace tone         { enum Member { tube, cab, count };
-                             inline const juce::Colour from { 0xfff0a030 }, to { 0xfffa8072 }; }   // orange, salmon
+                             inline const juce::Colour from { 0xfff0a030 }, to { 0xfffbc490 }; }   // orange, apricot (salmon was too near the dynamics' red)
 
     namespace equalisation { enum Member { equalizer, count };
                              inline const juce::Colour from { 0xff30dcf0 }, to { 0xff30dcf0 }; }   // cyan
@@ -65,7 +65,7 @@ namespace fxmefx::theme
                              inline const juce::Colour from { 0xff4cb450 }, to { 0xffa0a040 }; }   // green, olive
 
     namespace reverbs      { enum Member { reverb, convolReverb, count };
-                             inline const juce::Colour from { 0xffe8cc40 }, to { 0xffa0a0a0 }; }   // yellow, grey
+                             inline const juce::Colour from { 0xffe8cc40 }, to { 0xffd9c9a3 }; }   // yellow, beige
 
     namespace spectral     { enum Member { freeze, oct, count };
                              inline const juce::Colour from { 0xff8c64dc }, to { 0xffe678b4 }; }   // violet, pink

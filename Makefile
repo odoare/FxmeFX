@@ -12,7 +12,7 @@
 
 BUILD_DIR        ?= build
 CMAKE_BUILD_TYPE ?= Release
-VST3_INSTALL_DIR ?= $(HOME)/.vst3
+VST3_INSTALL_DIR ?= $(HOME)/.vst3/Fx-Mechanics
 JOBS             ?= 4
 
 VST3_GLOB := $(BUILD_DIR)/Source/*/Fxme*_artefacts/$(CMAKE_BUILD_TYPE)/VST3/*.vst3
