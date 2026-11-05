@@ -7,6 +7,7 @@
 */
 
 #include "Freeze.h"
+#include <FxmeTools/dsp/Sanitise.h>
 
 namespace
 {
@@ -116,6 +117,11 @@ void Freeze::checkParameters()
 
 void Freeze::process (juce::AudioBuffer<float>& buffer)
 {
+    // A NaN or an infinity in a captured window would make the whole frozen
+    // wash NaN until the next capture (and stay in the display): out first.
+    // Nothing else changes.
+    fxme::sanitiseBlock (buffer.getArrayOfWritePointers(), buffer.getNumChannels(), buffer.getNumSamples(), fxme::kMainPathLimit);
+
     pushDisplaySamples (buffer);
 
     // Freeze the pre-press window first, then let this block's input roll

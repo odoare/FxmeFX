@@ -7,6 +7,7 @@
 */
 
 #include "Transient.h"
+#include <FxmeTools/dsp/Sanitise.h>
 
 namespace
 {
@@ -123,6 +124,9 @@ void Transient::process (juce::AudioBuffer<float>& buffer)
     if (! on)
         return;
 
+    // An infinity would stay in the four envelope followers for good, which
+    // would quietly stop the shaping: out first, NaN too. Nothing else changes.
+    fxme::sanitiseBlock (buffer.getArrayOfWritePointers(), buffer.getNumChannels(), buffer.getNumSamples(), fxme::kMainPathLimit);
     buffer.applyGain (preGain);
 
     const int numChannels = buffer.getNumChannels();

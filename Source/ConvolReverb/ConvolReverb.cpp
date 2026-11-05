@@ -7,6 +7,7 @@
 */
 
 #include "ConvolReverb.h"
+#include <FxmeTools/dsp/Sanitise.h>
 #include <FxmeTools/presets/EmbeddedAudio.h>
 #include <FxmeTools/dsp/ImpulseEnergy.h>
 #include <resample.h>
@@ -114,8 +115,11 @@ void ConvolReverb::process (juce::AudioBuffer<float>& buffer)
     {
         auto* src = buffer.getReadPointer (c);
         auto* dst = wdlInputBuffer.getWritePointer(c);
+        // Cleaned on the way in: one NaN or infinity spoils the engine's whole
+        // FFT block, and the wet output stays NaN for the impulse's length
+        // (seconds). The dry path is left alone: a bad sample passes once.
         for (int i = 0; i < numSamples; ++i)
-            dst[i] = (WDL_FFT_REAL) src[i];
+            dst[i] = (WDL_FFT_REAL) fxme::sanitiseSample (src[i], fxme::kMainPathLimit);
         wdlInputPtrs[c] = dst;
     }
 

@@ -7,6 +7,7 @@
 */
 
 #include "Compressor.h"
+#include <FxmeTools/dsp/Sanitise.h>
 
 Compressor::Compressor()
 {
@@ -145,6 +146,9 @@ void Compressor::process (juce::AudioBuffer<float>& buffer)
     if (! on)
         return;
 
+    // An infinity would stay in the level detector for good (and the gain
+    // with it, at zero): out first, NaN too. Nothing else changes.
+    fxme::sanitiseBlock (buffer.getArrayOfWritePointers(), buffer.getNumChannels(), buffer.getNumSamples(), fxme::kMainPathLimit);
     buffer.applyGain (preGain);
 
     int numChannels = buffer.getNumChannels();

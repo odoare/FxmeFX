@@ -7,6 +7,7 @@
 */
 
 #include "Cab.h"
+#include <FxmeTools/dsp/Sanitise.h>
 #include <resample.h>
 #include <FxmeTools/dsp/ImpulseEnergy.h>
 
@@ -99,8 +100,10 @@ void Cab::process (juce::AudioBuffer<float>& buffer)
     {
         const auto* src = buffer.getReadPointer (c);
         auto*       dst = wdlInputBuffer.getWritePointer (c);
+        // Cleaned on the way in: one NaN or infinity spoils the engine's whole
+        // FFT block, and the output stays NaN for the impulse's length.
         for (int i = 0; i < numSamples; ++i)
-            dst[i] = (WDL_FFT_REAL) src[i];
+            dst[i] = (WDL_FFT_REAL) fxme::sanitiseSample (src[i], fxme::kMainPathLimit);
         wdlInputPtrs[(size_t) c] = dst;
     }
 

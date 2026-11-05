@@ -7,6 +7,7 @@
 */
 
 #include "Equalizer.h"
+#include <FxmeTools/dsp/Sanitise.h>
 
 Equalizer::BandConfig Equalizer::getBandConfig (int i, int numBands) noexcept
 {
@@ -104,6 +105,10 @@ void Equalizer::updateCoefficients()
 
 void Equalizer::process (juce::AudioBuffer<float>& buffer)
 {
+    // A NaN or an infinity would stay in the filters' (and the spectrum
+    // display's) state for good: out first. Nothing else changes.
+    fxme::sanitiseBlock (buffer.getArrayOfWritePointers(), buffer.getNumChannels(), buffer.getNumSamples(), fxme::kMainPathLimit);
+
     // Feed the pre-EQ tap first, so it captures the untouched input even when
     // the EQ is bypassed (in which case output == input).
     if (spectrumEnabled)

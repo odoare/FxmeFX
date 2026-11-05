@@ -9,6 +9,7 @@
 */
 
 #include "Tube.h"
+#include <FxmeTools/dsp/Sanitise.h>
 
 namespace
 {
@@ -159,6 +160,10 @@ void Tube::process (juce::AudioBuffer<float>& buffer)
     const int numChannels = buffer.getNumChannels();
     const int numSamples  = buffer.getNumSamples();
     if (numChannels > (int) x1.size()) return;
+
+    // A NaN or an infinity would stay in the oversampling filters, the tone
+    // and DC filters and the sag for good: out first. Nothing else changes.
+    fxme::sanitiseBlock (buffer.getArrayOfWritePointers(), numChannels, numSamples, fxme::kMainPathLimit);
 
     auto* os = oversamplingFactor == 4 ? oversampler4x.get() : (oversamplingFactor == 2 ? oversampler2x.get() : nullptr);
     if (os == nullptr)

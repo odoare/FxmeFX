@@ -7,6 +7,7 @@
 */
 
 #include "Oct.h"
+#include <FxmeTools/dsp/Sanitise.h>
 
 Oct::Oct()
 {
@@ -150,6 +151,10 @@ void Oct::process (juce::AudioBuffer<float>& buffer)
 
     const int numChannels = buffer.getNumChannels();
     const int numSamples  = buffer.getNumSamples();
+
+    // A NaN or an infinity would stay in the envelope followers and the
+    // detection filters for good: out first. Nothing else changes.
+    fxme::sanitiseBlock (buffer.getArrayOfWritePointers(), numChannels, numSamples, fxme::kMainPathLimit);
 
     if ((int) channels.size() < numChannels)
     {
