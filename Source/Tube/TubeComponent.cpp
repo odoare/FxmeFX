@@ -56,6 +56,18 @@ TubeComponent::TubeComponent (Tube& t, juce::AudioProcessorValueTreeState& state
     modelBox.setTooltip ("Tube Model. \n Standard: tanh. \n Dynamic: tanh + power-supply sag. \n Triode: asymmetric Dempwolf-style 12AX7 curve. \n Class AB: push-pull with crossover behaviour.");
     modelAtt = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (apvts, prefix + "_Tube_Model", modelBox);
 
+    addAndMakeVisible (oversamplingBox);
+    oversamplingBox.setLookAndFeel (&fxmeLookAndFeel);
+    oversamplingBox.setColour (juce::ComboBox::outlineColourId, fxmefx::theme::tube.darker());
+    oversamplingBox.setColour (juce::ComboBox::arrowColourId,   fxmefx::theme::tube.brighter (0.3f));
+    oversamplingBox.addItem ("1x", 1);
+    oversamplingBox.addItem ("2x", 2);
+    oversamplingBox.addItem ("4x", 3);
+    oversamplingBox.setTooltip ("Oversampling. \n Runs the saturation at 2 or 4 times the rate, so a hard drive's high harmonics "
+                                "are filtered out instead of folding back as harsh aliases. \n Costs CPU (about 2 or 4 times) "
+                                "and adds a few samples of delay, which the host compensates.");
+    oversamplingAtt = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (apvts, prefix + "_Tube_Oversampling", oversamplingBox);
+
     addChildComponent (titleLabel);
     if (compact)
         fxmeLookAndFeel.setKnobStyle (fxme::FxmeLookAndFeel::KnobStyle::flat);
@@ -124,6 +136,7 @@ void TubeComponent::resized()
     f1.items.add(fi(onButton).withWidth(fxmefx::kOnButtonWidth));
     f1.items.add(fi(titleLabel).withFlex(1.f));
     f1.items.add(fi(modelBox).withFlex(0.5f));
+    f1.items.add(fi(oversamplingBox).withWidth(58.f).withMargin(juce::FlexItem::Margin(0.f, fxmefx::kEdgeMargin, 0.f, 5.f)));
 
     // In a wide but short slot every vertical pixel counts, so the header keeps
     // its height (the button and combo still need it) but gives back its

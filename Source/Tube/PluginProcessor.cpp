@@ -51,7 +51,9 @@ void   FxmeTubeAudioProcessor::changeProgramName (int, const juce::String&) {}
 
 void FxmeTubeAudioProcessor::prepareToPlay (double sampleRate, int /*samplesPerBlock*/)
 {
+    tube.checkParameters();   // the oversampling setting, before prepare sizes it
     tube.prepare (sampleRate);
+    setLatencySamples (tube.getLatencySamples());
 }
 
 void FxmeTubeAudioProcessor::releaseResources() {}
@@ -77,6 +79,9 @@ void FxmeTubeAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
         buffer.clear (i, 0, buffer.getNumSamples());
 
     tube.checkParameters();
+    // The oversampling setting changed: tell the host its new delay.
+    if (tube.getLatencySamples() != getLatencySamples())
+        setLatencySamples (tube.getLatencySamples());
     tube.process (buffer);
 }
 

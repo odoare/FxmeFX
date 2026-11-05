@@ -48,19 +48,50 @@ void Tube::prepare (double sampleRate)
     currentSampleRate = sampleRate;
     railVoltage = 1.0f;
 
-    const int maxChannels = 4;
     x1.assign (maxChannels, 0.0f);
     y1.assign (maxChannels, 0.0f);
     xLpState.assign (maxChannels, 0.0f);
     satLpState.assign (maxChannels, 0.0f);
 
+    // Polyphase IIR half-band stages: steep, a few samples of delay. Integer
+    // latency, so the host can compensate it exactly.
+    using OS = juce::dsp::Oversampling<float>;
+    oversampler2x = std::make_unique<OS> (maxChannels, 1, OS::filterHalfBandPolyphaseIIR, true, true);
+    oversampler4x = std::make_unique<OS> (maxChannels, 2, OS::filterHalfBandPolyphaseIIR, true, true);
+    oversampler2x->initProcessing ((size_t) oversamplingChunk);
+    oversampler4x->initProcessing ((size_t) oversamplingChunk);
+
+    setOversampling (oversamplingFactor);   // coefficients and latency for the new rate
+}
+
+void Tube::updateRateCoefficients()
+{
+    // The rate the stage runs at. At 1x these are exactly the expressions
+    // the stage always had.
+    const double rate = currentSampleRate * oversamplingFactor;
+
     // Tone shelf split frequency (~1.5 kHz) — splits "warmth" from "edge".
     constexpr float toneSplitHz = 1500.0f;
-    toneLpCoef = std::exp (-2.0f * juce::MathConstants<float>::pi * toneSplitHz / (float) sampleRate);
+    toneLpCoef = std::exp (-2.0f * juce::MathConstants<float>::pi * toneSplitHz / (float) rate);
 
     // Power-supply sag time constants: fast attack, slow recovery.
-    sagAttackCoef  = std::exp (-1.0f / (0.010f * (float) sampleRate)); // ~10 ms
-    sagReleaseCoef = std::exp (-1.0f / (0.200f * (float) sampleRate)); // ~200 ms
+    sagAttackCoef  = std::exp (-1.0f / (0.010f * (float) rate)); // ~10 ms
+    sagReleaseCoef = std::exp (-1.0f / (0.200f * (float) rate)); // ~200 ms
+
+    // The DC blocker's corner stays where it was at the host's rate.
+    dcCoef = oversamplingFactor == 1 ? 0.995f : std::pow (0.995f, 1.0f / (float) oversamplingFactor);
+}
+
+void Tube::setOversampling (int factor)
+{
+    oversamplingFactor = factor == 4 ? 4 : (factor == 2 ? 2 : 1);
+
+    auto* os = oversamplingFactor == 4 ? oversampler4x.get() : (oversamplingFactor == 2 ? oversampler2x.get() : nullptr);
+    if (os != nullptr)
+        os->reset();
+    latencySamples = os != nullptr ? juce::roundToInt (os->getLatencyInSamples()) : 0;
+
+    updateRateCoefficients();
 }
 
 void Tube::setDrive (float drivedB) { drive = juce::Decibels::decibelsToGain (drivedB); }
@@ -86,6 +117,7 @@ void Tube::assignParameters (juce::AudioProcessorValueTreeState& apvts, const ju
     sagParam   = apvts.getRawParameterValue (prefix + "_Tube_Sag");
     outParam   = apvts.getRawParameterValue (prefix + "_Tube_Out");
     modelParam = apvts.getRawParameterValue (prefix + "_Tube_Model");
+    oversamplingParam = apvts.getRawParameterValue (prefix + "_Tube_Oversampling");
 }
 
 void Tube::addParameters (std::vector<std::unique_ptr<juce::RangedAudioParameter>>& params, const juce::String& prefix)
@@ -98,6 +130,11 @@ void Tube::addParameters (std::vector<std::unique_ptr<juce::RangedAudioParameter
     params.push_back (std::make_unique<juce::AudioParameterFloat> (juce::ParameterID { prefix + "_Tube_Out",   1 }, prefix + " Tube Out", -20.0f, 20.0f, 0.0f));
     params.push_back (std::make_unique<juce::AudioParameterChoice> (juce::ParameterID { prefix + "_Tube_Model", 1 }, prefix + " Tube Model",
                                                                     juce::StringArray { "Standard", "Dynamic", "Triode", "Class AB" }, 0));
+
+    // Appended last: the Pd external exposes parameters as inlets in this
+    // order. Off by default, the stage as it was.
+    params.push_back (std::make_unique<juce::AudioParameterChoice> (juce::ParameterID { prefix + "_Tube_Oversampling", 2 }, prefix + " Tube Oversampling",
+                                                                    juce::StringArray { "Off", "2x", "4x" }, 0));
 }
 
 void Tube::checkParameters()
@@ -109,18 +146,53 @@ void Tube::checkParameters()
     if (sagParam   && *sagParam   != lastSag)   { setSag (*sagParam);                                   lastSag = *sagParam; }
     if (outParam   && *outParam   != lastOut)   { setOutput (*outParam);                                lastOut = *outParam; }
     if (modelParam && *modelParam != lastModel) { setModel (static_cast<TubeModel> ((int) *modelParam)); lastModel = *modelParam; }
+    if (oversamplingParam && *oversamplingParam != lastOversampling)
+    {
+        const int choice = (int) *oversamplingParam;   // 0 Off, 1 2x, 2 4x
+        setOversampling (choice == 2 ? 4 : (choice == 1 ? 2 : 1));
+        lastOversampling = *oversamplingParam;
+    }
 }
 
 void Tube::process (juce::AudioBuffer<float>& buffer)
 {
-    if (! on) return;
-
     const int numChannels = buffer.getNumChannels();
     const int numSamples  = buffer.getNumSamples();
     if (numChannels > (int) x1.size()) return;
 
-    float* const* dataAll = buffer.getArrayOfWritePointers();
+    auto* os = oversamplingFactor == 4 ? oversampler4x.get() : (oversamplingFactor == 2 ? oversampler2x.get() : nullptr);
+    if (os == nullptr)
+    {
+        if (on)
+            processStage (buffer.getArrayOfWritePointers(), numChannels, numSamples);
+        return;
+    }
 
+    // Oversampling, on or off: the signal goes through the filters either
+    // way, so its delay matches the latency reported, and switching the
+    // stage on or off does not jump in time.
+
+    // Up, the stage at the higher rate, down; in chunks the oversampler was
+    // sized for, whatever block the host sends.
+    juce::dsp::AudioBlock<float> block (buffer);
+    for (int start = 0; start < numSamples; start += oversamplingChunk)
+    {
+        auto chunk = block.getSubBlock ((size_t) start, (size_t) juce::jmin (oversamplingChunk, numSamples - start));
+        auto up = os->processSamplesUp (chunk);
+
+        float* channels[maxChannels] = {};
+        for (int ch = 0; ch < numChannels; ++ch)
+            channels[ch] = up.getChannelPointer ((size_t) ch);
+        if (on)
+            processStage (channels, numChannels, (int) up.getNumSamples());
+
+        os->processSamplesDown (chunk);
+    }
+}
+
+// The stage itself, at whatever rate the coefficients were set for.
+void Tube::processStage (float* const* dataAll, int numChannels, int numSamples)
+{
     const float oneMinusToneCoef    = 1.0f - toneLpCoef;
     const float oneMinusSagAttack   = 1.0f - sagAttackCoef;
     const float oneMinusSagRelease  = 1.0f - sagReleaseCoef;
@@ -210,7 +282,7 @@ void Tube::process (juce::AudioBuffer<float>& buffer)
             // ---- DC blocker (removes offset from asymmetry / bias) ----
             const float x_1 = x1[ch];
             const float y_1 = y1[ch];
-            const float out = post - x_1 + 0.995f * y_1;
+            const float out = post - x_1 + dcCoef * y_1;
             x1[ch] = post;
             y1[ch] = out;
 
