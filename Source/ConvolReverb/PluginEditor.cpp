@@ -20,7 +20,7 @@ FxmeConvolReverbAudioProcessorEditor::FxmeConvolReverbAudioProcessorEditor (Fxme
     addAndMakeVisible (topBar);
     addAndMakeVisible (reverbComponent);
     setResizable (true, true);
-    setResizeLimits (500, 350 + fxmefx::kTopBarHeight, 1800, 1300);
+    setResizeLimits (470, 400 + fxmefx::kTopBarHeight, 1800, 1300);
     setSize (kPreferredWidth, kPreferredHeight);
 }
 

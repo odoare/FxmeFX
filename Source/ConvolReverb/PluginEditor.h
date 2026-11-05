@@ -16,8 +16,8 @@
 class FxmeConvolReverbAudioProcessorEditor  : public juce::AudioProcessorEditor
 {
 public:
-    static constexpr int kPreferredWidth  = 600;
-    static constexpr int kPreferredHeight = 400 + fxmefx::kTopBarHeight;
+    static constexpr int kPreferredWidth  = 530;   // the menus' column at a fixed 150 px
+    static constexpr int kPreferredHeight = 460 + fxmefx::kTopBarHeight;   // the colour knobs and taller faders
 
     FxmeConvolReverbAudioProcessorEditor (FxmeConvolReverbAudioProcessor&);
     ~FxmeConvolReverbAudioProcessorEditor() override;

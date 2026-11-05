@@ -36,6 +36,21 @@ public:
     void setLengthRatio (float ratio); // 0.0 to 1.0
     void setShapeType (int type); // 0: Exp, 1: Lin, 2: Log
     void setStartOffset (float offsetMs); // -100ms to 100ms
+
+    /** The reverb's colour: a 2nd-order Butterworth (non-resonant) high-pass
+        and low-pass. By default they are applied to the IR when it is
+        rebuilt, so they cost nothing on the audio thread; live (setFilterLive)
+        they run on the wet output instead, so a move is heard at once rather
+        than after the engine has been rebuilt, which is what one wants when
+        tuning. Both give the same sound (the filters and the convolution are
+        linear) and the IR plot shows the filtered IR either way. At their
+        defaults (lowCutOffHz, highCutOffHz) they are skipped altogether:
+        a session saved before they existed gets exactly the IR it had. */
+    void setLowCut (float hz);
+    void setHighCut (float hz);
+    void setFilterLive (bool shouldBeLive);
+    static constexpr float lowCutOffHz  = 20.0f;
+    static constexpr float highCutOffHz = 20000.0f;
     void setOn (bool shouldBeOn);
     bool isOn() const { return on; }
 
@@ -108,6 +123,7 @@ private:
     {
         WDL_ImpulseBuffer impulse;
         WDL_ConvolutionEngine_Div engine;
+        bool liveFilters = false;   // the IR is unfiltered: process() filters the wet output
     };
 
     /** What process() convolves with. Guarded by stageLock, which is held just
@@ -159,12 +175,17 @@ private:
     juce::StringArray midSideIRs;     // resources stored as M / S, see setImpulseList
     bool decodeMidSide = false;       // for the IR being loaded (under lock)
     juce::AudioBuffer<float> originalIR; // Stores the raw loaded IR
-    juce::AudioBuffer<float> modifiedIR; // Stores the IR after length/shape modifications
+    juce::AudioBuffer<float> baseIR;     // originalIR with length, shape and offset applied
+    juce::AudioBuffer<float> modifiedIR; // baseIR through the colour filters (what the plot shows)
+    bool stagePlaysBaseIR = false;       // the stage is live and convolves the current baseIR
 
     int currentIndex = -1;
     float currentLengthRatio = 1.0f;
     int currentShapeType = 0;
     float currentStartOffsetMs = 0.0f;
+    float currentLowCutHz = lowCutOffHz;
+    float currentHighCutHz = highCutOffHz;
+    bool currentFilterLive = false;
     float dryGain = 0.0f;
     float wetGain = 0.0f;
     float dryGainLinear = 0.0f;
@@ -177,6 +198,9 @@ private:
     std::atomic<float>* lengthParam = nullptr;
     std::atomic<float>* shapeParam = nullptr;
     std::atomic<float>* startOffsetParam = nullptr;
+    std::atomic<float>* lowCutParam = nullptr;
+    std::atomic<float>* highCutParam = nullptr;
+    std::atomic<float>* filterLiveParam = nullptr;
     std::atomic<float>* dryGainParam = nullptr;
     std::atomic<float>* wetGainParam = nullptr;
 
@@ -185,6 +209,9 @@ private:
     float lastLengthRatio = -1.0f;
     int lastShapeType = -1;
     float lastStartOffset = 0.0f;
+    float lastLowCut = lowCutOffHz;
+    float lastHighCut = highCutOffHz;
+    float lastFilterLive = 0.0f;
     float lastDryGain = -100.0f;
     float lastWetGain = -100.0f;
     float lastOn = -1.0f;
@@ -210,8 +237,19 @@ private:
     void loadExternalIR(); // Loads the external IR file from externalPath
     void reloadCurrentIR(); // Loads the selected IR again from its source, at the current rate (into originalIR)
     void loadIRFromReader (juce::AudioFormatReader& reader);
-    void updateModifiedIR(); // Applies length/shape to originalIR and installs it
-    void installStage (const juce::AudioBuffer<float>& buffer);
+    void updateModifiedIR(); // Applies length/shape/offset to originalIR (baseIR), then applyColour()
+    void applyColour();      // Filters baseIR into modifiedIR, installs whichever the mode plays
+    void filterIR (juce::AudioBuffer<float>& ir) const;
+    void installStage (const juce::AudioBuffer<float>& buffer, bool liveFilters);
+
+    // The live filters (audio thread only). They glide to the parameters'
+    // values, so a knob move or automation does not click.
+    static constexpr int maxLiveChannels = 4;
+    juce::IIRFilter liveHighPass[maxLiveChannels], liveLowPass[maxLiveChannels];
+    float liveLowHz = lowCutOffHz, liveHighHz = highCutOffHz;
+    bool liveHighPassOn = false, liveLowPassOn = false;
+    bool liveFiltering = false;   // the last block was filtered live
+    void updateLiveFilters (int numSamples);
     void updateGains();
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ConvolReverb)

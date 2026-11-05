@@ -46,8 +46,12 @@ private:
     juce::Label lengthLabel;
     fxme::FxmeSlider startOffsetSlider;
     juce::Label startOffsetLabel;
+    fxme::FxmeSlider lowCutSlider, highCutSlider;   // the reverb's colour
+    juce::Label lowCutLabel, highCutLabel;
+    juce::TextButton fileButton { "Load file..." };
     juce::ComboBox shapeBox;
     juce::Label shapeLabel;
+    fxme::FxmeButton liveFilterButton;   // the colour filters on the output rather than the IR
     fxme::FxmeSlider dryGainSlider, wetGainSlider;
     juce::Label dryGainLabel, wetGainLabel;
 

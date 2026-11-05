@@ -189,7 +189,8 @@ void ImpulseResponsePlot::paint(juce::Graphics& g)
 
 ConvolReverbComponent::ConvolReverbComponent (ConvolReverb& r, juce::AudioProcessorValueTreeState& state, const juce::String& pfx, bool showTitle)
     : reverb (r), apvts (state), irPlot(r), prefix (pfx),
-      onButton (state, pfx + "_Rev_On", "On", fxmefx::theme::convolReverb)
+      onButton (state, pfx + "_Rev_On", "On", fxmefx::theme::convolReverb),
+      liveFilterButton (state, pfx + "_Rev_FilterLive", "Live filter", fxmefx::theme::convolReverb)
 {
     // Tints this component's combo-box drop-downs; a menu is its own window
     // and cannot see the box that opened it.
@@ -272,6 +273,36 @@ ConvolReverbComponent::ConvolReverbComponent (ConvolReverb& r, juce::AudioProces
     shapeBox.addItem ("Slow Log", 3);
     shapeAtt = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (apvts, prefix + "_Rev_Shape", shapeBox);
     shapeBox.onChange = [this] { graphNeedsUpdate = true; };
+
+    // The colour: a high-pass and a low-pass on the IR (their ranges and skews
+    // come from the parameters).
+    setupSlider (lowCutSlider, lowCutLabel, "Low Cut", 20.0, 2000.0, 20.0);
+    lowCutSlider.setTextValueSuffix (" Hz");
+    lowCutSlider.setNumDecimalPlacesToDisplay (0);
+    lowCutSlider.setTooltip ("Low Cut. \n Removes the low end of the reverb (a gentle 12 dB/octave high-pass). Off at 20 Hz.");
+    lowCutSlider.setAttachment (new juce::AudioProcessorValueTreeState::SliderAttachment (apvts, prefix + "_Rev_LowCut", lowCutSlider));
+    lowCutSlider.onValueChange = [this] { graphNeedsUpdate = true; };
+
+    setupSlider (highCutSlider, highCutLabel, "High Cut", 200.0, 20000.0, 20000.0);
+    highCutSlider.setTextValueSuffix (" Hz");
+    highCutSlider.setNumDecimalPlacesToDisplay (0);
+    highCutSlider.setTooltip ("High Cut. \n Darkens the reverb (a gentle 12 dB/octave low-pass). Off at 20 kHz.");
+    highCutSlider.setAttachment (new juce::AudioProcessorValueTreeState::SliderAttachment (apvts, prefix + "_Rev_HighCut", highCutSlider));
+    highCutSlider.onValueChange = [this] { graphNeedsUpdate = true; };
+
+    // Where the colour filters run. Live, a move is heard at once (on the IR,
+    // the engine is rebuilt first); the sound is the same.
+    addAndMakeVisible (liveFilterButton);
+    liveFilterButton.setLookAndFeel (&fxmeLookAndFeel);
+    liveFilterButton.button.setTooltip ("Live filter. \n On: Low Cut and High Cut run on the reverb's output, so a move is heard at once (handy when tuning). "
+                                        "Off: they are applied to the impulse response, at no CPU cost. Both sound the same.");
+
+    // A file IR, also reachable through the combo's External entry.
+    addAndMakeVisible (fileButton);
+    fileButton.setLookAndFeel (&fxmeLookAndFeel);
+    fileButton.setColour (juce::TextButton::buttonColourId, fxmefx::theme::convolReverb.darker (0.6f));
+    fileButton.setTooltip ("Load an impulse response from a WAV, AIFF or FLAC file. It is stored in the session and in presets.");
+    fileButton.onClick = [this] { openExternalIRChooser(); };
 
     setupBarSlider(dryGainSlider, dryGainLabel, "Dry", -60.0, 6.0, -60.0);
     dryGainSlider.setTextValueSuffix(" dB");
@@ -382,8 +413,6 @@ void ConvolReverbComponent::resized()
     fMain.flexDirection = juce::FlexBox::Direction::column;
     fTop.flexDirection = juce::FlexBox::Direction::row;
     fSliders.flexDirection = juce::FlexBox::Direction::row;
-    fSl1.flexDirection = juce::FlexBox::Direction::column;
-    fSl2.flexDirection = juce::FlexBox::Direction::column;
     fDry.flexDirection = juce::FlexBox::Direction::column;
     fWet.flexDirection = juce::FlexBox::Direction::column;
     fGains.flexDirection = juce::FlexBox::Direction::column;
@@ -392,28 +421,47 @@ void ConvolReverbComponent::resized()
     fTop.items.add(fi(onButton).withWidth(fxmefx::kOnButtonWidth));
     fTop.items.add(fi(titleLabel).withFlex(1.5f));
 
-    fBoxes.items.add(fi(irLabel).withFlex(0.5f));
-    fBoxes.items.add(fi(irBox).withFlex(0.8f).withMargin(juce::FlexItem::Margin(5.f, 0.f, 5.f, 0)));
-    fBoxes.items.add(fi(shapeLabel).withFlex(0.5f));
-    fBoxes.items.add(fi(shapeBox).withFlex(0.8f).withMargin(juce::FlexItem::Margin(5.f, 0.f, 5.f, 0)));
+    // The IR, a button to load one from a file, the shape, where the filters
+    // run. Fixed heights: the boxes keep a usable size whatever the section's
+    // height.
+    fBoxes.items.add(fi(irLabel).withHeight(18.f));
+    fBoxes.items.add(fi(irBox).withHeight(26.f).withMargin(juce::FlexItem::Margin(2.f, 0.f, 4.f, 0)));
+    fBoxes.items.add(fi(fileButton).withHeight(24.f).withMargin(juce::FlexItem::Margin(0.f, 0.f, 8.f, 0)));
+    fBoxes.items.add(fi(shapeLabel).withHeight(18.f));
+    fBoxes.items.add(fi(shapeBox).withHeight(26.f).withMargin(juce::FlexItem::Margin(2.f, 0.f, 0.f, 0)));
+    fBoxes.items.add(fi(liveFilterButton).withHeight(24.f).withMargin(juce::FlexItem::Margin(8.f, 0.f, 0.f, 0)));
+    fBoxes.justifyContent = juce::FlexBox::JustifyContent::center;
+
+    // Two by two: the IR's length and start, then its colour.
+    fSl1.flexDirection = juce::FlexBox::Direction::row;
+    fSl2.flexDirection = juce::FlexBox::Direction::row;
+    fSl1.items.add(fi(lengthSlider).withFlex(1.f));
+    fSl1.items.add(fi(startOffsetSlider).withFlex(1.f));
+    fSl2.items.add(fi(lowCutSlider).withFlex(1.f));
+    fSl2.items.add(fi(highCutSlider).withFlex(1.f));
+    juce::FlexBox fKnobs;
+    fKnobs.flexDirection = juce::FlexBox::Direction::column;
+    fKnobs.items.add(fi(fSl1).withFlex(1.f));
+    fKnobs.items.add(fi(fSl2).withFlex(1.f));
     fDry.items.add(fi(dryGainLabel).withFlex(0.2f));
     fDry.items.add(fi(dryGainSlider).withFlex(0.8f));
     fWet.items.add(fi(wetGainLabel).withFlex(0.2f));
     fWet.items.add(fi(wetGainSlider).withFlex(0.8f));
 
-    fSliders.items.add(fi(fBoxes).withFlex(1.f).withMargin(juce::FlexItem::Margin(0.f, 5.f, 0.f, 0)));
-    fSliders.items.add(fi(lengthSlider).withFlex(1.f));
-    fSliders.items.add(fi(startOffsetSlider).withFlex(1.f));
-    fSliders.items.add(fi(fDry).withFlex(.25f).withMargin(juce::FlexItem::Margin(0.f, 5.f, 0.f, 10.f)));
-    fSliders.items.add(fi(fWet).withFlex(.25f).withMargin(juce::FlexItem::Margin(0.f, fxmefx::kEdgeMargin, 0.f, 5.f)));
-    
+    // The menus and the faders at fixed widths, the knobs in what is left;
+    // the section at a fixed height, the plot below it in the rest, so the
+    // knobs keep their size whatever the window's.
+    fSliders.items.add(fi(fBoxes).withWidth(150.f).withMargin(juce::FlexItem::Margin(0.f, 5.f, 0.f, 0)));
+    fSliders.items.add(fi(fKnobs).withFlex(1.f));
+    fSliders.items.add(fi(fDry).withWidth(56.f).withMargin(juce::FlexItem::Margin(0.f, 5.f, 0.f, 10.f)));
+    fSliders.items.add(fi(fWet).withWidth(56.f).withMargin(juce::FlexItem::Margin(0.f, fxmefx::kEdgeMargin, 0.f, 5.f)));
+
 
     fMain.items.add(fi(fTop).withHeight(fxmefx::kHeaderRowHeight)
                             .withMinHeight(fxmefx::kHeaderRowHeight)
                             .withMargin(juce::FlexItem::Margin(5.f, 0.f, 8.f, 0.f)));
-    fMain.items.add(fi(fSliders).withFlex(0.35f));
-    // Graph will take the remaining space
-    fMain.items.add(fi(irPlot).withFlex(0.55f));
+    fMain.items.add(fi(fSliders).withHeight(190.f));
+    fMain.items.add(fi(irPlot).withFlex(1.f).withMargin(juce::FlexItem::Margin(6.f, 0.f, 0.f, 0.f)));
 
     fMain.performLayout(area);
     

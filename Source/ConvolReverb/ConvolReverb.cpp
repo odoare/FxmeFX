@@ -32,6 +32,7 @@ void ConvolReverb::prepare (double sampleRate, int samplesPerBlock)
         if (stage != nullptr)
             stage->engine.Reset();
     }
+    liveFiltering = false;   // the next live block starts the filters afresh
 
     // Headroom over the promised block size: process() has a guard that resizes
     // if a host hands over a bigger block than it announced, and that guard
@@ -67,7 +68,11 @@ void ConvolReverb::process (juce::AudioBuffer<float>& buffer)
 {
     checkParameters(); // gains and on/off only — the IR is the loader's business
 
-    if (!on) return;
+    if (!on)
+    {
+        liveFiltering = false;   // back on, the live filters start afresh
+        return;
+    }
 
     // Try rather than wait: if the loader thread is mid-swap, leave this one
     // block dry instead of blocking the audio thread. The swap is a pointer
@@ -91,6 +96,16 @@ void ConvolReverb::process (juce::AudioBuffer<float>& buffer)
 
     if (channelsToProcess == 0)
         return;
+
+    // The colour filters on the wet output, when the IR in use was built
+    // without them (the stage, not the parameter, says so: the two modes
+    // switch over together, with the IR).
+    const bool live = stage->liveFilters;
+    if (live)
+        updateLiveFilters (numSamples);
+    liveFiltering = live;
+    const bool highPass = live && liveHighPassOn;
+    const bool lowPass  = live && liveLowPassOn;
 
     if (wdlInputBuffer.getNumSamples() < numSamples)
         wdlInputBuffer.setSize(wdlInputBuffer.getNumChannels(), numSamples, false, true, true);
@@ -116,11 +131,26 @@ void ConvolReverb::process (juce::AudioBuffer<float>& buffer)
         
         // If the engine has output for this channel
         auto* src = out[c];
-        for (int i = 0; i < toCopy; ++i)
+        if ((highPass || lowPass) && c < maxLiveChannels)
         {
-            float dry = dst[i];
-            float wet = (float) src[i];
-            dst[i] = dry * dryGainLinear + wet * wetGainLinear;
+            auto& hp = liveHighPass[c];
+            auto& lp = liveLowPass[c];
+            for (int i = 0; i < toCopy; ++i)
+            {
+                float wet = (float) src[i];
+                if (highPass) wet = hp.processSingleSampleRaw (wet);
+                if (lowPass)  wet = lp.processSingleSampleRaw (wet);
+                dst[i] = dst[i] * dryGainLinear + wet * wetGainLinear;
+            }
+        }
+        else
+        {
+            for (int i = 0; i < toCopy; ++i)
+            {
+                float dry = dst[i];
+                float wet = (float) src[i];
+                dst[i] = dry * dryGainLinear + wet * wetGainLinear;
+            }
         }
 
         if (toCopy < numSamples)
@@ -187,6 +217,35 @@ void ConvolReverb::setStartOffset (float offsetMs)
     }
 }
 
+// The colour only refilters baseIR: live, that is just the plot (the
+// engine keeps its unfiltered IR); otherwise it is a new stage.
+void ConvolReverb::setLowCut (float hz)
+{
+    if (currentLowCutHz != hz)
+    {
+        currentLowCutHz = hz;
+        applyColour();
+    }
+}
+
+void ConvolReverb::setHighCut (float hz)
+{
+    if (currentHighCutHz != hz)
+    {
+        currentHighCutHz = hz;
+        applyColour();
+    }
+}
+
+void ConvolReverb::setFilterLive (bool shouldBeLive)
+{
+    if (currentFilterLive != shouldBeLive)
+    {
+        currentFilterLive = shouldBeLive;
+        applyColour();
+    }
+}
+
 void ConvolReverb::setOn (bool shouldBeOn)
 {
     on = shouldBeOn;
@@ -198,6 +257,9 @@ void ConvolReverb::assignParameters (juce::AudioProcessorValueTreeState& apvts, 
     lengthParam = apvts.getRawParameterValue (prefix + "_Rev_Length");
     shapeParam = apvts.getRawParameterValue (prefix + "_Rev_Shape");
     startOffsetParam = apvts.getRawParameterValue (prefix + "_Rev_StartOffset");
+    lowCutParam = apvts.getRawParameterValue (prefix + "_Rev_LowCut");
+    highCutParam = apvts.getRawParameterValue (prefix + "_Rev_HighCut");
+    filterLiveParam = apvts.getRawParameterValue (prefix + "_Rev_FilterLive");
     dryGainParam = apvts.getRawParameterValue (prefix + "_Rev_DryGain");
     wetGainParam = apvts.getRawParameterValue (prefix + "_Rev_WetGain");
     onParam = apvts.getRawParameterValue (prefix + "_Rev_On");
@@ -232,6 +294,24 @@ void ConvolReverb::addParameters (std::vector<std::unique_ptr<juce::RangedAudioP
     params.push_back (std::make_unique<juce::AudioParameterFloat> (juce::ParameterID { prefix + "_Rev_StartOffset", 1 }, prefix + " Rev Start Offset", -100.0f, 100.0f, 0.0f));
     params.push_back (std::make_unique<juce::AudioParameterFloat> (juce::ParameterID { prefix + "_Rev_DryGain", 1 }, prefix + " Rev Dry Gain", -60.0f, 6.0f, -60.0f));
     params.push_back (std::make_unique<juce::AudioParameterFloat> (juce::ParameterID { prefix + "_Rev_WetGain", 1 }, prefix + " Rev Wet Gain", -60.0f, 6.0f, 0.0f));
+
+    // The colour filters, appended last: the Pd external exposes parameters as
+    // inlets in this order. Their defaults switch them off (see setLowCut), so
+    // a session or preset without them sounds exactly as before.
+    auto frequency = [] (float lo, float hi, float centre)
+    {
+        juce::NormalisableRange<float> range (lo, hi, 1.0f);
+        range.setSkewForCentre (centre);
+        return range;
+    };
+    params.push_back (std::make_unique<juce::AudioParameterFloat> (juce::ParameterID { prefix + "_Rev_LowCut", 2 }, prefix + " Rev Low Cut",
+                                                                   frequency (lowCutOffHz, 2000.0f, 200.0f), lowCutOffHz));
+    params.push_back (std::make_unique<juce::AudioParameterFloat> (juce::ParameterID { prefix + "_Rev_HighCut", 2 }, prefix + " Rev High Cut",
+                                                                   frequency (200.0f, highCutOffHz, 2000.0f), highCutOffHz));
+
+    // Where the colour filters run: on the IR (off, the default) or live on
+    // the wet output. The sound is the same; live answers a move at once.
+    params.push_back (std::make_unique<juce::AudioParameterBool> (juce::ParameterID { prefix + "_Rev_FilterLive", 2 }, prefix + " Rev Filter Live", false));
 }
 
 void ConvolReverb::loadResource (const juce::String& resourceName)
@@ -490,10 +570,13 @@ juce::AudioBuffer<float> ConvolReverb::getModifiedIR() const
 void ConvolReverb::updateModifiedIR()
 {
     juce::ScopedLock sl (lock);
+    stagePlaysBaseIR = false;   // baseIR is about to change
+
     if (originalIR.getNumSamples() == 0)
     {
+        baseIR.setSize (0, 0);
         modifiedIR.clear();
-        installStage (modifiedIR); // an empty impulse, so the wet path is silent
+        installStage (modifiedIR, false); // an empty impulse, so the wet path is silent
         return;
     }
 
@@ -537,11 +620,11 @@ void ConvolReverb::updateModifiedIR()
     if (offsetInSamples > 0)
     {
         // Positive offset: add silence at the start
-        modifiedIR.setSize(shapedIR.getNumChannels(), shapedIR.getNumSamples() + offsetInSamples, false, true, true);
-        modifiedIR.clear();
+        baseIR.setSize(shapedIR.getNumChannels(), shapedIR.getNumSamples() + offsetInSamples, false, true, true);
+        baseIR.clear();
         for (int ch = 0; ch < shapedIR.getNumChannels(); ++ch)
         {
-            modifiedIR.copyFrom(ch, offsetInSamples, shapedIR, ch, 0, shapedIR.getNumSamples());
+            baseIR.copyFrom(ch, offsetInSamples, shapedIR, ch, 0, shapedIR.getNumSamples());
         }
     }
     else if (offsetInSamples < 0)
@@ -550,28 +633,83 @@ void ConvolReverb::updateModifiedIR()
         int trimSamples = -offsetInSamples;
         if (trimSamples >= shapedIR.getNumSamples())
         {
-            modifiedIR.clear();
+            baseIR.setSize (0, 0);
         }
         else
         {
             const int numSamplesToCopy = shapedIR.getNumSamples() - trimSamples;
-            modifiedIR.setSize (shapedIR.getNumChannels(), numSamplesToCopy, false, true, true);
+            baseIR.setSize (shapedIR.getNumChannels(), numSamplesToCopy, false, true, true);
 
             for (int ch = 0; ch < shapedIR.getNumChannels(); ++ch)
             {
-                modifiedIR.copyFrom (ch, 0, shapedIR.getReadPointer (ch, trimSamples), numSamplesToCopy);
+                baseIR.copyFrom (ch, 0, shapedIR.getReadPointer (ch, trimSamples), numSamplesToCopy);
             }
         }
     }
     else // offsetInSamples == 0
     {
-        modifiedIR.makeCopyOf(shapedIR);
+        baseIR.makeCopyOf(shapedIR);
     }
 
-    installStage (modifiedIR);
+    applyColour();
 }
 
-void ConvolReverb::installStage (const juce::AudioBuffer<float>& buffer)
+// The colour: non-resonant (Butterworth) high- and low-pass, each skipped at
+// its default so an older session keeps its exact IR. Run on the finished IR
+// (after the offset), which is exactly what filtering the wet output does.
+void ConvolReverb::filterIR (juce::AudioBuffer<float>& ir) const
+{
+    const double nyquist = currentSampleRate * 0.5;
+    const bool highPass = currentLowCutHz > lowCutOffHz + 0.01f;
+    const bool lowPass  = currentHighCutHz < highCutOffHz - 0.01f && currentHighCutHz < nyquist * 0.95;
+
+    for (int ch = 0; ch < ir.getNumChannels(); ++ch)
+    {
+        auto* data = ir.getWritePointer (ch);
+        if (highPass)
+        {
+            juce::IIRFilter filter;
+            filter.setCoefficients (juce::IIRCoefficients::makeHighPass (currentSampleRate, juce::jmin ((double) currentLowCutHz, nyquist * 0.9),
+                                                                         juce::MathConstants<double>::sqrt2 * 0.5));
+            filter.processSamples (data, ir.getNumSamples());
+        }
+        if (lowPass)
+        {
+            juce::IIRFilter filter;
+            filter.setCoefficients (juce::IIRCoefficients::makeLowPass (currentSampleRate, currentHighCutHz,
+                                                                        juce::MathConstants<double>::sqrt2 * 0.5));
+            filter.processSamples (data, ir.getNumSamples());
+        }
+    }
+}
+
+void ConvolReverb::applyColour()
+{
+    juce::ScopedLock sl (lock);
+    if (originalIR.getNumSamples() == 0)
+        return;   // updateModifiedIR installed the silent stage
+
+    // What the plot shows, in either mode.
+    modifiedIR.makeCopyOf (baseIR);
+    filterIR (modifiedIR);
+
+    if (! currentFilterLive)
+    {
+        installStage (modifiedIR, false);
+        stagePlaysBaseIR = false;
+    }
+    else if (! stagePlaysBaseIR)
+    {
+        installStage (baseIR, true);
+        stagePlaysBaseIR = true;
+    }
+    else
+    {
+        ++irGeneration;   // the engine is unchanged; only the plot has news
+    }
+}
+
+void ConvolReverb::installStage (const juce::AudioBuffer<float>& buffer, bool liveFilters)
 {
     // Everything here allocates — the impulse buffer, and SetImpulse partitioning
     // it into FFT blocks — so it all happens on a stage the audio thread cannot
@@ -613,6 +751,7 @@ void ConvolReverb::installStage (const juce::AudioBuffer<float>& buffer)
     }
 
     next->engine.SetImpulse (&next->impulse);
+    next->liveFilters = liveFilters;
 
     // Hand over. The outgoing stage is moved out under the lock but destroyed
     // after it, so freeing several megabytes never widens the window in which
@@ -689,6 +828,95 @@ void ConvolReverb::serviceParameters()
         setStartOffset(*startOffsetParam);
         lastStartOffset = *startOffsetParam;
     }
+
+    if (lowCutParam && *lowCutParam != lastLowCut)
+    {
+        setLowCut (*lowCutParam);
+        lastLowCut = *lowCutParam;
+    }
+
+    if (highCutParam && *highCutParam != lastHighCut)
+    {
+        setHighCut (*highCutParam);
+        lastHighCut = *highCutParam;
+    }
+
+    if (filterLiveParam && *filterLiveParam != lastFilterLive)
+    {
+        setFilterLive (*filterLiveParam > 0.5f);
+        lastFilterLive = *filterLiveParam;
+    }
+}
+
+// Audio thread: follows the cut parameters, gliding (about 30 ms) in log
+// frequency so a jump does not click. A filter is switched off at its
+// default, exactly as on the IR.
+void ConvolReverb::updateLiveFilters (int numSamples)
+{
+    const float targetLow  = lowCutParam  != nullptr ? lowCutParam->load()  : lowCutOffHz;
+    const float targetHigh = highCutParam != nullptr ? highCutParam->load() : highCutOffHz;
+    bool changed = false;
+
+    if (! liveFiltering)
+    {
+        // Just switched to live (or restarted): start from the targets, with
+        // clean filter states.
+        for (int c = 0; c < maxLiveChannels; ++c)
+        {
+            liveHighPass[c].reset();
+            liveLowPass[c].reset();
+        }
+        liveLowHz  = targetLow;
+        liveHighHz = targetHigh;
+        liveHighPassOn = liveLowPassOn = false;
+        changed = true;
+    }
+    else
+    {
+        const float a = 1.0f - std::exp (-(float) numSamples / (float) (0.03 * currentSampleRate));
+        auto glide = [a] (float& hz, float target)
+        {
+            if (hz == target)
+                return false;
+            const float ratio = target / hz;
+            hz = std::abs (ratio - 1.0f) < 1.0e-3f ? target : hz * std::pow (ratio, a);
+            return true;
+        };
+        changed = glide (liveLowHz, targetLow);
+        changed = glide (liveHighHz, targetHigh) || changed;
+    }
+
+    if (! changed)
+        return;
+
+    const double nyquist = currentSampleRate * 0.5;
+    constexpr double q = juce::MathConstants<double>::sqrt2 * 0.5;
+
+    const bool highPass = liveLowHz > lowCutOffHz + 0.01f;
+    if (highPass)
+    {
+        const auto coefficients = juce::IIRCoefficients::makeHighPass (currentSampleRate, juce::jmin ((double) liveLowHz, nyquist * 0.9), q);
+        for (int c = 0; c < maxLiveChannels; ++c)
+        {
+            if (! liveHighPassOn)
+                liveHighPass[c].reset();
+            liveHighPass[c].setCoefficients (coefficients);
+        }
+    }
+    liveHighPassOn = highPass;
+
+    const bool lowPass = liveHighHz < highCutOffHz - 0.01f && liveHighHz < nyquist * 0.95;
+    if (lowPass)
+    {
+        const auto coefficients = juce::IIRCoefficients::makeLowPass (currentSampleRate, liveHighHz, q);
+        for (int c = 0; c < maxLiveChannels; ++c)
+        {
+            if (! liveLowPassOn)
+                liveLowPass[c].reset();
+            liveLowPass[c].setCoefficients (coefficients);
+        }
+    }
+    liveLowPassOn = lowPass;
 }
 
 // Runs on the audio thread from process(): the two gains and the bypass, which
