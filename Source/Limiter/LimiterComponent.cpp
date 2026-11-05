@@ -20,7 +20,8 @@ void LimiterComponent::setSliderColours (juce::Slider& s, juce::Colour c)
 
 LimiterComponent::LimiterComponent (Limiter& lim, juce::AudioProcessorValueTreeState& state, const juce::String& prefix, bool showTitle)
     : limiter (lim), apvts (state),
-      onButton (state, prefix + "_Lim_On", "On", fxmefx::theme::limiter)
+      onButton (state, prefix + "_Lim_On", "On", fxmefx::theme::limiter),
+      truePeakButton (state, prefix + "_Lim_TruePeak", "True Peak", fxmefx::theme::limiter)
 {
     // Tints this component's drop-down menus and tooltips; both are their own
     // windows and cannot see the widget that opened them.
@@ -28,6 +29,12 @@ LimiterComponent::LimiterComponent (Limiter& lim, juce::AudioProcessorValueTreeS
 
     addAndMakeVisible (onButton);
     onButton.setLookAndFeel (&fxmeLookAndFeel);
+
+    addAndMakeVisible (truePeakButton);
+    truePeakButton.setLookAndFeel (&fxmeLookAndFeel);
+    truePeakButton.button.setTooltip ("True Peak. \n Also limits the peaks between samples, those a DAC rebuilds "
+                                      "(read on a 4x oversampled copy, as ITU-R BS.1770 does), so the ceiling holds "
+                                      "in dBTP. Adds 6 samples of delay. For a master, a ceiling of -1 dB is usual.");
 
     addChildComponent (titleLabel);
     titleLabel.setVisible (showTitle);
@@ -84,6 +91,8 @@ void LimiterComponent::resized()
 
     header.items.add (fi (onButton).withWidth (fxmefx::kOnButtonWidth));
     header.items.add (fi (titleLabel).withFlex (1.0f));
+    header.items.add (fi (truePeakButton).withWidth (96.0f)
+                                         .withMargin (juce::FlexItem::Margin (0.f, fxmefx::kEdgeMargin, 0.f, 0.f)));
 
     knobs.items.add (fi (driveSlider).withFlex (1.f));
     knobs.items.add (fi (ceilingSlider).withFlex (1.f));

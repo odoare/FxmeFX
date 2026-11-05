@@ -10,6 +10,17 @@
     behaviour); "Ceiling" is the absolute output limit; "Release" sets how fast
     gain recovers after a peak.
 
+    True Peak mode limits the inter-sample peaks too, those a DAC's
+    reconstruction makes between samples, as ITU-R BS.1770 measures them: the
+    peak is read on a 4x oversampled copy of the signal (a 49-tap polyphase
+    interpolator, 12 or 13 taps per phase), and the gain is built so that it
+    is fully down for every sample around a peak when that peak comes out:
+    the target held over the look-ahead, an instant attack, the release, then
+    a moving average over the look-ahead. Its delay is 6 samples longer than
+    sample mode's (the interpolator's). Like any 4x estimate it may read up
+    to about half a dB low on content near Nyquist, which is why masters aim
+    at -1 dBTP rather than 0.
+
   ==============================================================================
 */
 
@@ -17,7 +28,9 @@
 
 #include <JuceHeader.h>
 #include "VuMeter.h"
+#include <array>
 #include <atomic>
+#include <cstdint>
 #include <vector>
 
 class Limiter
@@ -40,6 +53,8 @@ public:
 
 private:
     void updateCoefficients();
+    void processTruePeak (juce::AudioBuffer<float>& buffer);
+    void resetTruePeak();
 
     double currentSampleRate = 44100.0;
 
@@ -69,5 +84,34 @@ private:
     std::atomic<float>* ceilingParam = nullptr;
     std::atomic<float>* releaseParam = nullptr;
 
+    std::atomic<float>* truePeakParam = nullptr;
+
     float lastOn = -1.0f, lastDrive = -1000.0f, lastCeiling = -1000.0f, lastRelease = -1.0f;
+    float lastTruePeak = -1.0f;
+
+    //==========================================================================
+    // True Peak mode (all of it sized in prepare(); nothing allocates in process()).
+    bool truePeak = false;
+
+    // The 4x interpolator: phase k's tap j is the prototype's h[4j + k], whose
+    // centre is h[24], so phase k gives the signal at n - 6 + k / 4.
+    static constexpr int tpPhases = 4, tpTaps = 13, tpDelay = 6;
+    std::array<std::array<float, tpTaps>, tpPhases> tpCoeffs {};
+    struct TpHistory { std::array<float, 2 * tpTaps> x {}; int pos = 0; };
+    std::vector<TpHistory> tpHistory;              // per channel
+
+    std::vector<std::vector<float>> tpDelayLine;   // [channel][lookahead + tpDelay]
+    int tpWritePos = 0;
+
+    // The peak held over the last lookahead + 2 samples: a monotonic queue.
+    int tpHold = 1;
+    std::vector<float> holdValue;
+    std::vector<std::uint32_t> holdIndex;
+    int holdFront = 0, holdCount = 0;
+    std::uint32_t sampleCounter = 0;
+
+    float tpRelease = 1.0f;                        // the target, released
+    std::vector<float> boxRing;                    // the moving average over the look-ahead
+    double boxSum = 0.0;
+    int boxPos = 0;
 };

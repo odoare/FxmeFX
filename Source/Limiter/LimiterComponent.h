@@ -28,6 +28,7 @@ private:
     juce::AudioProcessorValueTreeState& apvts;
 
     fxme::FxmeButton onButton;
+    fxme::FxmeButton truePeakButton;   // limit the inter-sample peaks too
     juce::Label titleLabel;
     fxme::GainReductionMeter grMeter;
     fxme::FxmeSlider driveSlider, ceilingSlider, releaseSlider;
