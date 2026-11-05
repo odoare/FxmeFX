@@ -35,6 +35,14 @@ public:
     void setLastNoteHz (float hz);
     float getLastNoteHz() const { return lastNoteHz.load(); }
 
+    /** What the editor's read-out shows, as of the audio thread's last
+        update: the tempo and the two resolved delay times (seconds).
+        Atomics, so FxmeNet can also carry them from the server to a mirror,
+        which never processes (telemetry "bpm", "timeL", "timeR", "note"). */
+    std::atomic<float>& getDisplayBpm() noexcept                     { return displayBpm; }
+    std::atomic<float>& getDisplaySeconds (bool rightSide) noexcept  { return rightSide ? displaySecondsR : displaySecondsL; }
+    std::atomic<float>& getLastNoteHzValue() noexcept                { return lastNoteHz; }
+
     /** What a side's delay value currently comes to in seconds, under its own
         mode and the current transport/pitch context. For the GUI read-out. */
     float resolvedSeconds (bool rightSide) const;
@@ -78,6 +86,7 @@ private:
     fxme::DelayTimeMode modeL = fxme::DelayTimeMode::seconds;
     fxme::DelayTimeMode modeR = fxme::DelayTimeMode::seconds;
     std::atomic<float> lastNoteHz { 0.0f };
+    std::atomic<float> displayBpm { 120.0f }, displaySecondsL { 0.0f }, displaySecondsR { 0.0f };
     float feedbackL = -6.0f, feedbackR = -6.0f;
     float crossFeedback = -60.0f;
     float filterCutoff = 5000.0f, filterQ = 1.0f;

@@ -8,6 +8,7 @@
 
 #include "EqualizerComponent.h"
 #include "../Common/Theme.h"
+#include "../Common/Controls.h"
 #include "../Common/TopBar.h"
 
 #include <complex>
@@ -649,15 +650,7 @@ EqualizerComponent::EqualizerComponent (Equalizer& eq, juce::AudioProcessorValue
     if (compact)
         selectBand (0);
 
-    addAndMakeVisible (postGainSlider);
-    postGainSlider.setSliderStyle (juce::Slider::LinearBarVertical);
-    postGainSlider.setRange (-24.0, 24.0, 0.1);
-    postGainSlider.setValue (0.0);
-    postGainSlider.setCentralValue (0.0);   // bipolar ±dB: the bar grows from 0 dB
-    postGainSlider.setTextValueSuffix ("dB");
-    postGainSlider.setTooltip ("Post Gain");
-    postGainSlider.setLookAndFeel (&fxmeLookAndFeel);
-    setSliderColours (postGainSlider, color);
+    fxmefx::setupGainFader (*this, postGainSlider, "Post Gain", fxmefx::theme::equalizer, fxmeLookAndFeel);
     postGainSlider.onValueChange = [this] { responseGraph.updateCurve(); };
     postGainSlider.setAttachment (new SliderAttachment (apvts, prefix + "_EQ_PostGain", postGainSlider));
 
@@ -698,7 +691,8 @@ void EqualizerComponent::resized()
         // type, its knobs, and the output bar.
         responseGraph.setBounds (area.removeFromLeft ((int) ((float) area.getWidth() * 0.55f)));
         area.removeFromLeft (8);
-        postGainSlider.setBounds (area.removeFromRight (40));
+        area.removeFromRight (6);   // off the right edge
+        postGainSlider.setBounds (area.removeFromRight (44));
         area.removeFromRight (6);
 
         auto line = area.removeFromTop (24);
@@ -752,7 +746,7 @@ void EqualizerComponent::resized()
     }
     // Output post-gain bar moved to the right of the band controls.
     fmiddle.items.add (fi (postGainSlider).withFlex (0.25f)
-                                          .withMargin (juce::FlexItem::Margin (0.f, 10.f, 0.f, 15.f)));
+                                          .withMargin (juce::FlexItem::Margin (0.f, fxmefx::kEdgeMargin, 0.f, 15.f)));
 
     juce::FlexBox fbottom;
     fbottom.flexDirection = juce::FlexBox::Direction::row;

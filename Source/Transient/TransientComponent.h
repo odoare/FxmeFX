@@ -10,7 +10,7 @@
 
 #include <JuceHeader.h>
 #include "Transient.h"
-#include "VuMeterComponent.h"
+#include <FxmeTools/components/GainReductionMeter.h>
 
 class TransientComponent : public juce::Component,
                            public juce::Timer
@@ -30,15 +30,14 @@ private:
     fxme::FxmeButton onButton;
     juce::Label titleLabel;
     juce::ComboBox characterBox;
-    VuMeterComponent gainMeter;
-    juce::Label preGainLabel, attackLabel, sustainLabel, gainLabel;
+    fxme::GainReductionMeter gainMeter;
+    juce::Label attackLabel, sustainLabel;
     fxme::FxmeSlider preGainSlider, attackSlider, sustainSlider, gainSlider;
 
     using ComboBoxAttachment = juce::AudioProcessorValueTreeState::ComboBoxAttachment;
     std::unique_ptr<ComboBoxAttachment> characterAtt;
 
     void setupSlider (fxme::FxmeSlider& slider, juce::Label& label, const juce::String& text, double min, double max, double def);
-    void setupBarSlider (fxme::FxmeSlider& slider, juce::Label& label, const juce::String& text, double min, double max, double def);
     void setSliderColours (juce::Slider& s, juce::Colour c);
 
     fxme::FxmeLookAndFeel fxmeLookAndFeel;

@@ -245,6 +245,7 @@ void Phaser::process (juce::AudioBuffer<float>& buffer)
 
         lfo.advance();
     }
+    displayPhase.store (lfo.phase(), std::memory_order_relaxed);
 
     if (! on && ! mixSmooth.isSmoothing() && ! outSmooth.isSmoothing()
         && mixSmooth.getCurrentValue() <= 0.0f)

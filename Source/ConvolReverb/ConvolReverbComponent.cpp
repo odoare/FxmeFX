@@ -8,6 +8,7 @@
 
 #include "ConvolReverbComponent.h"
 #include "../Common/Theme.h"
+#include "../Common/Controls.h"
 #include "../Common/TopBar.h"
 
 void ConvolReverbComponent::setSliderColours (juce::Slider& s, juce::Colour c)
@@ -35,21 +36,18 @@ void ConvolReverbComponent::setupSlider (juce::Slider& slider, juce::Label& labe
     setSliderColours(slider, color);
 }
 
-void ConvolReverbComponent::setupBarSlider (juce::Slider& slider, juce::Label& label, const juce::String& text, double min, double max, double def)
+/** A level in dB as a console fader, its name above it. */
+void ConvolReverbComponent::setupBarSlider (fxme::FxmeSlider& slider, juce::Label& label, const juce::String& text, double min, double max, double def)
 {
-    juce::Colour color = fxmefx::theme::convolReverb;
-
     addAndMakeVisible (label);
     label.setText (text, juce::NotificationType::dontSendNotification);
     label.setJustificationType (juce::Justification::centred);
 
-    addAndMakeVisible (slider);
-    slider.setSliderStyle (juce::Slider::LinearBarVertical);
+    fxmefx::setupFader (*this, slider, text, fxmefx::theme::convolReverb, fxmeLookAndFeel);
     slider.setRange (min, max);
     slider.setValue (def);
-    slider.setTooltip (text);
-    slider.setLookAndFeel(&fxmeLookAndFeel);
-    setSliderColours(slider, color);
+    slider.setNumDecimalPlacesToDisplay (1);
+    slider.setTextValueSuffix (" dB");
 }
 
 ImpulseResponsePlot::ImpulseResponsePlot(ConvolReverb& r) : reverb(r)
@@ -407,7 +405,7 @@ void ConvolReverbComponent::resized()
     fSliders.items.add(fi(lengthSlider).withFlex(1.f));
     fSliders.items.add(fi(startOffsetSlider).withFlex(1.f));
     fSliders.items.add(fi(fDry).withFlex(.25f).withMargin(juce::FlexItem::Margin(0.f, 5.f, 0.f, 10.f)));
-    fSliders.items.add(fi(fWet).withFlex(.25f).withMargin(juce::FlexItem::Margin(0.f, 10.f, 0.f, 5.f)));
+    fSliders.items.add(fi(fWet).withFlex(.25f).withMargin(juce::FlexItem::Margin(0.f, fxmefx::kEdgeMargin, 0.f, 5.f)));
     
 
     fMain.items.add(fi(fTop).withHeight(fxmefx::kHeaderRowHeight)

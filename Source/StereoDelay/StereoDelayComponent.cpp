@@ -8,6 +8,7 @@
 
 #include "StereoDelayComponent.h"
 #include "../Common/Theme.h"
+#include "../Common/Controls.h"
 #include "../Common/TopBar.h"
 
 void StereoDelayComponent::setSliderColours(juce::Slider& s, juce::Colour c)
@@ -33,19 +34,16 @@ void StereoDelayComponent::setupSlider(juce::Slider& slider, juce::Label& label,
     setSliderColours(slider, color);
 }
 
-void StereoDelayComponent::setupBarSlider(juce::Slider& slider, juce::Label& label, const juce::String& text)
+/** A level in dB as a console fader, its name above it. */
+void StereoDelayComponent::setupBarSlider(fxme::FxmeSlider& slider, juce::Label& label, const juce::String& text)
 {
-    juce::Colour color = fxmefx::theme::stereoDelay;
-
     addAndMakeVisible(label);
     label.setText(text, juce::NotificationType::dontSendNotification);
     label.setJustificationType(juce::Justification::centred);
 
-    addAndMakeVisible(slider);
-    slider.setSliderStyle(juce::Slider::LinearBarVertical);
-    slider.setTooltip(text);
-    slider.setLookAndFeel(&fxmeLookAndFeel);
-    setSliderColours(slider, color);
+    fxmefx::setupFader (*this, slider, text, fxmefx::theme::stereoDelay, fxmeLookAndFeel);
+    slider.setNumDecimalPlacesToDisplay (1);
+    slider.setTextValueSuffix (" dB");
 }
 
 void StereoDelayComponent::setupCombo (juce::ComboBox& box, juce::Label& label, const juce::String& text)
@@ -70,7 +68,8 @@ juce::String StereoDelayComponent::resolvedTimeText() const
 {
     const auto ms = [this] (bool right)
     {
-        return juce::String (delay.resolvedSeconds (right) * 1000.0f, 1) + " ms";
+        // As published by the audio thread (or, in a FxmeNet mirror, sent by the server).
+        return juce::String (delay.getDisplaySeconds (right).load() * 1000.0f, 1) + " ms";
     };
 
     juce::String text = "L " + ms (false) + "    R " + ms (true);
@@ -199,7 +198,7 @@ void StereoDelayComponent::resized()
         wet.items.add (fi (wetGainLabel).withHeight (16.0f));
         wet.items.add (fi (wetGainSlider).withFlex (1.0f));
         row.items.add (fi (dry).withWidth (40.0f).withMargin (juce::FlexItem::Margin (0.f, 3.f, 0.f, 3.f)));
-        row.items.add (fi (wet).withWidth (40.0f).withMargin (juce::FlexItem::Margin (0.f, 3.f, 0.f, 3.f)));
+        row.items.add (fi (wet).withWidth (40.0f).withMargin (juce::FlexItem::Margin (0.f, 6.f, 0.f, 3.f)));
 
         column.items.add (fi (top).withHeight (24.0f).withMargin (juce::FlexItem::Margin (0.f, 0.f, 4.f, 0.f)));
         column.items.add (fi (row).withFlex (1.0f));
@@ -242,7 +241,7 @@ void StereoDelayComponent::resized()
     fSliders2.items.add(fi(cutoffSlider).withFlex(1.f));
     fSliders2.items.add(fi(qSlider).withFlex(1.f));
     fSliders2.items.add(fi(b8).withFlex(0.25f).withMargin(juce::FlexItem::Margin(0.f, 5.f, 0.f, 5.f)));
-    fSliders2.items.add(fi(b9).withFlex(0.25f).withMargin(juce::FlexItem::Margin(0.f, 5.f, 0.f, 5.f)));
+    fSliders2.items.add(fi(b9).withFlex(0.25f).withMargin(juce::FlexItem::Margin(0.f, fxmefx::kEdgeMargin, 0.f, 5.f)));
 
     fMain.items.add(fi(fTop).withHeight(fxmefx::kHeaderRowHeight)
                             .withMinHeight(fxmefx::kHeaderRowHeight)
@@ -257,7 +256,7 @@ void StereoDelayComponent::resized()
 
 void StereoDelayComponent::timerCallback()
 {
-    bpmLabel.setText(juce::String(delay.getBPM(), 1) + " BPM", juce::NotificationType::dontSendNotification);
+    bpmLabel.setText(juce::String(delay.getDisplayBpm().load(), 1) + " BPM", juce::NotificationType::dontSendNotification);
 
     // Only repaint the read-out when it actually changes: it follows the knobs,
     // the transport tempo and the last note, so it moves on its own.

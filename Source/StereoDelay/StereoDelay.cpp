@@ -213,6 +213,7 @@ void StereoDelay::checkParameters()
 
 void StereoDelay::setBPM(double bpm)
 {
+    displayBpm.store ((float) bpm, std::memory_order_relaxed);
     if (currentBPM != bpm)
     {
         currentBPM = bpm;
@@ -248,6 +249,9 @@ void StereoDelay::updateDelayTimes()
 
     delaySamplesL = toSamples (delayValueL, modeL);
     delaySamplesR = toSamples (delayValueR, modeR);
+
+    displaySecondsL.store (resolver.toSeconds (delayValueL, modeL), std::memory_order_relaxed);
+    displaySecondsR.store (resolver.toSeconds (delayValueR, modeR), std::memory_order_relaxed);
 }
 
 void StereoDelay::setLastNoteHz (float hz)

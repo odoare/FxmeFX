@@ -27,6 +27,12 @@ FxmeStereoDelayAudioProcessor::FxmeStereoDelayAudioProcessor()
 #endif
 {
     stereoDelay.assignParameters (apvts, parameterPrefix);
+   #ifndef FXME_PD_BUILD
+    net.telemetry().addValue ("bpm",   stereoDelay.getDisplayBpm());   // FxmeNet: the read-out above the knobs
+    net.telemetry().addValue ("timeL", stereoDelay.getDisplaySeconds (false));
+    net.telemetry().addValue ("timeR", stereoDelay.getDisplaySeconds (true));
+    net.telemetry().addValue ("note",  stereoDelay.getLastNoteHzValue());
+   #endif
 }
 
 FxmeStereoDelayAudioProcessor::~FxmeStereoDelayAudioProcessor() = default;

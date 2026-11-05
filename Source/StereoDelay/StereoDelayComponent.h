@@ -62,7 +62,7 @@ private:
     fxme::FxmeLookAndFeel fxmeLookAndFeel;
 
     void setupSlider(juce::Slider& slider, juce::Label& label, const juce::String& text);
-    void setupBarSlider(juce::Slider& slider, juce::Label& label, const juce::String& text);
+    void setupBarSlider(fxme::FxmeSlider& slider, juce::Label& label, const juce::String& text);
     void setSliderColours(juce::Slider& s, juce::Colour c);
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(StereoDelayComponent)

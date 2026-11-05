@@ -27,6 +27,9 @@ FxmeTransientAudioProcessor::FxmeTransientAudioProcessor()
 #endif
 {
     transientFx.assignParameters (apvts, parameterPrefix);
+   #ifndef FXME_PD_BUILD
+    net.telemetry().addMeter ("gain", transientFx.getGainMeter());   // FxmeNet: the gain change meter
+   #endif
 }
 
 FxmeTransientAudioProcessor::~FxmeTransientAudioProcessor() = default;

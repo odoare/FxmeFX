@@ -10,7 +10,7 @@
 
 #include <JuceHeader.h>
 #include "Limiter.h"
-#include "VuMeterComponent.h"
+#include <FxmeTools/components/GainReductionMeter.h>
 
 class LimiterComponent : public juce::Component,
                          public juce::Timer
@@ -29,7 +29,7 @@ private:
 
     fxme::FxmeButton onButton;
     juce::Label titleLabel;
-    VuMeterComponent grMeter;
+    fxme::GainReductionMeter grMeter;
     fxme::FxmeSlider driveSlider, ceilingSlider, releaseSlider;
 
     void setupSlider (fxme::FxmeSlider& slider, const juce::String& text, double min, double max, double def);

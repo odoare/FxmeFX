@@ -8,6 +8,7 @@
 
 #include "ChorusComponent.h"
 #include "../Common/Theme.h"
+#include "../Common/Controls.h"
 #include "../Common/TopBar.h"
 #include <FxmeTools/dsp/Lfo.h>
 
@@ -97,14 +98,7 @@ ChorusComponent::ChorusComponent (Chorus& c,
     setupRotary (voicesSlider, "Voices", 2.0,   (double) Chorus::maxVoices, 1.0, {});
     setupRotary (widthSlider,  "Width",  0.0,   100.0,  0.1,   " %");
     setupRotary (mixSlider,    "Mix",    0.0,   100.0,  0.1,   " %");
-    setupRotary (outSlider,    "Output", -24.0, 24.0,   0.1,   " dB");
-    outSlider.setCentralValue (0.0);
-
-    // The output as a console fader, like the dynamics plugins' gains.
-    outSlider.setSliderStyle (juce::Slider::LinearVertical);
-    outSlider.getProperties().set ("linearStyle", "console");
-    outSlider.setNumDecimalPlacesToDisplay (1);
-    outSlider.setColour (juce::Slider::rotarySliderFillColourId, juce::Colour (0xff2b2b2b));   // the cap's body
+    fxmefx::setupGainFader (*this, outSlider, "Output", chorusTint, fxmeLookAndFeel);
 
     delaySlider.setTooltip ("Delay. \n Centre of the modulated delay. Short values thin the "
                             "sound out, long ones drift towards a doubling effect.");
@@ -249,7 +243,7 @@ void ChorusComponent::resized()
     knobs.items.add (fi (knobRow1).withFlex (1.0f));
     knobs.items.add (fi (knobRow2).withFlex (1.0f));
     body.items.add (fi (knobs).withFlex (1.0f));
-    body.items.add (fi (outSlider).withWidth (64.0f).withMargin (juce::FlexItem::Margin (0.f, 10.f, 0.f, 8.f)));   // off the right edge
+    body.items.add (fi (outSlider).withWidth (64.0f).withMargin (juce::FlexItem::Margin (0.f, fxmefx::kEdgeMargin, 0.f, 8.f)));
 
     fMain.items.add (fi (top)     .withHeight (fxmefx::kHeaderRowHeight)
                                   .withMinHeight (fxmefx::kHeaderRowHeight)

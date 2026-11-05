@@ -10,6 +10,7 @@
 
 #include <JuceHeader.h>
 #include "Flanger.h"
+#include <FxmeTools/components/LfoPhaseDisplay.h>
 
 class FlangerComponent : public juce::Component,
                          private juce::Timer
@@ -47,13 +48,22 @@ private:
     fxme::FxmeSlider rateSlider, depthSlider, delaySlider, feedbackSlider,
                      widthSlider, mixSlider, outSlider;
 
+    fxme::LfoPhaseDisplay phaseDisplay;   // the LFO's shape, with a dot per channel
+
     using SliderAttachment   = juce::AudioProcessorValueTreeState::SliderAttachment;
     using ComboBoxAttachment = juce::AudioProcessorValueTreeState::ComboBoxAttachment;
 
     std::unique_ptr<ComboBoxAttachment> shapeAtt, divAtt;
 
     std::atomic<float>* syncParam = nullptr;
+    std::atomic<float>* onParam = nullptr;
+    std::atomic<float>* shapeParam = nullptr;
+    std::atomic<float>* widthParam = nullptr;
+    std::atomic<float>* rateParam = nullptr;
+    std::atomic<float>* divParam = nullptr;
     bool lastSyncState = false;
+
+    void updatePhaseDisplay();
 
     fxme::FxmeLookAndFeel fxmeLookAndFeel;
 

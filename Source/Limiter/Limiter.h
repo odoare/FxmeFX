@@ -29,7 +29,9 @@ public:
     void process (juce::AudioBuffer<float>& buffer);
 
     void setOn (bool shouldBeOn) { on = shouldBeOn; }
-    bool isOn() const { return on; }
+    /** The On parameter when there is one: right in a mirror (FxmeNet), which
+        never processes, and no race with the audio thread. */
+    bool isOn() const { return onParam != nullptr ? onParam->load() > 0.5f : on; }
     VuMeter& getGrMeter() { return grMeter; }
 
     void assignParameters (juce::AudioProcessorValueTreeState& apvts, const juce::String& prefix);

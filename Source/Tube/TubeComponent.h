@@ -49,14 +49,13 @@ private:
     juce::ComboBox modelBox;
     juce::Label titleLabel;
     juce::ImageComponent tubeImage;
-    juce::Label driveLabel, biasLabel, toneLabel, sagLabel, outLabel;
+    juce::Label driveLabel, biasLabel, toneLabel, sagLabel;
     fxme::FxmeSlider driveSlider, biasSlider, toneSlider, sagSlider;
     fxme::FxmeSlider outSlider;
 
     std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> modelAtt;
 
     void setupSlider (fxme::FxmeSlider& slider, juce::Label& label, const juce::String& text, double min, double max, double def);
-    void setupBarSlider (fxme::FxmeSlider& slider, juce::Label& label, const juce::String& text, double min, double max, double def);
     void setSliderColours (juce::Slider& s, juce::Colour c);
 
     fxme::FxmeLookAndFeel fxmeLookAndFeel;

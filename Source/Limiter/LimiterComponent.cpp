@@ -8,6 +8,7 @@
 
 #include "LimiterComponent.h"
 #include "../Common/Theme.h"
+#include "../Common/Controls.h"
 #include "../Common/TopBar.h"
 
 void LimiterComponent::setSliderColours (juce::Slider& s, juce::Colour c)
@@ -43,10 +44,10 @@ LimiterComponent::LimiterComponent (Limiter& lim, juce::AudioProcessorValueTreeS
     releaseSlider.setAttachment (new juce::AudioProcessorValueTreeState::SliderAttachment (apvts, prefix + "_Lim_Release", releaseSlider));
 
     addAndMakeVisible (grMeter);
-    grMeter.setMeterColor (fxmefx::theme::limiter);
+    grMeter.setMeterColour (fxmefx::theme::gainReduction);
     grMeter.setRange (-30.0f, 0.0f);
-    grMeter.setZeroLevel (0.0f);
-    startTimerHz (24);
+    grMeter.setTooltip ("Gain reduction, in dB. The number above holds the deepest reduction for a moment.");
+    startTimerHz (30);
 }
 
 LimiterComponent::~LimiterComponent()
@@ -87,7 +88,7 @@ void LimiterComponent::resized()
     knobs.items.add (fi (driveSlider).withFlex (1.f));
     knobs.items.add (fi (ceilingSlider).withFlex (1.f));
     knobs.items.add (fi (releaseSlider).withFlex (1.f));
-    knobs.items.add (fi (grMeter).withFlex (0.25f).withMargin (juce::FlexItem::Margin (0.f, 8.f, 0.f, 8.f)));
+    knobs.items.add (fi (grMeter).withFlex (0.25f).withMinWidth (40.0f).withMargin (juce::FlexItem::Margin (0.f, fxmefx::kEdgeMargin, 0.f, 8.f)));
 
     fMain.items.add (fi (header).withHeight (fxmefx::kHeaderRowHeight)
                                 .withMinHeight (fxmefx::kHeaderRowHeight)
@@ -99,6 +100,6 @@ void LimiterComponent::resized()
 
 void LimiterComponent::timerCallback()
 {
-    grMeter.setMeterColor (limiter.isOn() ? fxmefx::theme::limiter : juce::Colours::grey);
+    grMeter.setActive (limiter.isOn());
     grMeter.setValue (limiter.getGrMeter().getPeak());
 }

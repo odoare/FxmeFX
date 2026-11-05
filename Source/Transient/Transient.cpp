@@ -79,7 +79,9 @@ void Transient::setSustainAmount (float s) { sustainAmount = juce::jlimit (-1.0f
 void Transient::setPostGain (float g)      { postGaindB = g; updateCoefficients(); }
 void Transient::setCharacter (int idx)     { character = juce::jlimit (0, (int) NumCharacters - 1, idx); updateCoefficients(); }
 void Transient::setOn (bool b)             { on = b; }
-bool Transient::isOn() const               { return on; }
+// The On parameter when there is one: right in a mirror (FxmeNet), which
+// never processes, and no race with the audio thread.
+bool Transient::isOn() const               { return onParam != nullptr ? onParam->load() > 0.5f : on; }
 
 void Transient::assignParameters (juce::AudioProcessorValueTreeState& apvts, const juce::String& prefix)
 {

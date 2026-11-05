@@ -74,7 +74,7 @@ private:
     IRBoxClickWatcher irBoxClickWatcher { *this };
 
     void setupSlider (juce::Slider& slider, juce::Label& label, const juce::String& text, double min, double max, double def);
-    void setupBarSlider (juce::Slider& slider, juce::Label& label, const juce::String& text, double min, double max, double def);
+    void setupBarSlider (fxme::FxmeSlider& slider, juce::Label& label, const juce::String& text, double min, double max, double def);
     void setSliderColours (juce::Slider& s, juce::Colour c);
 
     void openExternalIRChooser();

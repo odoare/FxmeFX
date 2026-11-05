@@ -8,6 +8,7 @@
 
 #include "TubeComponent.h"
 #include "../Common/Theme.h"
+#include "../Common/Controls.h"
 #include "../Common/TopBar.h"
 
 void TubeComponent::setSliderColours (juce::Slider& s, juce::Colour c)
@@ -67,7 +68,7 @@ TubeComponent::TubeComponent (Tube& t, juce::AudioProcessorValueTreeState& state
     setupSlider (biasSlider,  biasLabel,  "Bias",        0.0, 0.5,  0.0);
     setupSlider (toneSlider,  toneLabel,  "Tone",       -1.0, 1.0,  0.0);
     setupSlider (sagSlider,   sagLabel,   "Sag",         0.0, 1.0,  0.5);
-    setupBarSlider (outSlider, outLabel, "Output (dB)", -20.0, 20.0, 0.0);
+    fxmefx::setupGainFader (*this, outSlider, "Output", fxmefx::theme::tube, fxmeLookAndFeel, -20.0, 20.0);
 
     toneSlider.setTooltip ("Tone. \n Pre-emphasis before saturation, matching cut after. \n Positive = bright/edgy, negative = warm/dark.");
     sagSlider.setTooltip  ("Sag. \n Power-supply rail droop. \n Affects Dynamic, Triode, and Class AB models. Standard ignores it.");
@@ -102,20 +103,6 @@ void TubeComponent::setupSlider (fxme::FxmeSlider& slider, juce::Label& label, c
     setSliderColours(slider, color);
 }
 
-void TubeComponent::setupBarSlider (fxme::FxmeSlider& slider, juce::Label& label, const juce::String& text, double min, double max, double def)
-{
-    juce::Colour color = fxmefx::theme::tube;
-
-    addAndMakeVisible (slider);
-    slider.setSliderStyle (juce::Slider::LinearBarVertical);
-    slider.setRange (min, max);
-    slider.setValue (def);
-    slider.setCentralValue (0.0);   // bipolar ±dB: the bar grows from 0 dB
-    slider.setTextValueSuffix ("dB");
-    slider.setTooltip (text);
-    slider.setLookAndFeel (&fxmeLookAndFeel);
-    setSliderColours(slider, color);
-}
 
 void TubeComponent::paint (juce::Graphics& g)
 {
@@ -178,7 +165,7 @@ void TubeComponent::resized()
 
     f2.items.add(fi(tubeImage).withWidth(imageWidth));
     f2.items.add(fi(knobs).withFlex(1.f));
-    f2.items.add(fi(outSlider).withWidth(60.f).withMargin(juce::FlexItem::Margin(0.f, 0.f, 0.f, 5.f)));
+    f2.items.add(fi(outSlider).withWidth(60.f).withMargin(juce::FlexItem::Margin(0.f, fxmefx::kEdgeMargin, 0.f, 5.f)));
 
     fMain.items.add(fi(f1).withHeight(headerHeight)
                           .withMinHeight(headerHeight)

@@ -8,12 +8,13 @@
 
 #include "PhaserComponent.h"
 #include "../Common/Theme.h"
+#include "../Common/Controls.h"
 #include "../Common/TopBar.h"
 #include <FxmeTools/dsp/Lfo.h>
 
 namespace
 {
-    const auto phaserTint = fxmefx::theme::phaser; // magenta
+    const auto phaserTint = fxmefx::theme::phaser;
 }
 
 void PhaserComponent::setSliderColours (juce::Slider& s, juce::Colour c)
@@ -102,7 +103,7 @@ PhaserComponent::PhaserComponent (Phaser& p,
     setupRotary (feedbackSlider, "Feedback", -95.0, 95.0,   0.1,   " %");
     setupRotary (widthSlider,    "Width",    0.0,   100.0,  0.1,   " %");
     setupRotary (mixSlider,      "Mix",      0.0,   100.0,  0.1,   " %");
-    setupRotary (outSlider,      "Output",   -24.0, 24.0,   0.1,   " dB");
+    fxmefx::setupGainFader (*this, outSlider, "Output", phaserTint, fxmeLookAndFeel);
     feedbackSlider.setCentralValue (0.0);
     outSlider     .setCentralValue (0.0);
 
@@ -122,15 +123,26 @@ PhaserComponent::PhaserComponent (Phaser& p,
     mixSlider     .setAttachment (new SliderAttachment (apvts, prefix + "_Phaser_Mix",      mixSlider));
     outSlider     .setAttachment (new SliderAttachment (apvts, prefix + "_Phaser_Out",      outSlider));
 
-    syncParam = apvts.getRawParameterValue (prefix + "_Phaser_Sync");
+    addAndMakeVisible (phaseDisplay);
+    phaseDisplay.setAccentColour (phaserTint);
+    phaseDisplay.setTooltip ("The LFO: its shape, and where the left and right channels read it.");
+
+    syncParam  = apvts.getRawParameterValue (prefix + "_Phaser_Sync");
+    onParam    = apvts.getRawParameterValue (prefix + "_Phaser_On");
+    shapeParam = apvts.getRawParameterValue (prefix + "_Phaser_Shape");
+    widthParam = apvts.getRawParameterValue (prefix + "_Phaser_Width");
+    rateParam  = apvts.getRawParameterValue (prefix + "_Phaser_Rate");
+    divParam   = apvts.getRawParameterValue (prefix + "_Phaser_Div");
     lastSyncState = ! (syncParam != nullptr && *syncParam > 0.5f);   // force the first update
-    startTimerHz (10);
+    startTimerHz (30);
 }
 
 PhaserComponent::~PhaserComponent() = default;
 
 void PhaserComponent::timerCallback()
 {
+    updatePhaseDisplay();
+
     // Only one of the two rate controls is meaningful at a time; the parameter
     // can also move from host automation, hence polling rather than onClick.
     const bool synced = (syncParam != nullptr && *syncParam > 0.5f);
@@ -141,6 +153,25 @@ void PhaserComponent::timerCallback()
     rateSlider.setEnabled (! synced);
     divBox.setEnabled (synced);
     divLabel.setEnabled (synced);
+}
+
+void PhaserComponent::updatePhaseDisplay()
+{
+    // Everything but the phase comes from the parameters, not from the DSP:
+    // a mirror (FxmeNet) never processes, and only the phase is sent to it.
+    const float width = widthParam != nullptr ? widthParam->load() * 0.01f * 0.5f : 0.5f;   // as Phaser::checkParameters
+    phaseDisplay.setDots ({ { 0.0f, "L", false }, { width, "R", false } });
+
+    if (shapeParam != nullptr)
+        phaseDisplay.setShape ((int) shapeParam->load());
+    phaseDisplay.setActive (onParam == nullptr || onParam->load() > 0.5f);
+    phaseDisplay.setPhase (phaser.getDisplayPhase().load (std::memory_order_relaxed));
+
+    const bool synced = syncParam != nullptr && syncParam->load() > 0.5f;
+    if (synced && divParam != nullptr)
+        phaseDisplay.setCaption (fxme::Lfo::syncDivisionNames[juce::jlimit (0, fxme::Lfo::numSyncDivisions - 1, (int) divParam->load())]);
+    else if (rateParam != nullptr)
+        phaseDisplay.setCaption (juce::String (rateParam->load(), 2) + " Hz");
 }
 
 void PhaserComponent::paint (juce::Graphics& g)
@@ -168,20 +199,23 @@ void PhaserComponent::resized()
         top.items.add (fi (divLabel)  .withWidth (30.0f));
         top.items.add (fi (divBox)    .withFlex (0.9f).withMargin (juce::FlexItem::Margin (0.f, 8.f, 0.f, 4.f)));
         top.items.add (fi (syncButton).withWidth (66.0f));
+        knobs.items.add (fi (phaseDisplay).withFlex (1.6f).withMargin (juce::FlexItem::Margin (2.f, 6.f, 2.f, 0.f)));
         knobs.items.add (fi (rateSlider).withFlex (1.0f));
         knobs.items.add (fi (depthSlider).withFlex (1.0f));
         knobs.items.add (fi (freqSlider).withFlex (1.0f));
         knobs.items.add (fi (feedbackSlider).withFlex (1.0f));
         knobs.items.add (fi (widthSlider).withFlex (1.0f));
         knobs.items.add (fi (mixSlider).withFlex (1.0f));
-        knobs.items.add (fi (outSlider).withFlex (1.0f));
+        knobs.items.add (fi (outSlider).withWidth (48.0f).withMargin (juce::FlexItem::Margin (0.f, 6.f, 0.f, 6.f)));
         column.items.add (fi (top).withHeight (24.0f).withMargin (juce::FlexItem::Margin (0.f, 0.f, 4.f, 0.f)));
         column.items.add (fi (knobs).withFlex (1.0f));
         column.performLayout (area);
         return;
     }
 
-    juce::FlexBox top, comboRow, knobRow1, knobRow2, fMain;
+    juce::FlexBox top, comboRow, knobRow1, knobRow2, knobs, body, fMain;
+    knobs   .flexDirection = juce::FlexBox::Direction::column;
+    body    .flexDirection = juce::FlexBox::Direction::row;
     top     .flexDirection = juce::FlexBox::Direction::row;
     comboRow.flexDirection = juce::FlexBox::Direction::row;
     knobRow1.flexDirection = juce::FlexBox::Direction::row;
@@ -199,26 +233,26 @@ void PhaserComponent::resized()
     comboRow.items.add (fi (divLabel)   .withWidth (30.0f));
     comboRow.items.add (fi (divBox)     .withFlex (0.9f) .withMargin (juce::FlexItem::Margin (0.f, 0.f, 0.f, 4.f)));
 
+    // Two rows of three knobs, the output fader on their right.
     knobRow1.items.add (fi (rateSlider)    .withFlex (1.0f));
     knobRow1.items.add (fi (depthSlider)   .withFlex (1.0f));
-    knobRow1.items.add (fi (freqSlider)    .withFlex (1.0f));
-    knobRow1.items.add (fi (feedbackSlider).withFlex (1.0f));
-
-    // Half-width spacers either side keep the three knobs of the second row the
-    // same size as the four above them.
-    knobRow2.items.add (fi().withFlex (0.5f));
-    knobRow2.items.add (fi (widthSlider).withFlex (1.0f));
-    knobRow2.items.add (fi (mixSlider)  .withFlex (1.0f));
-    knobRow2.items.add (fi (outSlider)  .withFlex (1.0f));
-    knobRow2.items.add (fi().withFlex (0.5f));
+    knobRow1.items.add (fi (freqSlider).withFlex (1.0f));
+    knobRow2.items.add (fi (feedbackSlider).withFlex (1.0f));
+    knobRow2.items.add (fi (widthSlider)   .withFlex (1.0f));
+    knobRow2.items.add (fi (mixSlider)     .withFlex (1.0f));
+    knobs.items.add (fi (knobRow1).withFlex (1.0f));
+    knobs.items.add (fi (knobRow2).withFlex (1.0f));
+    body.items.add (fi (knobs).withFlex (1.0f));
+    body.items.add (fi (outSlider).withWidth (64.0f).withMargin (juce::FlexItem::Margin (0.f, fxmefx::kEdgeMargin, 0.f, 8.f)));
 
     fMain.items.add (fi (top)     .withHeight (fxmefx::kHeaderRowHeight)
                                   .withMinHeight (fxmefx::kHeaderRowHeight)
                                   .withMargin (juce::FlexItem::Margin (5.f, 0.f, 6.f, 0.f)));
     fMain.items.add (fi (comboRow).withHeight (26.0f).withMinHeight (24.0f)
                                   .withMargin (juce::FlexItem::Margin (0.f, 4.f, 6.f, 4.f)));
-    fMain.items.add (fi (knobRow1).withFlex (1.0f));
-    fMain.items.add (fi (knobRow2).withFlex (1.0f));
+    fMain.items.add (fi (phaseDisplay).withFlex (0.55f).withMinHeight (40.0f)
+                                      .withMargin (juce::FlexItem::Margin (0.f, 4.f, 6.f, 4.f)));
+    fMain.items.add (fi (body).withFlex (2.0f));
 
     fMain.performLayout (area);
 }

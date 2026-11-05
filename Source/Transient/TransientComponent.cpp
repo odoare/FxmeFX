@@ -8,6 +8,7 @@
 
 #include "TransientComponent.h"
 #include "../Common/Theme.h"
+#include "../Common/Controls.h"
 #include "../Common/TopBar.h"
 
 void TransientComponent::setSliderColours (juce::Slider& s, juce::Colour c)
@@ -44,10 +45,10 @@ TransientComponent::TransientComponent (Transient& t, juce::AudioProcessorValueT
     characterBox.setTooltip ("Character — selects the time-constant set");
     characterAtt = std::make_unique<ComboBoxAttachment> (apvts, prefix + "_Trans_Character", characterBox);
 
-    setupBarSlider (preGainSlider, preGainLabel, "Pre Gain",   -24.0,  24.0, 0.0);
+    fxmefx::setupGainFader (*this, preGainSlider, "Pre Gain", fxmefx::theme::transient, fxmeLookAndFeel);
     setupSlider    (attackSlider,  attackLabel,  "Attack (%)",  -100.0, 100.0, 0.0);
     setupSlider    (sustainSlider, sustainLabel, "Sustain (%)", -100.0, 100.0, 0.0);
-    setupBarSlider (gainSlider,    gainLabel,    "Gain (dB)",  -24.0,  24.0, 0.0);
+    fxmefx::setupGainFader (*this, gainSlider, "Gain", fxmefx::theme::transient, fxmeLookAndFeel);
 
     preGainSlider.setAttachment (new juce::AudioProcessorValueTreeState::SliderAttachment (apvts, prefix + "_Trans_PreGain", preGainSlider));
     attackSlider .setAttachment (new juce::AudioProcessorValueTreeState::SliderAttachment (apvts, prefix + "_Trans_Attack",  attackSlider));
@@ -55,11 +56,13 @@ TransientComponent::TransientComponent (Transient& t, juce::AudioProcessorValueT
     gainSlider   .setAttachment (new juce::AudioProcessorValueTreeState::SliderAttachment (apvts, prefix + "_Trans_Gain",    gainSlider));
 
     addAndMakeVisible (gainMeter);
-    gainMeter.setMeterColor (fxmefx::theme::transient);
-    // Modification spans roughly ±18 dB; show that range with 0 dB as "no change".
+    gainMeter.setMeterColour (fxmefx::theme::gainReduction);
+    // Modification spans roughly ±18 dB: segments light up from 0 dB for a
+    // boost, down for a cut.
     gainMeter.setRange (-18.0f, 18.0f);
-    gainMeter.setZeroLevel (0.0f);
-    startTimerHz (24);
+    gainMeter.setScaleTicks ({ 18.0f, 12.0f, 6.0f, 0.0f, -6.0f, -12.0f, -18.0f });
+    gainMeter.setTooltip ("Gain change, in dB: up for a boost, down for a cut. The number above holds the largest change for a moment.");
+    startTimerHz (30);
 }
 
 TransientComponent::~TransientComponent()
@@ -86,20 +89,6 @@ void TransientComponent::setupSlider (fxme::FxmeSlider& slider, juce::Label& lab
     setSliderColours (slider, color);
 }
 
-void TransientComponent::setupBarSlider (fxme::FxmeSlider& slider, juce::Label& label, const juce::String& text, double min, double max, double def)
-{
-    juce::Colour color = fxmefx::theme::transient;
-
-    addAndMakeVisible (slider);
-    slider.setSliderStyle (juce::Slider::LinearBarVertical);
-    slider.setRange (min, max);
-    slider.setValue (def);
-    slider.setCentralValue (0.0);   // bipolar ±dB: the bar grows from 0 dB
-    slider.setTextValueSuffix ("dB");
-    slider.setTooltip (text);
-    slider.setLookAndFeel (&fxmeLookAndFeel);
-    setSliderColours (slider, color);
-}
 
 void TransientComponent::paint (juce::Graphics& g)
 {
@@ -126,7 +115,7 @@ void TransientComponent::resized()
     f5.items.add (fi (preGainSlider).withFlex (0.15f));
     f5.items.add (fi (f2).withFlex (1.f));
     f5.items.add (fi (gainMeter).withFlex (0.15f).withMargin (juce::FlexItem::Margin (0.f, 10.f, 0.f, 0)));
-    f5.items.add (fi (gainSlider).withFlex (0.15f));
+    f5.items.add (fi (gainSlider).withFlex (0.15f).withMargin (juce::FlexItem::Margin (0.f, fxmefx::kEdgeMargin, 0.f, 0.f)));
 
     fMain.items.add (fi (f1).withHeight (fxmefx::kHeaderRowHeight)
                             .withMinHeight (fxmefx::kHeaderRowHeight)
@@ -138,10 +127,7 @@ void TransientComponent::resized()
 
 void TransientComponent::timerCallback()
 {
-    if (transientFx.isOn())
-        gainMeter.setMeterColor (fxmefx::theme::transient);
-    else
-        gainMeter.setMeterColor (juce::Colours::grey);
+    gainMeter.setActive (transientFx.isOn());
 
     // VuMeter::getPeak() returns dB of the linear gain factor — i.e. the
     // current gain modification depth, signed.

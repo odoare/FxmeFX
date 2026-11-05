@@ -8,6 +8,7 @@
 
 #include "CompressorComponent.h"
 #include "../Common/Theme.h"
+#include "../Common/Controls.h"
 #include "../Common/TopBar.h"
 
 void CompressorComponent::setSliderColours (juce::Slider& s, juce::Colour c)
@@ -36,14 +37,14 @@ CompressorComponent::CompressorComponent (Compressor& comp, juce::AudioProcessor
     titleLabel.setJustificationType (juce::Justification::centred);
     titleLabel.setFont (juce::Font (juce::FontOptions (16.0f, juce::Font::bold)));
 
-    setupFader (preGainSlider, "Pre Gain", -24.0, 24.0, 0.0);
+    fxmefx::setupGainFader (*this, preGainSlider, "Pre Gain", fxmefx::theme::compressor, fxmeLookAndFeel);
     setupSlider (attackSlider, attackLabel, "Attack (ms)", 0.1, 100.0, 10.0);
     setupSlider (releaseSlider, releaseLabel, "Release (ms)", 10.0, 1000.0, 100.0);
     setupSlider (threshSlider, threshLabel, "Thresh (dB)", -60.0, 0.0, 0.0);
     setupSlider (ratioSlider, ratioLabel, "Ratio", 1.0, 20.0, 1.0);
     setupSlider (kneeSlider, kneeLabel, "Knee (dB)", 0.0, 24.0, 0.0);
     setupSlider (peakRmsSlider, peakRmsLabel, "Peak / RMS", 0.0, 1.0, 0.0);
-    setupFader (gainSlider, "Gain", -24.0, 24.0, 0.0);
+    fxmefx::setupGainFader (*this, gainSlider, "Gain", fxmefx::theme::compressor, fxmeLookAndFeel);
 
     addAndMakeVisible (relModeBox);
     relModeBox.setLookAndFeel (&fxmeLookAndFeel);
@@ -95,25 +96,6 @@ void CompressorComponent::setupSlider (fxme::FxmeSlider& slider, juce::Label& la
     setSliderColours(slider, color);
 }
 
-/** A console fader for a ±dB gain: a scale beside its slot, the value under it. */
-void CompressorComponent::setupFader (fxme::FxmeSlider& slider, const juce::String& text, double min, double max, double def)
-{
-    addAndMakeVisible (slider);
-    slider.setSliderStyle (juce::Slider::LinearVertical);
-    slider.setTextBoxStyle (juce::Slider::NoTextBox, false, 0, 0);
-    slider.getProperties().set ("linearStyle", "console");
-    slider.setRange (min, max);
-    slider.setValue (def);
-    slider.setCentralValue (0.0);   // bipolar ±dB: the fill grows from 0 dB
-    slider.setNumDecimalPlacesToDisplay (1);
-    slider.setTextValueSuffix (" dB");
-    slider.setTooltip (text);
-    slider.setName (text);
-    slider.setShowLabel (true);
-    slider.setLookAndFeel (&fxmeLookAndFeel);
-    setSliderColours (slider, fxmefx::theme::compressor);
-    slider.setColour (juce::Slider::rotarySliderFillColourId, juce::Colour (0xff2b2b2b));   // the cap's body
-}
 
 void CompressorComponent::paint (juce::Graphics& g)
 {
@@ -170,7 +152,7 @@ void CompressorComponent::resized()
     f5.items.add(fi(preGainSlider).withFlex(0.15f));
     f5.items.add(fi(f4).withFlex(1.f));
     f5.items.add(fi(grMeter).withFlex(0.15f).withMargin(juce::FlexItem::Margin(0.f, 10.f, 0.f, 0)));
-    f5.items.add(fi(gainSlider).withFlex(0.15f).withMargin(juce::FlexItem::Margin(0.f, 10.f, 0.f, 0.f)));   // off the right edge
+    f5.items.add(fi(gainSlider).withFlex(0.15f).withMargin(juce::FlexItem::Margin(0.f, fxmefx::kEdgeMargin, 0.f, 0.f)));
 
     fMain.items.add(fi(f1).withHeight(fxmefx::kHeaderRowHeight)
                           .withMinHeight(fxmefx::kHeaderRowHeight)

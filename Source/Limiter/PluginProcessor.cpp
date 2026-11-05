@@ -27,6 +27,9 @@ FxmeLimiterAudioProcessor::FxmeLimiterAudioProcessor()
 #endif
 {
     limiter.assignParameters (apvts, parameterPrefix);
+   #ifndef FXME_PD_BUILD
+    net.telemetry().addMeter ("gr", limiter.getGrMeter());   // FxmeNet: the gain reduction meter
+   #endif
 }
 
 FxmeLimiterAudioProcessor::~FxmeLimiterAudioProcessor()

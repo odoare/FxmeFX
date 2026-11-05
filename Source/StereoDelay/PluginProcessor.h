@@ -11,6 +11,7 @@
 #include <JuceHeader.h>
 #ifndef FXME_PD_BUILD
  #include "../Common/EffectPresets.h"
+ #include <FxmeTools/net/NetBridge.h>   // FxmeNet
 #endif
 #include "StereoDelay.h"
 
@@ -52,6 +53,11 @@ public:
     juce::AudioProcessorValueTreeState& getApvts() { return apvts; }
 
    #ifndef FXME_PD_BUILD
+    // FxmeNet: the server and the client find the bridge through the VST3 component.
+    juce::VST3ClientExtensions* getVST3ClientExtensions() override { return &net; }
+   #endif
+
+   #ifndef FXME_PD_BUILD
     /** The effect's presets (module presets, shared with every plugin
         embedding it; see Common/EffectPresets.h). */
     fxme::ModulePresetTarget& getPresets() noexcept { return presets.target; }
@@ -67,6 +73,10 @@ private:
     fxmefx::EffectPresets presets { apvts, "StereoDelay", juce::String (parameterPrefix) + "_Del_" };
    #endif
     StereoDelay stereoDelay;
+
+   #ifndef FXME_PD_BUILD
+    fxme::net::NetBridge net;   // FxmeNet: declared after what it registers
+   #endif
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (FxmeStereoDelayAudioProcessor)
 };

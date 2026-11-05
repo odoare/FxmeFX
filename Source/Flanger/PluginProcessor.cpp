@@ -27,6 +27,9 @@ FxmeFlangerAudioProcessor::FxmeFlangerAudioProcessor()
 #endif
 {
     flanger.assignParameters (apvts, parameterPrefix);
+   #ifndef FXME_PD_BUILD
+    net.telemetry().addValue ("phase", flanger.getDisplayPhase());   // FxmeNet: the LFO display's phase
+   #endif
 }
 
 FxmeFlangerAudioProcessor::~FxmeFlangerAudioProcessor() = default;
