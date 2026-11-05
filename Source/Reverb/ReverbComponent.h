@@ -5,12 +5,15 @@
 
     The Reverb's controls. Two layouts:
 
-      standard   the On switch and the title over two rows of four knobs
-                 (pre-delay, size, damping, width / low cut, high cut, mix,
-                 output), for the plugin's own editor;
+      standard   the On switch and the title over two rows of three knobs
+                 (pre-delay, size, damping / width, low cut, high cut), Mix
+                 and Output as console faders on the right, for the plugin's
+                 own editor;
       compact    no title, flat knobs (FxmeLookAndFeel::KnobStyle::flat), the
-                 On switch over one row of all eight knobs, for a host that
-                 gives the effect a wide and short slot (Camshaft's panes).
+                 On switch over one row of all eight knobs (Mix and Output
+                 included: a short slot leaves faders no height), for a host
+                 that gives the effect a wide and short slot (Camshaft's
+                 panes).
 
   ==============================================================================
 */
