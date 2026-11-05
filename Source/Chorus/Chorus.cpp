@@ -8,6 +8,7 @@
 
 #include "Chorus.h"
 #include <FxmeTools/dsp/Lfo.h>
+#include <FxmeTools/dsp/Sanitise.h>
 
 namespace
 {
@@ -248,7 +249,9 @@ void Chorus::process (juce::AudioBuffer<float>& buffer)
 
             auto* data    = buffer.getWritePointer (ch);
             const float x = data[i];
-            lines[(size_t) ch].write (x);
+            // No feedback here, so a bad sample would only pass once; kept out
+            // of the line all the same (+24 dB at most), like its siblings.
+            lines[(size_t) ch].write (fxme::sanitiseSample (x, 16.0f));
             data[i] = (x + mix * (wet - x)) * outG;
         }
 

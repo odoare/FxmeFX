@@ -7,6 +7,15 @@
 */
 
 #include "StereoDelay.h"
+#include <FxmeTools/dsp/Sanitise.h>
+
+namespace
+{
+    // The feedback filter's output beyond this means its state went bad (an
+    // unstable setting): it is cleared. The line itself never holds more
+    // than +-1, so a sane feedback stays far below.
+    constexpr float kMaxFeedback = 1000.0f;
+}
 
 StereoDelay::StereoDelay()
 {
@@ -67,10 +76,15 @@ void StereoDelay::process(juce::AudioBuffer<float>& buffer)
             // Apply filter to feedback
             float filteredFeedbackL = filterL.processSample(feedbackL);
             float filteredFeedbackR = filterR.processSample(feedbackR);
+            if (fxme::isOutOfBounds(filteredFeedbackL, kMaxFeedback)) { filterL.reset(); filteredFeedbackL = 0.0f; }
+            if (fxme::isOutOfBounds(filteredFeedbackR, kMaxFeedback)) { filterR.reset(); filteredFeedbackR = 0.0f; }
 
-            // Write input + feedback to delay buffer
-            delayWriteL[writePos] = juce::jlimit(-1.0f, 1.0f, channelDataL[i] + filteredFeedbackL);
-            delayWriteR[writePos] = juce::jlimit(-1.0f, 1.0f, channelDataR[i] + filteredFeedbackR);
+            // Write input + feedback to delay buffer. Sanitised, not just
+            // clamped: a NaN gets through a clamp, and once in the line it
+            // would come back through the feedback (even at -60 dB, as
+            // 0.001 x NaN is NaN) and stay for good.
+            delayWriteL[writePos] = fxme::sanitiseSample(channelDataL[i] + filteredFeedbackL, 1.0f);
+            delayWriteR[writePos] = fxme::sanitiseSample(channelDataR[i] + filteredFeedbackR, 1.0f);
 
             // Calculate output (dry + wet)
             channelDataL[i] = channelDataL[i] * dryGainLinear + delayedL * wetGainLinear;
@@ -79,8 +93,9 @@ void StereoDelay::process(juce::AudioBuffer<float>& buffer)
         else
         {
             float filteredFeedbackL = filterL.processSample(delayedL * feedbackLGain);
+            if (fxme::isOutOfBounds(filteredFeedbackL, kMaxFeedback)) { filterL.reset(); filteredFeedbackL = 0.0f; }
 
-            delayWriteL[writePos] = juce::jlimit(-1.0f, 1.0f, channelDataL[i] + filteredFeedbackL);
+            delayWriteL[writePos] = fxme::sanitiseSample(channelDataL[i] + filteredFeedbackL, 1.0f);
             channelDataL[i] = channelDataL[i] * dryGainLinear + delayedL * wetGainLinear;
         }
 

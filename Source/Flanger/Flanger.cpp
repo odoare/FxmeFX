@@ -8,6 +8,7 @@
 
 #include "Flanger.h"
 #include <FxmeTools/dsp/Lfo.h>
+#include <FxmeTools/dsp/Sanitise.h>
 
 namespace
 {
@@ -236,8 +237,10 @@ void Flanger::process (juce::AudioBuffer<float>& buffer)
 
             auto* data    = buffer.getWritePointer (ch);
             const float x = data[i];
-            lines[(size_t) ch].write (juce::jlimit (-kFeedbackCeiling, kFeedbackCeiling,
-                                                    x + fb * wet));
+            // Sanitised, not just clamped: a NaN gets through a clamp, and
+            // once in the line it comes back for good (even at zero feedback,
+            // as 0 x NaN is NaN).
+            lines[(size_t) ch].write (fxme::sanitiseSample (x + fb * wet, kFeedbackCeiling));
             data[i] = (x + mix * (wet - x)) * outG;
         }
 

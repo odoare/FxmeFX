@@ -8,7 +8,17 @@
 
 #include "Phaser.h"
 #include <FxmeTools/dsp/Lfo.h>
+#include <FxmeTools/dsp/Sanitise.h>
 #include <cmath>
+
+namespace
+{
+    // The loudest the all-pass chain is fed (+24 dB), and the output beyond
+    // which its state is taken as bad and cleared. A NaN or an infinity in
+    // the filters' state would otherwise stay there for good, feedback or not.
+    constexpr float kMaxInput = 16.0f;
+    constexpr float kMaxState = 1000.0f;
+}
 
 namespace
 {
@@ -237,7 +247,12 @@ void Phaser::process (juce::AudioBuffer<float>& buffer)
 
             auto* data    = buffer.getWritePointer (ch);
             const float x = data[i];
-            const float y = chain.process (x + fb * feedbackState[(size_t) ch]);
+            float y = chain.process (fxme::sanitiseSample (x + fb * feedbackState[(size_t) ch], kMaxInput));
+            if (fxme::isOutOfBounds (y, kMaxState))
+            {
+                chain.reset();
+                y = 0.0f;
+            }
             feedbackState[(size_t) ch] = y;
 
             data[i] = (x + mix * (y - x)) * outG;
