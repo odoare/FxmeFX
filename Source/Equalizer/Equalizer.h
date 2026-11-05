@@ -23,6 +23,12 @@
  * Backwards-compatibility note: band 0 defaults to Low Shelf, band 4 to High
  * Shelf, bands 1-3 to Peak. Existing presets that did not store a band-type
  * parameter therefore behave exactly as before.
+ *
+ * Each band also has a mode (BandMode): it filters both channels (Stereo, the
+ * default, as before), or only the mid or the side signal of a stereo pair,
+ * M = (L + R) / 2, S = (L - R) / 2. Bands run in order, each in its own
+ * domain. With other channel counts a Mid band filters every channel and a
+ * Side band does nothing (a mono signal has no side).
  */
 class Equalizer
 {
@@ -42,6 +48,13 @@ public:
         Peak,
         Lowshelf,
         Highshelf
+    };
+
+    enum class BandMode
+    {
+        Stereo = 0,
+        Mid,
+        Side
     };
 
     struct BandConfig
@@ -90,6 +103,8 @@ public:
     static BandConfig getBandConfig (int bandIndex, int numBands) noexcept;
     /** Display names for the band-type choice parameter, in BandType enum order. */
     static juce::StringArray getBandTypeNames();
+    /** Display names for the band-mode choice parameter, in BandMode enum order. */
+    static juce::StringArray getBandModeNames();
 
 private:
     struct ChannelStrip
@@ -102,6 +117,7 @@ private:
         BandType type = BandType::Peak;
         float    f = 1000.0f, q = 1.0f, g = 0.0f;
         bool     on = true;
+        BandMode mode = BandMode::Stereo;
     };
 
     struct BandParamPtrs
@@ -111,6 +127,7 @@ private:
         std::atomic<float>* freq = nullptr;
         std::atomic<float>* q    = nullptr;
         std::atomic<float>* gain = nullptr;
+        std::atomic<float>* mode = nullptr;
     };
 
     struct BandLast
@@ -120,6 +137,7 @@ private:
         float freq = -1.0f;
         float q    = -1.0f;
         float gain = -100.0f;
+        float mode = -1.0f;
     };
 
     std::vector<ChannelStrip> channels;
@@ -127,6 +145,9 @@ private:
     double currentSampleRate = 44100.0;
     bool   on = true;
     float  postGain = 1.0f;
+    bool   anyMidSide = false;   // a band that is on filters the mid or the side
+
+    void processMidSide (juce::AudioBuffer<float>& buffer) noexcept;
 
     bool              spectrumEnabled = false;
     fxme::SpectrumTap inputTap, outputTap;

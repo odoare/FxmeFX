@@ -13,6 +13,46 @@
 #include "Equalizer.h"
 
 /**
+ * @class BandModeButton
+ * @brief A band's switch, bound to its On and Mode parameters. A click steps
+ *        through Off, Stereo, Mid and Side; the text names the band and, when
+ *        it is on, its mode. toggleOn() (a double-click on the band's handle)
+ *        switches between Off and the mode the band has.
+ */
+class BandModeButton : public juce::Component
+{
+public:
+    BandModeButton (juce::AudioProcessorValueTreeState& apvts, const juce::String& onId,
+                    const juce::String& modeId, const juce::String& label, juce::Colour colour);
+
+    void resized() override                         { button.setBounds (getLocalBounds()); }
+    /** The look-and-feel of the button inside (hides Component's, as FxmeButton does). */
+    void setLookAndFeel (juce::LookAndFeel* laf)    { button.setLookAndFeel (laf); }
+
+    bool isOn() const noexcept                      { return onValue > 0.5f; }
+    Equalizer::BandMode getMode() const noexcept;
+
+    /** Off, Stereo, Mid, Side, Off... */
+    void cycle();
+    /** Off, or back on in the band's mode. */
+    void toggleOn();
+
+    /** Called when either parameter changes (a click, the host, a preset). */
+    std::function<void()> onChange;
+
+    juce::ToggleButton button;
+
+private:
+    juce::String label;
+    float onValue = 1.0f, modeValue = 0.0f;
+    std::unique_ptr<juce::ParameterAttachment> onAttachment, modeAttachment;
+
+    void refresh();
+
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (BandModeButton)
+};
+
+/**
  * @class FrequencyResponseGraph
  * @brief Component that draws the frequency response curve of the equalizer
  *        and per-band response curves with draggable handles.
@@ -31,7 +71,7 @@ public:
     /** Per-band references the graph reads to compute the response. */
     struct BandRefs
     {
-        juce::ToggleButton* on   = nullptr;
+        BandModeButton* on   = nullptr;
         juce::ComboBox* type = nullptr;
         juce::Slider*   freq = nullptr;
         juce::Slider*   q    = nullptr;
@@ -62,8 +102,14 @@ private:
     juce::Slider*       postGain = nullptr;
     juce::ToggleButton* onBtn    = nullptr;
 
-    juce::Path                                          curvePath;
+    // The response: of the stereo and Mid bands (all of them, when no band
+    // filters the side), and of the stereo and Side bands, shown dashed when
+    // a Side band is on. A Mid or Side band's own curve is dashed too.
+    juce::Path                                          curvePath, sideCurvePath;
+    bool                                                showSideCurve = false;
     std::array<juce::Path, Equalizer::MaxBands>         bandPaths;
+    std::array<bool, Equalizer::MaxBands>               bandMidSide { };
+    Equalizer::BandMode getBandMode (int i) const noexcept;
 
     int draggedHandle = -1;
     int hoveredHandle = -1;
@@ -132,7 +178,7 @@ private:
     // FxmeButton binds its parameter in the constructor and is non-copyable,
     // so the per-band buttons cannot be a plain array of objects: only the
     // first numBands entries are created, the rest stay null.
-    std::array<std::unique_ptr<fxme::FxmeButton>, Equalizer::MaxBands> bandOnButton;
+    std::array<std::unique_ptr<BandModeButton>, Equalizer::MaxBands> bandOnButton;
     std::array<juce::ComboBox,     Equalizer::MaxBands> bandType;
     std::array<fxme::FxmeSlider,   Equalizer::MaxBands> bandFreq;
     std::array<fxme::FxmeSlider,   Equalizer::MaxBands> bandQ;

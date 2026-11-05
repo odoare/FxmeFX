@@ -57,6 +57,11 @@ juce::StringArray Equalizer::getBandTypeNames()
     return { "Low Pass", "High Pass", "Peak", "Low Shelf", "High Shelf" };
 }
 
+juce::StringArray Equalizer::getBandModeNames()
+{
+    return { "Stereo", "Mid", "Side" };
+}
+
 Equalizer::Equalizer (int numBandsToUse, bool enableSpectrum)
     : numBands (juce::jlimit (2, MaxBands, numBandsToUse)),
       spectrumEnabled (enableSpectrum)
@@ -107,8 +112,14 @@ void Equalizer::process (juce::AudioBuffer<float>& buffer)
     int numChannels = buffer.getNumChannels();
     int numSamples  = buffer.getNumSamples();
 
-    if (on && numChannels <= (int) channels.size())
+    if (on && numChannels == 2 && anyMidSide && channels.size() >= 2)
     {
+        processMidSide (buffer);
+    }
+    else if (on && numChannels <= (int) channels.size())
+    {
+        // Every band on every channel; only a Side band is left out, which can
+        // only happen here with a channel count other than 2.
         for (int ch = 0; ch < numChannels; ++ch)
         {
             auto* data  = buffer.getWritePointer (ch);
@@ -118,7 +129,8 @@ void Equalizer::process (juce::AudioBuffer<float>& buffer)
             {
                 float s = data[i];
                 for (int bi = 0; bi < numBands; ++bi)
-                    s = strip.band[bi].processSample (s);
+                    if (bandCache[bi].mode != BandMode::Side)
+                        s = strip.band[bi].processSample (s);
                 s *= postGain;
                 data[i] = s;
             }
@@ -127,6 +139,54 @@ void Equalizer::process (juce::AudioBuffer<float>& buffer)
 
     if (spectrumEnabled)
         pushSum (outputTap, buffer);
+}
+
+// A stereo pair with at least one Mid or Side band: sample by sample, each
+// band in its own domain. A Mid or Side band uses the left strip's filter.
+void Equalizer::processMidSide (juce::AudioBuffer<float>& buffer) noexcept
+{
+    auto* left  = buffer.getWritePointer (0);
+    auto* right = buffer.getWritePointer (1);
+    auto& stripL = channels[0];
+    auto& stripR = channels[1];
+    const int numSamples = buffer.getNumSamples();
+
+    for (int i = 0; i < numSamples; ++i)
+    {
+        float l = left[i], r = right[i];
+        for (int bi = 0; bi < numBands; ++bi)
+        {
+            const auto& c = bandCache[bi];
+            if (! c.on)
+                continue;
+
+            switch (c.mode)
+            {
+                case BandMode::Stereo:
+                    l = stripL.band[bi].processSample (l);
+                    r = stripR.band[bi].processSample (r);
+                    break;
+                case BandMode::Mid:
+                {
+                    const float side = 0.5f * (l - r);
+                    const float mid  = stripL.band[bi].processSample (0.5f * (l + r));
+                    l = mid + side;
+                    r = mid - side;
+                    break;
+                }
+                case BandMode::Side:
+                {
+                    const float mid  = 0.5f * (l + r);
+                    const float side = stripL.band[bi].processSample (0.5f * (l - r));
+                    l = mid + side;
+                    r = mid - side;
+                    break;
+                }
+            }
+        }
+        left[i]  = l * postGain;
+        right[i] = r * postGain;
+    }
 }
 
 void Equalizer::pushSum (fxme::SpectrumTap& tap, const juce::AudioBuffer<float>& buffer) noexcept
@@ -168,6 +228,7 @@ void Equalizer::assignParameters (juce::AudioProcessorValueTreeState& apvts, con
         bandParams[i].freq = apvts.getRawParameterValue (pid + "_Freq");
         bandParams[i].q    = apvts.getRawParameterValue (pid + "_Q");
         bandParams[i].gain = apvts.getRawParameterValue (pid + "_Gain");
+        bandParams[i].mode = apvts.getRawParameterValue (pid + "_Mode");
     }
 }
 
@@ -197,6 +258,20 @@ void Equalizer::addParameters (std::vector<std::unique_ptr<juce::RangedAudioPara
         params.push_back (std::make_unique<juce::AudioParameterFloat> (
             juce::ParameterID { pid + "_Gain", 1 }, name + " Gain", -24.0f, 24.0f, 0.0f));
     }
+
+    // The band modes, after every band: the Pd external exposes parameters as
+    // inlets in this order, so the older ones keep their place. Stereo by
+    // default, which is what a band did before modes existed.
+    juce::StringArray modeNames = getBandModeNames();
+    for (int i = 0; i < numBands; ++i)
+    {
+        const auto cfg    = getBandConfig (i, numBands);
+        juce::String pid  = prefix + "_EQ_" + cfg.suffix;
+        juce::String name = prefix + " EQ " + cfg.suffix;
+
+        params.push_back (std::make_unique<juce::AudioParameterChoice> (
+            juce::ParameterID { pid + "_Mode", 2 }, name + " Mode", modeNames, (int) BandMode::Stereo));
+    }
 }
 
 void Equalizer::checkParameters()
@@ -225,10 +300,24 @@ void Equalizer::checkParameters()
         if (p.freq && *p.freq != l.freq) { c.f    = *p.freq;                  l.freq = *p.freq; changed = true; }
         if (p.q    && *p.q    != l.q)    { c.q    = *p.q;                     l.q    = *p.q;    changed = true; }
         if (p.gain && *p.gain != l.gain) { c.g    = *p.gain;                  l.gain = *p.gain; changed = true; }
+        if (p.mode && *p.mode != l.mode)
+        {
+            c.mode = (BandMode) juce::jlimit (0, 2, (int) *p.mode);
+            l.mode = *p.mode;
+            // The filter now sees another signal: start it clean.
+            for (auto& ch : channels)
+                ch.band[i].reset();
+            changed = true;
+        }
     }
 
     if (changed)
+    {
         updateCoefficients();
+        anyMidSide = false;
+        for (int i = 0; i < numBands; ++i)
+            anyMidSide = anyMidSide || (bandCache[i].on && bandCache[i].mode != BandMode::Stereo);
+    }
 }
 
 // ---------------------------------------------------------------------------
