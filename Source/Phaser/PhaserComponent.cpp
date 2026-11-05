@@ -118,6 +118,7 @@ PhaserComponent::PhaserComponent (Phaser& p,
     rateSlider    .setAttachment (new SliderAttachment (apvts, prefix + "_Phaser_Rate",     rateSlider));
     depthSlider   .setAttachment (new SliderAttachment (apvts, prefix + "_Phaser_Depth",    depthSlider));
     freqSlider    .setAttachment (new SliderAttachment (apvts, prefix + "_Phaser_Freq",     freqSlider));
+    freqSlider    .setLogarithmic();
     feedbackSlider.setAttachment (new SliderAttachment (apvts, prefix + "_Phaser_Feedback", feedbackSlider));
     widthSlider   .setAttachment (new SliderAttachment (apvts, prefix + "_Phaser_Width",    widthSlider));
     mixSlider     .setAttachment (new SliderAttachment (apvts, prefix + "_Phaser_Mix",      mixSlider));

@@ -80,6 +80,8 @@ ReverbComponent::ReverbComponent (ReverbEffect& r, juce::AudioProcessorValueTree
     widthSlider   .setAttachment (new SliderAttachment (apvts, prefix + "_Verb_Width",    widthSlider));
     lowCutSlider  .setAttachment (new SliderAttachment (apvts, prefix + "_Verb_LowCut",   lowCutSlider));
     highCutSlider .setAttachment (new SliderAttachment (apvts, prefix + "_Verb_HighCut",  highCutSlider));
+    lowCutSlider  .setLogarithmic();
+    highCutSlider .setLogarithmic();
     mixSlider     .setAttachment (new SliderAttachment (apvts, prefix + "_Verb_Mix",      mixSlider));
     outSlider     .setAttachment (new SliderAttachment (apvts, prefix + "_Verb_Out",      outSlider));
 }

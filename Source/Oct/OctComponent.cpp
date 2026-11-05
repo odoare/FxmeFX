@@ -72,6 +72,8 @@ OctComponent::OctComponent (Oct& o,
     oct2Slider  .setAttachment (new SliderAttachment (apvts, prefix + "_Oct_Oct2",   oct2Slider));
     detectSlider.setAttachment (new SliderAttachment (apvts, prefix + "_Oct_Detect", detectSlider));
     toneSlider  .setAttachment (new SliderAttachment (apvts, prefix + "_Oct_Tone",   toneSlider));
+    detectSlider.setLogarithmic();
+    toneSlider  .setLogarithmic();
 }
 
 OctComponent::~OctComponent() = default;

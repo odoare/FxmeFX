@@ -281,6 +281,7 @@ ConvolReverbComponent::ConvolReverbComponent (ConvolReverb& r, juce::AudioProces
     lowCutSlider.setNumDecimalPlacesToDisplay (0);
     lowCutSlider.setTooltip ("Low Cut. \n Removes the low end of the reverb (a gentle 12 dB/octave high-pass). Off at 20 Hz.");
     lowCutSlider.setAttachment (new juce::AudioProcessorValueTreeState::SliderAttachment (apvts, prefix + "_Rev_LowCut", lowCutSlider));
+    lowCutSlider.setLogarithmic();
     lowCutSlider.onValueChange = [this] { graphNeedsUpdate = true; };
 
     setupSlider (highCutSlider, highCutLabel, "High Cut", 200.0, 20000.0, 20000.0);
@@ -288,6 +289,7 @@ ConvolReverbComponent::ConvolReverbComponent (ConvolReverb& r, juce::AudioProces
     highCutSlider.setNumDecimalPlacesToDisplay (0);
     highCutSlider.setTooltip ("High Cut. \n Darkens the reverb (a gentle 12 dB/octave low-pass). Off at 20 kHz.");
     highCutSlider.setAttachment (new juce::AudioProcessorValueTreeState::SliderAttachment (apvts, prefix + "_Rev_HighCut", highCutSlider));
+    highCutSlider.setLogarithmic();
     highCutSlider.onValueChange = [this] { graphNeedsUpdate = true; };
 
     // Where the colour filters run. Live, a move is heard at once (on the IR,

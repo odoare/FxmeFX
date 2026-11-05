@@ -727,6 +727,7 @@ EqualizerComponent::EqualizerComponent (Equalizer& eq, juce::AudioProcessorValue
                      juce::String (cfg.suffix) + " Freq");
         bandFreq[i].setName ("Freq");
         bandFreq[i].setAttachment (new SliderAttachment (apvts, pid + "_Freq", bandFreq[i]));
+        bandFreq[i].setLogarithmic();   // as much travel per octave at 50 Hz as at 5 kHz
 
         setupSlider (bandQ[i], 0.1, 10.0, 1.0, juce::String (cfg.suffix) + " Q");
         bandQ[i].setName ("Q");

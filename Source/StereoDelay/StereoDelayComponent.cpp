@@ -145,6 +145,7 @@ StereoDelayComponent::StereoDelayComponent(StereoDelay& d, juce::AudioProcessorV
     setupSlider(cutoffSlider, cutoffLabel, "Cutoff");
     cutoffSlider.setTextValueSuffix(" Hz");
     cutoffSlider.setAttachment(new juce::AudioProcessorValueTreeState::SliderAttachment(apvts, prefix + "_Del_FilterCutoff", cutoffSlider));
+    cutoffSlider.setLogarithmic();
 
     setupSlider(qSlider, qLabel, "Q");
     qSlider.setAttachment(new juce::AudioProcessorValueTreeState::SliderAttachment(apvts, prefix + "_Del_FilterQ", qSlider));
