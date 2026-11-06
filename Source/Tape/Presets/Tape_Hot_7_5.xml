@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<FxmeModulePreset module="Tape" version="1" name="Hot 7.5">
+  <Param key="On" value="1"/>
+  <Param key="Drive" value="6"/>
+  <Param key="Sat" value="70"/>
+  <Param key="Bias" value="45"/>
+  <Param key="Type" value="1"/>
+  <Param key="Speed" value="0"/>
+  <Param key="EQ" value="0"/>
+  <Param key="Hiss" value="-75"/>
+  <Param key="OS" value="0"/>
+  <Param key="Auto" value="1"/>
+  <Param key="Mix" value="100"/>
+  <Param key="Out" value="0"/>
+</FxmeModulePreset>

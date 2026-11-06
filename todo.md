@@ -2,7 +2,7 @@
 
 Date: 2026-11-05.
 
-Four projects, in the suggested order: Gate, De-esser, Crusher (all three in FxmeFX), then the advanced reverb (a separate project). Each is done and committed on its own.
+Five projects: Gate, De-esser, Crusher (all three in FxmeFX, done), the advanced reverb (a separate project), and a tape saturation (FxmeFX, added 2026-11-06, section 5). Each is done and committed on its own.
 
 ## Checklist common to every new FxmeFX plugin
 
@@ -120,8 +120,69 @@ A mode is a set of topology and voicing values, not a different engine (unless b
 - [ ] CPU measurement at 48 and 96 kHz.
 - [ ] Docs, README, release.
 
+## 5. FxmeTape (Distortion and tone family)
+
+Proposal, 2026-11-06; implemented the same day with the decisions at the end of this section (no wow or flutter, a tape-type menu, 2x or 4x oversampling). Measurements in `doc/Tape/`. The aim is a tape machine that sounds right when pushed, not a tanh with a low-pass: the character of tape comes from magnetic hysteresis (soft, level-dependent, with a memory, so the harmonics and the phase shift change with level and frequency), from the record/playback equalisation around it (highs saturate first), from the playback head's losses and bump, and from the transport (wow and flutter). Each of those is a stage below.
+
+### Signal path
+
+Record side, then the tape, then the playback side, per channel:
+
+1. Input (Drive): the level into the record head, in dB; 0 dB puts a 0 dBFS sine at the tape's nominal "0 VU" (a few dB under where the hysteresis compresses hard).
+2. Record pre-emphasis: a high shelf boost, its corner set by the speed and the EQ standard (NAB: 50 and 3180 us at 7.5 and 15 ips; IEC/CCIR: 70 us at 7.5 ips, 35 us at 15; AES: 17.5 us at 30 ips). Highs therefore hit the hysteresis harder, which is why tape compresses cymbals and esses before the rest.
+3. Hysteresis, oversampled (2x by default, 4x option), reported as latency: a Jiles-Atherton magnetisation model (the physical one: Holters and Zolzer, DAFx 2016, for the model and its discretisation; Chowdhury, DAFx 2019, "Real-time physical modelling for analog tape machines", for its use on tape), solved per sample with RK4 (RK2 as a cheaper option if CPU demands it). Its parameters (saturation magnetisation, coercivity, loop width, coupling) come from three user controls:
+   - Saturation: how hard the loop saturates (Ms and the drive scaling).
+   - Bias: AC bias is what makes tape linear; modelled as its effect on the loop (more bias, narrower loop, cleaner and a little darker; under-bias, wider loop, gritty and "crossover"-like at low levels).
+   - Tape type (choice, maybe for v2): a few parameter sets (modern high-output, vintage ferric) instead of more knobs.
+4. Playback de-emphasis: the inverse of step 2, so a quiet signal comes out flat.
+5. Playback head losses, depending on the speed: gap loss (a sinc-shaped high-frequency roll-off, from the gap width against the wavelength v/f), spacing loss (exp (-2 pi d f / v)) and thickness loss, approximated by a short FIR or a low-order filter fitted per speed; and the head bump, a low-frequency resonance whose frequency scales with speed (about 40 Hz at 7.5 ips, 60 Hz at 15, 100 Hz at 30), a `fxme::RegaliaMitraEq` bell with a small dip under it.
+6. (Dropped: wow and flutter go to a later tape delay, see the decisions below.) Transport: wow (0.3 to 2 Hz) and flutter (6 to 15 Hz) as a modulated read on a `fxme::ModDelayLine` (Catmull-Rom), the two LFOs plus a slow random drift (filtered noise, seeded, so a bounce renders the same), the same modulation on both channels (one tape) with an optional small offset between them (azimuth). Its centre delay is a few ms, added to the reported latency.
+7. Hiss (off by default): noise shaped like tape hiss (high-passed, through the playback de-emphasis), its level relative to the "0 VU" reference, and gated by nothing (tape hiss is always there; an "only while signal" option is not realistic).
+8. Mix, Output, and an automatic make-up on Drive (as console tape plugins do: turning Drive up adds saturation, not mostly level), switchable.
+
+Plus the house rules: `sanitiseBlock` on the input and `sanitiseSample` on the hysteresis state (it is recursive), an On switch that fades, presets, Pd external.
+
+### Where the code goes
+
+- FxmeTools core: `dsp/TapeHysteresis.h` (Jiles-Atherton, the solver, the bias and saturation mapping), JUCE-free and tested; probably `dsp/TapeEq.h` too (the emphasis time constants and the head-loss filter per speed), since a tape delay or a cassette effect would reuse both. Recorded in `doc/api-changes.md`.
+- Oversampling stays on the JUCE side (`juce::dsp::Oversampling`, as the Tube does), so the hysteresis class takes the sample rate it runs at.
+- FxmeFX `Source/Tape/`: the chain, the parameters, the GUI.
+
+### Parameters (first proposal)
+
+On, Drive (-12 to +24 dB), Saturation (0 to 100 %), Bias (0 to 100 %, 50 % = calibrated), Speed (7.5, 15, 30 ips), EQ (NAB, IEC), Wow (0 to 100 %), Flutter (0 to 100 %), Hiss (off to -40 dB), Oversampling (2x, 4x), Auto gain (on/off), Mix, Output.
+
+### GUI
+
+- The knobs above, Speed and EQ as menus, Mix and Output as faders (house layout).
+- A small XY display of the hysteresis loop (H against M over the last block): it shows at a glance how hard the tape is driven and what Bias does to it. Needs a lock-free snapshot like `WaveformTap` (two taps, or a small XY tap in FxmeTools if none fits).
+- Input and output level meters (VU ballistics, as tape machines have), from FxmeTools.
+
+### Verification
+
+- Core tests: the model's output finite and bounded for any input (NaN, +-inf, huge values), odd symmetry, the loop's area growing with drive and shrinking with bias, a quiet sine coming out nearly linear, reset() bit-exact.
+- A Python transcription of the chain (as `doc/Limiter/`), in `doc/Tape/`: frequency response per speed and EQ at a low level (flat within a dB or two, except the head bump and the top end), THD and the third-to-second harmonic ratio against level, and the compression curve at 1 kHz and 10 kHz (the highs should compress first). Results checked against published measurements of real machines where they exist.
+- CPU at 48 and 96 kHz with 2x and 4x oversampling.
+
+### Commits
+
+1. FxmeTools: `TapeHysteresis` (and `TapeEq`) with their tests.
+2. FxmeFX: the plugin, presets (e.g. "15 ips Glue", "Hot 7.5", "Worn Cassette-ish" with wow and hiss), README, release notes, the simulation in `doc/Tape/`.
+
+### To decide before starting
+
+- Name: FxmeTape, or something else.
+> OK
+- Tape type menu in v1, or Saturation and Bias only.
+> Everything in V1
+- Default oversampling (2x is a fair compromise for the JA model; 4x is cleaner at high drive).
+> Both, 2x by default
+- Whether wow and flutter belong in this plugin at all (they add latency and are a transport effect, not a saturation one), or default to 0 here and live mostly in a later tape delay.
+> This is a saturation/colouration plugin, no WOW nor flutter. Indeed these will be in a tape delay later.
+
 ## Open questions for later
 
 - Gate: external sidechain in v1 or not.
 - Crusher: named FxmeCrusher.
 - Reverb: name; tank only, or tank plus FDN.
+- Tape: decided (see section 5). Possible later: a little even-harmonic asymmetry (imperfect bias), a cassette speed (1.875 ips).

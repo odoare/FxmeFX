@@ -29,6 +29,7 @@ drum kits).
 | FxmeGate         | `GATE`      | Noise gate and downward expander. Threshold with hysteresis, Range, Attack / Hold / Release, a Gate or Expander (ratio) mode, a high-pass and a low-pass on the detector with a Listen switch to hear it, optional look-ahead (0 to 5 ms, reported as latency), stereo-linked detection. A meter shows the detector's level against the threshold (which can be dragged) and the gain, and a LED the state (open, hold, closed). |
 | FxmeCrusher      | `CRSH`      | Bit and sample-rate crusher, after an old sampler's signal path. Drive into a converter that clips at full scale, Bits (1 to 24, fractional) with a mid-tread, mid-rise or mu-law quantizer, Rate (200 Hz up to Off), Jitter on the hold length, dither Noise, a Clean anti-alias filter and a Smooth reconstruction filter, Mix and Output. A waveform view shows the steps, input against output. |
 | FxmeDeEsser      | `DESS`      | De-esser. A band-pass (Frequency, Q) or high-pass detector on the sidechain, Threshold, Range and a single Speed knob; Wideband (the whole signal turned down) or Split band (only the band, through a dynamic bell or high shelf); Relative detection (the band against the whole signal, so the threshold holds at any level); Linked or Mid-only stereo; Listen to hear the band. A spectrum shows the detector's band, whose handle drags the frequency, and a meter the band's level against the threshold and the reduction. |
+| FxmeTape         | `TAPE`      | Tape saturation and colour: the magnetic hysteresis of tape (a Jiles-Atherton model, 2x or 4x oversampled) between the record pre-emphasis and the playback de-emphasis of the chosen Speed (7.5, 15, 30 ips) and EQ (NAB, IEC), then the playback head's loss and bump. Drive, Saturation, Bias (under-biased grit to over-biased darkness), three tape types, Hiss, Auto gain, Mix and Output. A display of the hysteresis loop and input and output VU meters. No wow or flutter: a colouring tool, not a transport. Measurements in `doc/Tape/`. |
 
 All plugins build as **VST3**, **CLAP**, **AU** (macOS) and a **Standalone** application,
 and also as headless **Pure Data externals** — see the dedicated section below.
@@ -53,6 +54,8 @@ and also as headless **Pure Data externals** — see the dedicated section below
 | ![FxmePhaser](doc/FxmePhaser.png) | ![FxmeGate](doc/FxmeGate.png) |
 | **FxmeCrusher** | **FxmeDeEsser** |
 | ![FxmeCrusher](doc/FxmeCrusher.png) | ![FxmeDeEsser](doc/FxmeDeEsser.png) |
+| **FxmeTape** | |
+| ![FxmeTape](doc/FxmeTape.png) | |
 
 ## Installing
 
@@ -387,6 +390,26 @@ level when Relative is 1. Q only matters with the band-pass detector.
 | 11 | Stereo          | 0 = Linked, 1 = Mid                | 0    |
 | 12 | Listen          | 0 / 1                              | 0    |
 
+### `fxmetape~`
+
+Tape saturation. The oversampling delays the output by a few samples (in
+Pd there is no host to report it to). Hiss at its minimum (-90) is off.
+
+| Inlet | Parameter | Range | Default |
+|------:|-----------|-------|--------:|
+| 2  | On              | 0 / 1                                    | 1   |
+| 3  | Drive (dB)      | -12 … 24                                 | 0   |
+| 4  | Saturation (%)  | 0 … 100                                  | 50  |
+| 5  | Bias (%)        | 0 … 100  (50 = calibrated)               | 50  |
+| 6  | Type            | 0 = Modern, 1 = Vintage, 2 = High output | 0   |
+| 7  | Speed           | 0 = 7.5 ips, 1 = 15 ips, 2 = 30 ips      | 1   |
+| 8  | EQ              | 0 = NAB, 1 = IEC                         | 0   |
+| 9  | Hiss (dB)       | -90 (off) … -40                          | -90 |
+| 10 | Oversampling    | 0 = 2x, 1 = 4x                           | 0   |
+| 11 | Auto gain       | 0 / 1                                    | 1   |
+| 12 | Mix (%)         | 0 … 100                                  | 100 |
+| 13 | Output (dB)     | -24 … 24                                 | 0   |
+
 ### `fxmefreeze~`
 
 | Inlet | Parameter | Range | Default |
@@ -494,6 +517,7 @@ FxmeFX/
 │   ├── Gate/                   # noise gate / expander (hysteresis, hold, look-ahead)
 │   ├── Crusher/                # bit and sample-rate crusher
 │   ├── DeEsser/                # de-esser (wideband or split band)
+│   ├── Tape/                   # tape saturation (Jiles-Atherton hysteresis)
 │   └── VuMeter/                # re-export shims for fxme::VuMeter / fxme::VuMeterComponent
 ├── cmake/                      # version, dependency pins (Dependencies.cmake), helpers
 ├── release-notes/              # v<x.y.z>.md: text of each GitHub release (required by release.yml)
@@ -567,7 +591,7 @@ cmake --build build --parallel
 
 `PLUGIN` accepts: `Compressor`, `Equalizer`, `Tube`, `Transient`,
 `StereoDelay`, `ConvolReverb`, `Cab`, `Oct`, `Limiter`, `Freeze`, `Chorus`,
-`Flanger`, `Phaser`, `Reverb`, `Gate`, `Crusher`, `DeEsser`.
+`Flanger`, `Phaser`, `Reverb`, `Gate`, `Crusher`, `DeEsser`, `Tape`.
 
 ### A single plugin standalone
 

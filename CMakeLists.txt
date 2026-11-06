@@ -46,6 +46,7 @@ set(_all_plugins
     Gate
     Crusher
     DeEsser
+    Tape
 )
 
 if(PLUGIN STREQUAL "")

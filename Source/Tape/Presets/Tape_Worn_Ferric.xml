@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<FxmeModulePreset module="Tape" version="1" name="Worn Ferric">
+  <Param key="On" value="1"/>
+  <Param key="Drive" value="4"/>
+  <Param key="Sat" value="65"/>
+  <Param key="Bias" value="30"/>
+  <Param key="Type" value="1"/>
+  <Param key="Speed" value="0"/>
+  <Param key="EQ" value="1"/>
+  <Param key="Hiss" value="-65"/>
+  <Param key="OS" value="0"/>
+  <Param key="Auto" value="1"/>
+  <Param key="Mix" value="100"/>
+  <Param key="Out" value="0"/>
+</FxmeModulePreset>
