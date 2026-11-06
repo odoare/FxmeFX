@@ -49,7 +49,7 @@ namespace fxmefx::theme
     //==============================================================================
     // The families: their two ends and their members, in gradient order.
 
-    namespace dynamics     { enum Member { limiter, transient, compressor, count };
+    namespace dynamics     { enum Member { limiter, transient, compressor, gate, count };
                              inline const juce::Colour from { 0xffb0703c }, to { 0xffdc4a44 }; }   // brown, red
 
     namespace modulation   { enum Member { chorus, phaser, flanger, count };
@@ -76,6 +76,7 @@ namespace fxmefx::theme
     inline const juce::Colour limiter      = along (dynamics::from, dynamics::to, dynamics::limiter,    dynamics::count);
     inline const juce::Colour transient    = along (dynamics::from, dynamics::to, dynamics::transient,  dynamics::count);
     inline const juce::Colour compressor   = along (dynamics::from, dynamics::to, dynamics::compressor, dynamics::count);
+    inline const juce::Colour gate         = along (dynamics::from, dynamics::to, dynamics::gate,       dynamics::count);
 
     inline const juce::Colour chorus       = along (modulation::from, modulation::to, modulation::chorus,  modulation::count);
     inline const juce::Colour phaser       = along (modulation::from, modulation::to, modulation::phaser,  modulation::count);

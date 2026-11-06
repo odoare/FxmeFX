@@ -26,6 +26,7 @@ drum kits).
 | FxmeFlanger      | `FLNG`      | Stereo flanger. One very short modulated delay per channel with bipolar feedback - positive sharpens the comb into the jet whoosh, negative inverts it for the hollow variant. Delay places the comb, Depth sets the sweep. Free-running or tempo-synced. |
 | FxmeReverb       | `FVRB`      | Algorithmic stereo reverb (WDL's Freeverb-derived engine). Pre-delay, Size, Damping and Width of the tail, Low cut and High cut on the reverb only, Mix and Output; the On switch fades and clears the tail. |
 | FxmePhaser       | `PHSR`      | Stereo phaser. 2 to 12 first-order allpass sections per channel swept by one LFO, with bipolar feedback. Freq is the sweep centre, Depth the excursion in octaves (up to 2.5 either way). Free-running or tempo-synced. |
+| FxmeGate         | `GATE`      | Noise gate and downward expander. Threshold with hysteresis, Range, Attack / Hold / Release, a Gate or Expander (ratio) mode, a high-pass and a low-pass on the detector with a Listen switch to hear it, optional look-ahead (0 to 5 ms, reported as latency), stereo-linked detection. A meter shows the detector's level against the threshold (which can be dragged) and the gain, and a LED the state (open, hold, closed). |
 
 All plugins build as **VST3**, **CLAP**, **AU** (macOS) and a **Standalone** application,
 and also as headless **Pure Data externals** — see the dedicated section below.
@@ -46,8 +47,8 @@ and also as headless **Pure Data externals** — see the dedicated section below
 | ![FxmeLimiter](doc/FxmeLimiter.png) | ![FxmeFreeze](doc/FxmeFreeze.png) |
 | **FxmeChorus** | **FxmeFlanger** |
 | ![FxmeChorus](doc/FxmeChorus.png) | ![FxmeFlanger](doc/FxmeFlanger.png) |
-| **FxmePhaser** | |
-| ![FxmePhaser](doc/FxmePhaser.png) | |
+| **FxmePhaser** | **FxmeGate** |
+| ![FxmePhaser](doc/FxmePhaser.png) | ![FxmeGate](doc/FxmeGate.png) |
 
 ## Installing
 
@@ -318,6 +319,31 @@ ceiling is never exceeded.
 | 4 | Ceiling (dB)  | -24 … 0                     | -0.3 |
 | 5 | Release (ms)  | 1 … 500   (skewed)          | 50   |
 
+### `fxmegate~`
+
+Noise gate / downward expander. The detector is the input through the
+sidechain high-pass and low-pass, linked across the channels. Listen outputs
+that detector signal instead of the gated one. In Gate mode Ratio is ignored.
+Look-ahead delays the output by up to 5 ms (in Pd there is no host to report
+it to, so compensate yourself if needed).
+
+| Inlet | Parameter | Range | Default |
+|------:|-----------|-------|--------:|
+| 2  | On                  | 0 / 1                       | 1     |
+| 3  | Mode                | 0 = Gate, 1 = Expander      | 0     |
+| 4  | Threshold (dB)      | -80 … 0                     | -40   |
+| 5  | Hysteresis (dB)     | 0 … 20                      | 4     |
+| 6  | Range (dB)          | -80 … 0                     | -80   |
+| 7  | Ratio               | 1.1 … 10  (skewed)          | 2     |
+| 8  | Attack (ms)         | 0.01 … 50  (skewed)         | 0.5   |
+| 9  | Hold (ms)           | 0 … 500  (skewed)           | 20    |
+| 10 | Release (ms)        | 5 … 2000  (skewed)          | 150   |
+| 11 | SC high-pass (Hz)   | 20 … 2000  (skewed)         | 20    |
+| 12 | SC low-pass (Hz)    | 500 … 20000  (skewed)       | 20000 |
+| 13 | Listen              | 0 / 1                       | 0     |
+| 14 | Look-ahead (ms)     | 0 … 5                       | 0     |
+| 15 | Output (dB)         | -24 … 24                    | 0     |
+
 ### `fxmefreeze~`
 
 | Inlet | Parameter | Range | Default |
@@ -422,6 +448,7 @@ FxmeFX/
 │   ├── Flanger/                # stereo flanger (tempo-syncable LFO)
 │   ├── Phaser/                 # stereo phaser  (tempo-syncable LFO)
 │   ├── Reverb/                 # algorithmic reverb (WDL Freeverb engine)
+│   ├── Gate/                   # noise gate / expander (hysteresis, hold, look-ahead)
 │   └── VuMeter/                # re-export shims for fxme::VuMeter / fxme::VuMeterComponent
 ├── cmake/                      # version, dependency pins (Dependencies.cmake), helpers
 ├── release-notes/              # v<x.y.z>.md: text of each GitHub release (required by release.yml)
@@ -495,7 +522,7 @@ cmake --build build --parallel
 
 `PLUGIN` accepts: `Compressor`, `Equalizer`, `Tube`, `Transient`,
 `StereoDelay`, `ConvolReverb`, `Cab`, `Oct`, `Limiter`, `Freeze`, `Chorus`,
-`Flanger`, `Phaser`, `Reverb`.
+`Flanger`, `Phaser`, `Reverb`, `Gate`.
 
 ### A single plugin standalone
 

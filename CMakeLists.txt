@@ -43,6 +43,7 @@ set(_all_plugins
     Flanger
     Phaser
     Reverb
+    Gate
 )
 
 if(PLUGIN STREQUAL "")

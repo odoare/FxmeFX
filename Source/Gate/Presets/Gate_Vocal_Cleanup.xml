@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<FxmeModulePreset module="Gate" version="1" name="Vocal Cleanup">
+  <Param key="On" value="1"/>
+  <Param key="Mode" value="1"/>
+  <Param key="Thresh" value="-45"/>
+  <Param key="Hyst" value="4"/>
+  <Param key="Range" value="-20"/>
+  <Param key="Ratio" value="2"/>
+  <Param key="Attack" value="2"/>
+  <Param key="Hold" value="60"/>
+  <Param key="Release" value="250"/>
+  <Param key="HighPass" value="100"/>
+  <Param key="LowPass" value="20000"/>
+  <Param key="Listen" value="0"/>
+  <Param key="Lookahead" value="0"/>
+  <Param key="Out" value="0"/>
+</FxmeModulePreset>
