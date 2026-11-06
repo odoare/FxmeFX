@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<FxmeModulePreset module="Crusher" version="1" name="Vintage Sampler">
+  <Param key="On" value="1"/>
+  <Param key="Drive" value="0"/>
+  <Param key="Bits" value="12"/>
+  <Param key="Rate" value="26040"/>
+  <Param key="Mode" value="0"/>
+  <Param key="Jitter" value="0"/>
+  <Param key="Noise" value="0"/>
+  <Param key="Clean" value="1"/>
+  <Param key="Smooth" value="1"/>
+  <Param key="Mix" value="100"/>
+  <Param key="Out" value="0"/>
+</FxmeModulePreset>

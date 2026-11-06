@@ -27,6 +27,7 @@ drum kits).
 | FxmeReverb       | `FVRB`      | Algorithmic stereo reverb (WDL's Freeverb-derived engine). Pre-delay, Size, Damping and Width of the tail, Low cut and High cut on the reverb only, Mix and Output; the On switch fades and clears the tail. |
 | FxmePhaser       | `PHSR`      | Stereo phaser. 2 to 12 first-order allpass sections per channel swept by one LFO, with bipolar feedback. Freq is the sweep centre, Depth the excursion in octaves (up to 2.5 either way). Free-running or tempo-synced. |
 | FxmeGate         | `GATE`      | Noise gate and downward expander. Threshold with hysteresis, Range, Attack / Hold / Release, a Gate or Expander (ratio) mode, a high-pass and a low-pass on the detector with a Listen switch to hear it, optional look-ahead (0 to 5 ms, reported as latency), stereo-linked detection. A meter shows the detector's level against the threshold (which can be dragged) and the gain, and a LED the state (open, hold, closed). |
+| FxmeCrusher      | `CRSH`      | Bit and sample-rate crusher, after an old sampler's signal path. Drive into a converter that clips at full scale, Bits (1 to 24, fractional) with a mid-tread, mid-rise or mu-law quantizer, Rate (200 Hz up to Off), Jitter on the hold length, dither Noise, a Clean anti-alias filter and a Smooth reconstruction filter, Mix and Output. A waveform view shows the steps, input against output. |
 
 All plugins build as **VST3**, **CLAP**, **AU** (macOS) and a **Standalone** application,
 and also as headless **Pure Data externals** — see the dedicated section below.
@@ -49,6 +50,8 @@ and also as headless **Pure Data externals** — see the dedicated section below
 | ![FxmeChorus](doc/FxmeChorus.png) | ![FxmeFlanger](doc/FxmeFlanger.png) |
 | **FxmePhaser** | **FxmeGate** |
 | ![FxmePhaser](doc/FxmePhaser.png) | ![FxmeGate](doc/FxmeGate.png) |
+| **FxmeCrusher** | |
+| ![FxmeCrusher](doc/FxmeCrusher.png) | |
 
 ## Installing
 
@@ -344,6 +347,26 @@ it to, so compensate yourself if needed).
 | 14 | Look-ahead (ms)     | 0 … 5                       | 0     |
 | 15 | Output (dB)         | -24 … 24                    | 0     |
 
+### `fxmecrusher~`
+
+Bit and sample-rate crusher. Rate at its maximum (48000) means no
+sample-rate reduction. Jitter and the dither Noise use fixed seeds, so a
+patch renders the same every time.
+
+| Inlet | Parameter | Range | Default |
+|------:|-----------|-------|--------:|
+| 2  | On              | 0 / 1                                  | 1     |
+| 3  | Drive (dB)      | 0 … 24                                 | 0     |
+| 4  | Bits            | 1 … 24  (skewed)                       | 8     |
+| 5  | Rate (Hz)       | 200 … 48000  (skewed, 48000 = off)     | 11025 |
+| 6  | Mode            | 0 = Mid-tread, 1 = Mid-rise, 2 = Mu-law | 0    |
+| 7  | Jitter (%)      | 0 … 100                                | 0     |
+| 8  | Noise (%)       | 0 … 100                                | 0     |
+| 9  | Clean           | 0 / 1                                  | 0     |
+| 10 | Smooth          | 0 / 1                                  | 0     |
+| 11 | Mix (%)         | 0 … 100                                | 100   |
+| 12 | Output (dB)     | -24 … 24                               | 0     |
+
 ### `fxmefreeze~`
 
 | Inlet | Parameter | Range | Default |
@@ -449,6 +472,7 @@ FxmeFX/
 │   ├── Phaser/                 # stereo phaser  (tempo-syncable LFO)
 │   ├── Reverb/                 # algorithmic reverb (WDL Freeverb engine)
 │   ├── Gate/                   # noise gate / expander (hysteresis, hold, look-ahead)
+│   ├── Crusher/                # bit and sample-rate crusher
 │   └── VuMeter/                # re-export shims for fxme::VuMeter / fxme::VuMeterComponent
 ├── cmake/                      # version, dependency pins (Dependencies.cmake), helpers
 ├── release-notes/              # v<x.y.z>.md: text of each GitHub release (required by release.yml)
@@ -522,7 +546,7 @@ cmake --build build --parallel
 
 `PLUGIN` accepts: `Compressor`, `Equalizer`, `Tube`, `Transient`,
 `StereoDelay`, `ConvolReverb`, `Cab`, `Oct`, `Limiter`, `Freeze`, `Chorus`,
-`Flanger`, `Phaser`, `Reverb`, `Gate`.
+`Flanger`, `Phaser`, `Reverb`, `Gate`, `Crusher`.
 
 ### A single plugin standalone
 

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<FxmeModulePreset module="Crusher" version="1" name="Lo-Fi Grit">
+  <Param key="On" value="1"/>
+  <Param key="Drive" value="6"/>
+  <Param key="Bits" value="6"/>
+  <Param key="Rate" value="6000"/>
+  <Param key="Mode" value="1"/>
+  <Param key="Jitter" value="30"/>
+  <Param key="Noise" value="0"/>
+  <Param key="Clean" value="0"/>
+  <Param key="Smooth" value="0"/>
+  <Param key="Mix" value="70"/>
+  <Param key="Out" value="-3"/>
+</FxmeModulePreset>

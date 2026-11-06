@@ -44,6 +44,7 @@ set(_all_plugins
     Phaser
     Reverb
     Gate
+    Crusher
 )
 
 if(PLUGIN STREQUAL "")

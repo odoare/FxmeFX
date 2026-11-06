@@ -47,15 +47,15 @@ Check before starting: `BandDynamicsProcessor.h` may already cover most of the s
 
 ## 3. FxmeCrusher (Distortion and tone family)
 
-`fxme::BitCrusher` and `fxme::Downsampler` already exist; the plugin is mostly wiring and sound design.
+`fxme::BitCrusher` and `fxme::Downsampler` already exist; the plugin is mostly wiring and sound design. Done: both gained additive options (quantizer laws, dither input, deterministic jitter), tested in FxmeTools core.
 
-- [ ] Bits (1 to 24, fractional), Rate (target sample rate or a decimation factor, log knob), Mix, Output.
-- [ ] Jitter on the hold length (a little randomness takes the edge off the fixed aliasing pattern), seeded through `DeterministicRandom`.
-- [ ] Optional anti-alias low-pass before the decimation ("Clean" versus "Dirty"), and a smoothing low-pass after it (the reconstruction filter of an old sampler).
-- [ ] Optional dither before the quantiser (a "noise" amount), which turns the quantisation distortion into hiss at low bit depths.
-- [ ] Drive into the quantiser and a DC blocker at the output.
-- [ ] Quantiser modes to consider: mid-tread versus mid-rise, or a mu-law curve for a telephone and old-sampler colour.
-- [ ] GUI: a small waveform view (`WaveformTap`) showing the steps.
+- [x] Bits (1 to 24, fractional), Rate (target sample rate or a decimation factor, log knob), Mix, Output.
+- [x] Jitter on the hold length (a little randomness takes the edge off the fixed aliasing pattern), seeded through `DeterministicRandom`.
+- [x] Optional anti-alias low-pass before the decimation ("Clean" versus "Dirty"), and a smoothing low-pass after it (the reconstruction filter of an old sampler).
+- [x] Optional dither before the quantiser (a "noise" amount), which turns the quantisation distortion into hiss at low bit depths.
+- [x] Drive into the quantiser and a DC blocker at the output.
+- [x] Quantiser modes to consider: mid-tread versus mid-rise, or a mu-law curve for a telephone and old-sampler colour.
+- [x] GUI: a small waveform view (`WaveformTap`) showing the steps.
 
 ## 4. Advanced algorithmic reverb (separate project)
 
@@ -123,5 +123,5 @@ A mode is a set of topology and voicing values, not a different engine (unless b
 ## Open questions for later
 
 - Gate: external sidechain in v1 or not.
-- Crusher: name (FxmeCrusher, FxmeBits, FxmeLofi).
+- Crusher: named FxmeCrusher.
 - Reverb: name; tank only, or tank plus FDN.
