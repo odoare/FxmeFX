@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<FxmeModulePreset module="DeEsser" version="1" name="Any Level Vocal">
+  <Param key="On" value="1"/>
+  <Param key="Mode" value="1"/>
+  <Param key="Filter" value="1"/>
+  <Param key="Freq" value="5000"/>
+  <Param key="Q" value="1"/>
+  <Param key="Thresh" value="-12"/>
+  <Param key="Range" value="-10"/>
+  <Param key="Speed" value="60"/>
+  <Param key="Relative" value="1"/>
+  <Param key="Stereo" value="1"/>
+  <Param key="Listen" value="0"/>
+</FxmeModulePreset>

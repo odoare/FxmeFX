@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<FxmeModulePreset module="DeEsser" version="1" name="Harsh Cymbals">
+  <Param key="On" value="1"/>
+  <Param key="Mode" value="1"/>
+  <Param key="Filter" value="0"/>
+  <Param key="Freq" value="9000"/>
+  <Param key="Q" value="2"/>
+  <Param key="Thresh" value="-36"/>
+  <Param key="Range" value="-8"/>
+  <Param key="Speed" value="40"/>
+  <Param key="Relative" value="0"/>
+  <Param key="Stereo" value="0"/>
+  <Param key="Listen" value="0"/>
+</FxmeModulePreset>

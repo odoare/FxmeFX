@@ -28,6 +28,7 @@ drum kits).
 | FxmePhaser       | `PHSR`      | Stereo phaser. 2 to 12 first-order allpass sections per channel swept by one LFO, with bipolar feedback. Freq is the sweep centre, Depth the excursion in octaves (up to 2.5 either way). Free-running or tempo-synced. |
 | FxmeGate         | `GATE`      | Noise gate and downward expander. Threshold with hysteresis, Range, Attack / Hold / Release, a Gate or Expander (ratio) mode, a high-pass and a low-pass on the detector with a Listen switch to hear it, optional look-ahead (0 to 5 ms, reported as latency), stereo-linked detection. A meter shows the detector's level against the threshold (which can be dragged) and the gain, and a LED the state (open, hold, closed). |
 | FxmeCrusher      | `CRSH`      | Bit and sample-rate crusher, after an old sampler's signal path. Drive into a converter that clips at full scale, Bits (1 to 24, fractional) with a mid-tread, mid-rise or mu-law quantizer, Rate (200 Hz up to Off), Jitter on the hold length, dither Noise, a Clean anti-alias filter and a Smooth reconstruction filter, Mix and Output. A waveform view shows the steps, input against output. |
+| FxmeDeEsser      | `DESS`      | De-esser. A band-pass (Frequency, Q) or high-pass detector on the sidechain, Threshold, Range and a single Speed knob; Wideband (the whole signal turned down) or Split band (only the band, through a dynamic bell or high shelf); Relative detection (the band against the whole signal, so the threshold holds at any level); Linked or Mid-only stereo; Listen to hear the band. A spectrum shows the detector's band, whose handle drags the frequency, and a meter the band's level against the threshold and the reduction. |
 
 All plugins build as **VST3**, **CLAP**, **AU** (macOS) and a **Standalone** application,
 and also as headless **Pure Data externals** — see the dedicated section below.
@@ -50,8 +51,8 @@ and also as headless **Pure Data externals** — see the dedicated section below
 | ![FxmeChorus](doc/FxmeChorus.png) | ![FxmeFlanger](doc/FxmeFlanger.png) |
 | **FxmePhaser** | **FxmeGate** |
 | ![FxmePhaser](doc/FxmePhaser.png) | ![FxmeGate](doc/FxmeGate.png) |
-| **FxmeCrusher** | |
-| ![FxmeCrusher](doc/FxmeCrusher.png) | |
+| **FxmeCrusher** | **FxmeDeEsser** |
+| ![FxmeCrusher](doc/FxmeCrusher.png) | ![FxmeDeEsser](doc/FxmeDeEsser.png) |
 
 ## Installing
 
@@ -367,6 +368,25 @@ patch renders the same every time.
 | 11 | Mix (%)         | 0 … 100                                | 100   |
 | 12 | Output (dB)     | -24 … 24                               | 0     |
 
+### `fxmedeesser~`
+
+De-esser. Threshold is against full scale, or against the whole signal's
+level when Relative is 1. Q only matters with the band-pass detector.
+
+| Inlet | Parameter | Range | Default |
+|------:|-----------|-------|--------:|
+| 2  | On              | 0 / 1                              | 1    |
+| 3  | Mode            | 0 = Wideband, 1 = Split band       | 0    |
+| 4  | Filter          | 0 = Band-pass, 1 = High-pass       | 0    |
+| 5  | Frequency (Hz)  | 2000 … 12000  (skewed)             | 6000 |
+| 6  | Q               | 0.5 … 8  (skewed)                  | 1.5  |
+| 7  | Threshold (dB)  | -60 … 0                            | -30  |
+| 8  | Range (dB)      | -24 … 0                            | -12  |
+| 9  | Speed (%)       | 0 … 100                            | 50   |
+| 10 | Relative        | 0 / 1                              | 0    |
+| 11 | Stereo          | 0 = Linked, 1 = Mid                | 0    |
+| 12 | Listen          | 0 / 1                              | 0    |
+
 ### `fxmefreeze~`
 
 | Inlet | Parameter | Range | Default |
@@ -473,6 +493,7 @@ FxmeFX/
 │   ├── Reverb/                 # algorithmic reverb (WDL Freeverb engine)
 │   ├── Gate/                   # noise gate / expander (hysteresis, hold, look-ahead)
 │   ├── Crusher/                # bit and sample-rate crusher
+│   ├── DeEsser/                # de-esser (wideband or split band)
 │   └── VuMeter/                # re-export shims for fxme::VuMeter / fxme::VuMeterComponent
 ├── cmake/                      # version, dependency pins (Dependencies.cmake), helpers
 ├── release-notes/              # v<x.y.z>.md: text of each GitHub release (required by release.yml)
@@ -546,7 +567,7 @@ cmake --build build --parallel
 
 `PLUGIN` accepts: `Compressor`, `Equalizer`, `Tube`, `Transient`,
 `StereoDelay`, `ConvolReverb`, `Cab`, `Oct`, `Limiter`, `Freeze`, `Chorus`,
-`Flanger`, `Phaser`, `Reverb`, `Gate`, `Crusher`.
+`Flanger`, `Phaser`, `Reverb`, `Gate`, `Crusher`, `DeEsser`.
 
 ### A single plugin standalone
 

@@ -33,17 +33,17 @@ Done: the hold/hysteresis logic is `fxme::GateStateMachine` in FxmeTools core (t
 
 ## 2. FxmeDeEsser (Dynamics family)
 
-- [ ] Detector: band-pass or high-pass on the sidechain (`fxme::TptSvf`), Frequency (2 to 12 kHz, log), Q or width.
-- [ ] Threshold, Range (maximum reduction), Attack and Release with sensible fixed defaults (a de-esser is mostly set-and-forget), maybe exposed as one "Speed" knob.
-- [ ] Two modes:
+- [x] Detector: band-pass or high-pass on the sidechain (`fxme::TptSvf`), Frequency (2 to 12 kHz, log), Q or width.
+- [x] Threshold, Range (maximum reduction), Attack and Release with sensible fixed defaults (a de-esser is mostly set-and-forget), maybe exposed as one "Speed" knob.
+- [x] Two modes:
   - **Wideband:** the whole signal is turned down when the band triggers (classic, safe).
   - **Split band:** only the band is turned down; a dynamic bell or high shelf on the main path whose gain follows the detector (`fxme::RegaliaMitraEq` driven by the gain computer, as `BandDynamics` already does).
-- [ ] Relative detection option: the band level compared with the full-band level, so the threshold works at any input level.
-- [ ] "Listen" button to solo the detector band, which is how people find the sibilance.
-- [ ] Stereo linked, plus an optional M/S mode (de-ess the Mid only), reusing the Equalizer's M/S code.
-- [ ] GUI: a small spectrum (`SpectrumTap`) with the detector band drawn on it and its handle draggable, and a gain-reduction meter.
+- [x] Relative detection option: the band level compared with the full-band level, so the threshold works at any input level.
+- [x] "Listen" button to solo the detector band, which is how people find the sibilance.
+- [x] Stereo linked, plus an optional M/S mode (de-ess the Mid only), reusing the Equalizer's M/S code.
+- [x] GUI: a small spectrum (`SpectrumTap`) with the detector band drawn on it and its handle draggable, and a gain-reduction meter.
 
-Check before starting: `BandDynamicsProcessor.h` may already cover most of the split-band mode.
+Checked: `BandDynamicsProcessor` is made for one band of a filter bank (its own level convention, the gain applied to the band signal), so the de-esser uses `LevelDetector` / `GainComputer` / `GainBallistics` and a `RegaliaMitraEq` directly. No new FxmeTools class was needed.
 
 ## 3. FxmeCrusher (Distortion and tone family)
 

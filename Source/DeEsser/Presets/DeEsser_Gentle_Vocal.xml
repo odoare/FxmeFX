@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<FxmeModulePreset module="DeEsser" version="1" name="Gentle Vocal">
+  <Param key="On" value="1"/>
+  <Param key="Mode" value="0"/>
+  <Param key="Filter" value="0"/>
+  <Param key="Freq" value="6500"/>
+  <Param key="Q" value="1.5"/>
+  <Param key="Thresh" value="-32"/>
+  <Param key="Range" value="-6"/>
+  <Param key="Speed" value="50"/>
+  <Param key="Relative" value="0"/>
+  <Param key="Stereo" value="0"/>
+  <Param key="Listen" value="0"/>
+</FxmeModulePreset>

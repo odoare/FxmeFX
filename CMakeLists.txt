@@ -45,6 +45,7 @@ set(_all_plugins
     Reverb
     Gate
     Crusher
+    DeEsser
 )
 
 if(PLUGIN STREQUAL "")
