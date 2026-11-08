@@ -70,7 +70,7 @@ void GateComponent::setupRotary (fxme::FxmeSlider& slider, const juce::String& t
 }
 
 GateComponent::GateComponent (Gate& g, juce::AudioProcessorValueTreeState& state,
-                              const juce::String& prefix, bool showTitle, bool compactLayout)
+                              const juce::String& prefix, bool showTitle, bool compactLayout, bool hasSidechain)
     : gate (g), apvts (state), threshId (prefix + "_Gate_Thresh"), compact (compactLayout),
       onButton (state, prefix + "_Gate_On", "On", tint()),
       listenButton (state, prefix + "_Gate_Listen", "Listen", tint())
@@ -93,6 +93,16 @@ GateComponent::GateComponent (Gate& g, juce::AudioProcessorValueTreeState& state
     listenButton.setLookAndFeel (&fxmeLookAndFeel);
     listenButton.button.setTooltip ("Listen. \n Hear the sidechain (the detector's signal, through its high-pass and low-pass) "
                              "instead of the output, to set the filters by ear.");
+
+    if (hasSidechain)
+    {
+        extButton = std::make_unique<fxme::FxmeButton> (state, prefix + "_Gate_ExtSc", "Ext SC", tint());
+        addAndMakeVisible (*extButton);
+        extButton->setLookAndFeel (&fxmeLookAndFeel);
+        extButton->button.setTooltip ("External side-chain. \n The gate opens on the plugin's side-chain input instead of the "
+                                      "signal it gates (a kick opening a noise, say). Route a track to the side-chain input in "
+                                      "your host. Without one, the gate keeps listening to its input.");
+    }
 
     addAndMakeVisible (modeBox);
     modeBox.setLookAndFeel (&fxmeLookAndFeel);
@@ -233,6 +243,8 @@ void GateComponent::resized()
     top.items.add (fi (stateLed).withWidth (80.0f).withMargin (juce::FlexItem::Margin (0.f, 0.f, 0.f, 8.f)));
     top.items.add (fi (titleLabel).withFlex (1.0f));
     top.items.add (fi (listenButton).withWidth (80.0f));
+    if (extButton != nullptr)
+        top.items.add (fi (*extButton).withWidth (80.0f));
     top.items.add (fi (modeBox).withWidth (120.0f).withMargin (juce::FlexItem::Margin (0.f, 4.f, 0.f, 4.f)));
 
     if (compact)

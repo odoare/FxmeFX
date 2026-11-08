@@ -18,7 +18,7 @@ FxmeGateAudioProcessorEditor::FxmeGateAudioProcessorEditor (FxmeGateAudioProcess
     : AudioProcessorEditor (&p),
       audioProcessor (p),
       topBar (JucePlugin_Name, gateTint),
-      gateComponent (p.getGate(), p.getApvts(), FxmeGateAudioProcessor::parameterPrefix, false)
+      gateComponent (p.getGate(), p.getApvts(), FxmeGateAudioProcessor::parameterPrefix, false, false, true)
 {
     topBar.setPresetBank (p.getPresets());
     addAndMakeVisible (topBar);

@@ -26,7 +26,7 @@ DSP, built on `fxme::DynamicGainComputer` (expand mode) where it fits:
 - [x] Sidechain filter: high-pass and low-pass on the detector only (log knobs), and a "Listen" button to hear the detector signal.
 - [x] Optional look-ahead (0 to 5 ms) so the attack does not cut the transient, with the latency reported.
 - [x] Stereo linked detection (max of the channels, as in the Compressor).
-- [ ] Optional external sidechain input (bus layout); left out of v1 (keeps the Pd external and the embedding hosts simple).
+- [x] External sidechain input (an optional aux bus, the Ext SC switch); added 2026-11-08, with the Compressor's. Not in the Pd externals or embedding hosts.
 - [x] GUI: a state LED (open, hold, closed) and the threshold drawn on the input meter.
 
 Done: the hold/hysteresis logic is `fxme::GateStateMachine` in FxmeTools core (tested), for a future multiband gate or ducker.
@@ -58,6 +58,8 @@ Checked: `BandDynamicsProcessor` is made for one band of a filter bank (its own 
 - [x] GUI: a small waveform view (`WaveformTap`) showing the steps.
 
 ## 4. Advanced algorithmic reverb (separate project)
+
+Started 2026-11-06 as **StairwellToHeaven** (`~/src/StairwellToHeaven`): phases 0 to 6 implemented (Dattorro tank, no FDN yet), the GUI and presets written; its `doc/architecture.md` holds the plan's status and `doc/todo.md` what remains. The checkboxes below are kept as the original plan.
 
 Kept out of FxmeFX, which stays a standard collection. A new repository built with the FX-Mechanics project template (FetchContent on FxmeTools, `core/`/shell split).
 
@@ -182,7 +184,7 @@ On, Drive (-12 to +24 dB), Saturation (0 to 100 %), Bias (0 to 100 %, 50 % = cal
 
 ## Open questions for later
 
-- Gate: external sidechain in v1 or not.
+- Gate: external sidechain: done (2026-11-08).
 - Crusher: named FxmeCrusher.
-- Reverb: name; tank only, or tank plus FDN.
+- Reverb: named StairwellToHeaven; tank only for v1, FDN kept as a later option (its todo 4).
 - Tape: decided (see section 5). Possible later: a little even-harmonic asymmetry (imperfect bias), a cassette speed (1.875 ips).

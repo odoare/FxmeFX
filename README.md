@@ -12,7 +12,7 @@ drum kits).
 
 | Name             | Plugin code | Description                                    |
 | ---------------- | ----------- | ---------------------------------------------- |
-| FxmeCompressor   | `COMP`      | Compressor with peak/RMS detector, three release modes (Linear / Opto / Vintage), soft-knee and gain-reduction meter. |
+| FxmeCompressor   | `COMP`      | Compressor with peak/RMS detector, three release modes (Linear / Opto / Vintage), soft-knee and gain-reduction meter. A high-pass and a low-pass on the detector, and a side-chain input (Ext SC). |
 | FxmeEqualizer    | `EQUL`      | 5-band parametric EQ. Each band switches between Lowpass, Highpass, Peak, Low Shelf and High Shelf, with an interactive frequency-response graph. |
 | FxmeTube         | `TUBE`      | Valve / tube saturation with four models (Standard, Dynamic, Triode, Class-AB), bias, tone and power-supply sag. |
 | FxmeTransient    | `TRNS`      | SPL-style transient designer using the Differential Envelope Technique - independent attack and sustain shaping. |
@@ -26,7 +26,7 @@ drum kits).
 | FxmeFlanger      | `FLNG`      | Stereo flanger. One very short modulated delay per channel with bipolar feedback - positive sharpens the comb into the jet whoosh, negative inverts it for the hollow variant. Delay places the comb, Depth sets the sweep. Free-running or tempo-synced. |
 | FxmeReverb       | `FVRB`      | Algorithmic stereo reverb (WDL's Freeverb-derived engine). Pre-delay, Size, Damping and Width of the tail, Low cut and High cut on the reverb only, Mix and Output; the On switch fades and clears the tail. |
 | FxmePhaser       | `PHSR`      | Stereo phaser. 2 to 12 first-order allpass sections per channel swept by one LFO, with bipolar feedback. Freq is the sweep centre, Depth the excursion in octaves (up to 2.5 either way). Free-running or tempo-synced. |
-| FxmeGate         | `GATE`      | Noise gate and downward expander. Threshold with hysteresis, Range, Attack / Hold / Release, a Gate or Expander (ratio) mode, a high-pass and a low-pass on the detector with a Listen switch to hear it, optional look-ahead (0 to 5 ms, reported as latency), stereo-linked detection. A meter shows the detector's level against the threshold (which can be dragged) and the gain, and a LED the state (open, hold, closed). |
+| FxmeGate         | `GATE`      | Noise gate and downward expander. Threshold with hysteresis, Range, Attack / Hold / Release, a Gate or Expander (ratio) mode, a high-pass and a low-pass on the detector with a Listen switch to hear it, optional look-ahead (0 to 5 ms, reported as latency), stereo-linked detection, a side-chain input (Ext SC). A meter shows the detector's level against the threshold (which can be dragged) and the gain, and a LED the state (open, hold, closed). |
 | FxmeCrusher      | `CRSH`      | Bit and sample-rate crusher, after an old sampler's signal path. Drive into a converter that clips at full scale, Bits (1 to 24, fractional) with a mid-tread, mid-rise or mu-law quantizer, Rate (200 Hz up to Off), Jitter on the hold length, dither Noise, a Clean anti-alias filter and a Smooth reconstruction filter, Mix and Output. A waveform view shows the steps, input against output. |
 | FxmeDeEsser      | `DESS`      | De-esser. A band-pass (Frequency, Q) or high-pass detector on the sidechain, Threshold, Range and a single Speed knob; Wideband (the whole signal turned down) or Split band (only the band, through a dynamic bell or high shelf); Relative detection (the band against the whole signal, so the threshold holds at any level); Linked or Mid-only stereo; Listen to hear the band. A spectrum shows the detector's band, whose handle drags the frequency, and a meter the band's level against the threshold and the reduction. |
 | FxmeTape         | `TAPE`      | Tape saturation and colour: the magnetic hysteresis of tape (a Jiles-Atherton model, 2x or 4x oversampled) between the record pre-emphasis and the playback de-emphasis of the chosen Speed (7.5, 15, 30 ips) and EQ (NAB, IEC), then the playback head's loss and bump. Drive, Saturation, Bias (under-biased grit to over-biased darkness), three tape types, Hiss, Auto gain, Mix and Output. A display of the hysteresis loop and input and output VU meters. No wow or flutter: a colouring tool, not a transport. Measurements in `doc/Tape/`. |
@@ -94,6 +94,28 @@ xattr -dr com.apple.quarantine ~/Library/Audio/Plug-Ins/Components/Fxme*.compone
 Then rescan in the host (Logic revalidates AUs on launch; most other hosts have
 a "rescan plugins" button). A host caches the module, so a reinstall over a
 running DAW needs a restart to take effect.
+
+## Side-chain: FxmeCompressor and FxmeGate
+
+Both have a side-chain input, so another track can drive their dynamics:
+ducking a bass under a kick, opening a noise with a snare.
+
+1. Route the track to the plugin's side-chain input. How depends on the host:
+   a side-chain menu in the plugin's header or device (Logic, Ableton Live,
+   Bitwig), activating the plugin's side-chain bus (Cubase), or sending to
+   channels 3 and 4 of the track holding the plugin (Reaper).
+2. Turn on **Ext SC** in the plugin.
+
+The switch decides, not the routing: an active side-chain input changes
+nothing until Ext SC is on, and with Ext SC on but no side-chain input the
+effect keeps listening to its own input. Ext SC belongs to the routing, so
+loading a preset leaves it as it is.
+
+The detector's filters (**SC HP** and **SC LP**) shape the side-chain signal
+too, and the gate's **Listen** plays it. The compressor's **Pre Gain** drives
+its input, not the side-chain.
+
+The Pure Data externals have no side-chain input and no Ext SC inlet.
 
 ## Sending MIDI to FxmeStereoDelay
 
@@ -186,6 +208,8 @@ Binaries are named `fxme<plugin>~.pd_linux` / `.pd_darwin` / `.dll`.
 | 9 | Release Mode      | 0 = Linear, 1 = Opto, 2 = Vintage         | 0    |
 | 10 | Peak / RMS mix   | 0 (pure peak) … 1 (pure RMS)              | 0    |
 | 11 | Make-up Gain (dB)| -24 … 24                                  | 0    |
+| 12 | SC high-pass (Hz)| 20 (off) … 2000  (skewed)                 | 20   |
+| 13 | SC low-pass (Hz) | 500 … 20000 (off)  (skewed)               | 20000 |
 
 ### `fxmeequalizer~`
 

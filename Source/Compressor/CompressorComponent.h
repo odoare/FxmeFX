@@ -16,7 +16,8 @@ class CompressorComponent : public juce::Component,
                             public juce::Timer
 {
 public:
-    CompressorComponent (Compressor& compressorToControl, juce::AudioProcessorValueTreeState& apvts, const juce::String& prefix, bool showTitle = true, bool compact = false);
+    CompressorComponent (Compressor& compressorToControl, juce::AudioProcessorValueTreeState& apvts, const juce::String& prefix, bool showTitle = true, bool compact = false,
+                         bool hasSidechain = false);   // the host has an aux input: show Ext SC
     ~CompressorComponent() override;
 
     void paint (juce::Graphics&) override;
@@ -29,12 +30,13 @@ private:
     const bool compact;     // a wide, short slot: no title, flat knobs, one row of controls
 
     fxme::FxmeButton onButton;
+    std::unique_ptr<fxme::FxmeButton> extButton;   // only with a side-chain input (the plugin's own editor)
     juce::Label titleLabel;
     fxme::GainReductionMeter grMeter;
     juce::Label attackLabel, releaseLabel, threshLabel, ratioLabel;
-    juce::Label kneeLabel, peakRmsLabel;
+    juce::Label kneeLabel, peakRmsLabel, scHighPassLabel, scLowPassLabel;
     fxme::FxmeSlider preGainSlider, attackSlider, releaseSlider, threshSlider, ratioSlider, gainSlider;
-    fxme::FxmeSlider kneeSlider, peakRmsSlider;
+    fxme::FxmeSlider kneeSlider, peakRmsSlider, scHighPassSlider, scLowPassSlider;
     juce::ComboBox relModeBox;
 
     using ComboBoxAttachment = juce::AudioProcessorValueTreeState::ComboBoxAttachment;

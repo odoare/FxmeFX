@@ -75,7 +75,7 @@ void Gate::updateComputer()
 }
 
 void Gate::addParameters (std::vector<std::unique_ptr<juce::RangedAudioParameter>>& params,
-                          const juce::String& prefix)
+                          const juce::String& prefix, bool withSidechain)
 {
     using Range = juce::NormalisableRange<float>;
     auto addFloat = [&] (const char* id, const char* name, Range range, float def)
@@ -105,6 +105,10 @@ void Gate::addParameters (std::vector<std::unique_ptr<juce::RangedAudioParameter
 
     addFloat ("Lookahead", "Look-ahead", Range (0.0f, kMaxLookaheadMs, 0.01f),       0.0f);
     addFloat ("Out",       "Output",     Range (-24.0f, 24.0f, 0.1f),                0.0f);
+
+    if (withSidechain)
+        params.push_back (std::make_unique<juce::AudioParameterBool> (
+            juce::ParameterID { prefix + "_Gate_ExtSc", 1 }, prefix + " Gate External Sidechain", false));
 }
 
 void Gate::assignParameters (juce::AudioProcessorValueTreeState& apvts, const juce::String& prefix)
@@ -124,6 +128,7 @@ void Gate::assignParameters (juce::AudioProcessorValueTreeState& apvts, const ju
     listenParam    = p ("Listen");
     lookaheadParam = p ("Lookahead");
     outParam       = p ("Out");
+    extSidechainParam = p ("ExtSc");
 }
 
 void Gate::checkParameters()
@@ -187,11 +192,14 @@ void Gate::checkParameters()
         latencySamples = lookaheadSamples;
     }
 
+    if (extSidechainParam != nullptr)
+        externalSidechain = extSidechainParam->load() > 0.5f;
+
     if (read (outParam, outDb))
         outSmooth.setTargetValue (juce::Decibels::decibelsToGain (outDb));
 }
 
-void Gate::process (juce::AudioBuffer<float>& buffer)
+void Gate::process (juce::AudioBuffer<float>& buffer, const juce::AudioBuffer<float>* sidechain)
 {
     const int numSamples  = buffer.getNumSamples();
     const int numChannels = juce::jmin (buffer.getNumChannels(), (int) delay.size());
@@ -227,6 +235,12 @@ void Gate::process (juce::AudioBuffer<float>& buffer)
         return;
     }
 
+    // What the detector listens to: the input, or the key.
+    const bool useKey = externalSidechain && sidechain != nullptr && sidechain->getNumChannels() > 0
+                        && sidechain->getNumSamples() >= numSamples;
+    const int keyChannels = useKey ? juce::jmin (sidechain->getNumChannels(), (int) scHighPass.size()) : numChannels;
+    auto* const* keyData = useKey ? sidechain->getArrayOfReadPointers() : nullptr;
+
     float blockLevelDb = fxme::LevelDetector::floorDb;
     std::array<float, 2> sc { 0.0f, 0.0f };
 
@@ -234,12 +248,16 @@ void Gate::process (juce::AudioBuffer<float>& buffer)
     {
         // Detector: the sidechain-filtered input, linked.
         float peak = 0.0f;
-        for (int ch = 0; ch < numChannels; ++ch)
+        for (int ch = 0; ch < keyChannels; ++ch)
         {
-            const float s = scLowPass[(size_t) ch].lowPass (scHighPass[(size_t) ch].highPass (data[ch][i]));
+            // The input was cleaned above; the key was not.
+            const float x = useKey ? fxme::sanitiseSample (keyData[ch][i], fxme::kMainPathLimit) : data[ch][i];
+            const float s = scLowPass[(size_t) ch].lowPass (scHighPass[(size_t) ch].highPass (x));
             sc[(size_t) ch] = s;
             peak = juce::jmax (peak, std::abs (s));
         }
+        if (keyChannels == 1)
+            sc[1] = sc[0];   // a mono key, for Listen on a stereo output
         peakEnv = peak > peakEnv ? peak : peakEnv * peakFall;
         const float levelDb = peakEnv > 1.0e-7f ? 20.0f * std::log10 (peakEnv) : fxme::LevelDetector::floorDb;
         blockLevelDb = juce::jmax (blockLevelDb, levelDb);

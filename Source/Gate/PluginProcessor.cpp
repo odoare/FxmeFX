@@ -17,6 +17,10 @@ FxmeGateAudioProcessor::FxmeGateAudioProcessor()
                      #if ! JucePlugin_IsMidiEffect
                       #if ! JucePlugin_IsSynth
                        .withInput  ("Input",  juce::AudioChannelSet::stereo(), true)
+                     #ifndef FXME_PD_BUILD
+                       // The key for the Ext SC switch: off until the host routes something to it.
+                       .withInput  ("Sidechain", juce::AudioChannelSet::stereo(), false)
+                     #endif
                       #endif
                        .withOutput ("Output", juce::AudioChannelSet::stereo(), true)
                      #endif
@@ -40,7 +44,11 @@ FxmeGateAudioProcessor::~FxmeGateAudioProcessor() = default;
 juce::AudioProcessorValueTreeState::ParameterLayout FxmeGateAudioProcessor::createParameterLayout()
 {
     std::vector<std::unique_ptr<juce::RangedAudioParameter>> params;
-    Gate::addParameters (params, parameterPrefix);
+   #ifdef FXME_PD_BUILD
+    Gate::addParameters (params, parameterPrefix);          // no aux input in Pd: no Ext SC switch
+   #else
+    Gate::addParameters (params, parameterPrefix, true);
+   #endif
     return { params.begin(), params.end() };
 }
 
@@ -59,7 +67,7 @@ void FxmeGateAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlo
 {
     juce::ignoreUnused (samplesPerBlock);
     gate.checkParameters();   // the look-ahead, before prepare sizes the delay
-    gate.prepare (sampleRate, getTotalNumInputChannels());
+    gate.prepare (sampleRate, getMainBusNumInputChannels());
     setLatencySamples (gate.getLatencySamples());
 }
 
@@ -73,6 +81,14 @@ bool FxmeGateAudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts)
         return false;
     if (layouts.getMainOutputChannelSet() != layouts.getMainInputChannelSet())
         return false;
+
+    // The side-chain input is optional: absent, off, mono or stereo.
+    if (layouts.inputBuses.size() > 1)
+    {
+        const auto key = layouts.getChannelSet (true, 1);
+        if (! key.isDisabled() && key != juce::AudioChannelSet::mono() && key != juce::AudioChannelSet::stereo())
+            return false;
+    }
     return true;
 }
 #endif
@@ -89,7 +105,24 @@ void FxmeGateAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
     // The look-ahead changed: tell the host its new delay.
     if (gate.getLatencySamples() != getLatencySamples())
         setLatencySamples (gate.getLatencySamples());
+   #ifdef FXME_PD_BUILD
     gate.process (buffer);
+   #else
+    // The buffer holds the main channels and, after them, the side-chain's:
+    // the effect sees the main ones, and the key apart. No allocation: both
+    // only refer to the host's channels.
+    auto mainBus = getBusBuffer (buffer, true, 0);
+    auto* keyBus = getBus (true, 1);
+    if (keyBus != nullptr && keyBus->isEnabled() && keyBus->getNumberOfChannels() > 0)
+    {
+        const auto key = getBusBuffer (buffer, true, 1);
+        gate.process (mainBus, &key);
+    }
+    else
+    {
+        gate.process (mainBus);
+    }
+   #endif
 }
 
 #ifdef FXME_PD_BUILD

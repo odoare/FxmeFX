@@ -3,6 +3,21 @@
 
     Compressor.h
 
+    The detector can be shaped and re-keyed, for side-chain work:
+
+      - a high-pass and a low-pass on the detector only (off at their range's
+        ends, 20 Hz and 20 kHz, where the detector is exactly what it was
+        without them);
+      - an external key: with the Ext SC switch on and a side-chain buffer
+        given to process(), the detector listens to that buffer instead of
+        the input. The switch decides, not the buffer's presence: a host may
+        activate an aux bus nobody feeds, and a silent key would stop the
+        compression. Without a buffer the detector stays on the input. The
+        key is not affected by Pre Gain, which drives the input only.
+
+    Only a host with an aux input asks for the switch (addParameters'
+    withSidechain); embedding hosts and the Pure Data external do not get it.
+
   ==============================================================================
 */
 
@@ -10,7 +25,9 @@
 
 #include <JuceHeader.h>
 #include "VuMeter.h"
+#include <FxmeTools/dsp/TptSvf.h>
 #include <atomic>
+#include <vector>
 
 class Compressor
 {
@@ -20,7 +37,9 @@ public:
     Compressor();
 
     void prepare (double sampleRate, int numChannels);
-    void process (juce::AudioBuffer<float>& buffer);
+    /** `sidechain` (optional, read only) is the key the Ext SC switch selects;
+        at least as many samples as `buffer`. */
+    void process (juce::AudioBuffer<float>& buffer, const juce::AudioBuffer<float>* sidechain = nullptr);
 
     void setAttack (float attackMs);
     void setRelease (float releaseMs); // Corresponds to "decay time" in request
@@ -30,13 +49,19 @@ public:
     void setReleaseMode (int mode);
     void setPeakRmsMix (float mix);
     void setPostGain (float gaindB);
+    void setSidechainFilters (float highPassHz, float lowPassHz);
+    void setExternalSidechain (bool shouldUseIt) { externalSidechain = shouldUseIt; }
     void setOn (bool shouldBeOn);
     bool isOn() const;
     VuMeter& getGrMeter() { return grMeter; }
 
     void assignParameters (juce::AudioProcessorValueTreeState& apvts, const juce::String& prefix);
     void checkParameters();
-    static void addParameters (std::vector<std::unique_ptr<juce::RangedAudioParameter>>& params, const juce::String& prefix);
+    /** `withSidechain`: also the Ext SC switch, for a host with an aux input. */
+    static void addParameters (std::vector<std::unique_ptr<juce::RangedAudioParameter>>& params, const juce::String& prefix,
+                               bool withSidechain = false);
+
+    static constexpr float kScHighPassOffHz = 20.0f, kScLowPassOffHz = 20000.0f;
 
 private:
     double currentSampleRate = 44100.0;
@@ -54,6 +79,12 @@ private:
 
     float envelope = 0.0f;
     VuMeter grMeter;
+
+    // The detector's filters, per channel, and the external key.
+    std::vector<fxme::TptSvf> scHighPass, scLowPass;
+    float scHighPassHz = kScHighPassOffHz, scLowPassHz = kScLowPassOffHz;
+    bool scHighPassOn = false, scLowPassOn = false;
+    bool externalSidechain = false;
 
     // RMS detector state (fixed 10 ms averaging window)
     float rmsSquare = 0.0f;
@@ -82,9 +113,13 @@ private:
     std::atomic<float>* relModeParam = nullptr;
     std::atomic<float>* peakRmsParam = nullptr;
     std::atomic<float>* gainParam = nullptr;
+    std::atomic<float>* scHighPassParam = nullptr;
+    std::atomic<float>* scLowPassParam = nullptr;
+    std::atomic<float>* extSidechainParam = nullptr;
 
     float lastOn = -1.0f, lastPreGain = -100.0f, lastAttack = -1.0f, lastRelease = -1.0f, lastThresh = 1.0f, lastRatio = -1.0f, lastGain = -1.0f;
     float lastKnee = -1.0f, lastRelMode = -1.0f, lastPeakRms = -1.0f;
 
     void updateCoefficients();
+    void updateSidechainFilters();
 };

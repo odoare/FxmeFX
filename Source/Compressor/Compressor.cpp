@@ -23,7 +23,35 @@ void Compressor::prepare (double sampleRate, int numChannels)
     stress = 0.0f;
     grMeter.prepare (sampleRate);
     updateCoefficients();
-    juce::ignoreUnused (numChannels);
+
+    // At least a stereo key, whatever the input's width.
+    const auto filters = (size_t) juce::jmax (2, numChannels);
+    scHighPass.assign (filters, fxme::TptSvf());
+    scLowPass.assign (filters, fxme::TptSvf());
+    updateSidechainFilters();
+}
+
+void Compressor::updateSidechainFilters()
+{
+    constexpr double butterworthK = 1.4142135623730951;
+    const bool highPassOn = scHighPassHz > kScHighPassOffHz + 0.5f;
+    const bool lowPassOn  = scLowPassHz < kScLowPassOffHz - 1.0f;
+
+    // Coming back on, the filter starts clean, not from where it was left.
+    if (highPassOn && ! scHighPassOn) for (auto& f : scHighPass) f.reset();
+    if (lowPassOn  && ! scLowPassOn)  for (auto& f : scLowPass)  f.reset();
+    scHighPassOn = highPassOn;
+    scLowPassOn  = lowPassOn;
+
+    for (auto& f : scHighPass) f.setup (fxme::TptSvf::gFor (scHighPassHz, currentSampleRate), butterworthK);
+    for (auto& f : scLowPass)  f.setup (fxme::TptSvf::gFor (scLowPassHz, currentSampleRate), butterworthK);
+}
+
+void Compressor::setSidechainFilters (float highPassHz, float lowPassHz)
+{
+    scHighPassHz = highPassHz;
+    scLowPassHz  = lowPassHz;
+    updateSidechainFilters();
 }
 
 void Compressor::updateCoefficients()
@@ -102,9 +130,13 @@ void Compressor::assignParameters (juce::AudioProcessorValueTreeState& apvts, co
     relModeParam = apvts.getRawParameterValue (prefix + "_Comp_RelMode");
     peakRmsParam = apvts.getRawParameterValue (prefix + "_Comp_PeakRms");
     gainParam = apvts.getRawParameterValue (prefix + "_Comp_Gain");
+    scHighPassParam = apvts.getRawParameterValue (prefix + "_Comp_ScHighPass");
+    scLowPassParam = apvts.getRawParameterValue (prefix + "_Comp_ScLowPass");
+    extSidechainParam = apvts.getRawParameterValue (prefix + "_Comp_ExtSc");   // null without the switch
 }
 
-void Compressor::addParameters (std::vector<std::unique_ptr<juce::RangedAudioParameter>>& params, const juce::String& prefix)
+void Compressor::addParameters (std::vector<std::unique_ptr<juce::RangedAudioParameter>>& params, const juce::String& prefix,
+                                bool withSidechain)
 {
     params.push_back (std::make_unique<juce::AudioParameterBool> (juce::ParameterID { prefix + "_Comp_On", 1 }, prefix + " Comp On", false));
     params.push_back (std::make_unique<juce::AudioParameterFloat> (juce::ParameterID { prefix + "_Comp_PreGain", 1 }, prefix + " Comp Pre Gain", -24.0f, 24.0f, 0.0f));
@@ -116,6 +148,17 @@ void Compressor::addParameters (std::vector<std::unique_ptr<juce::RangedAudioPar
     params.push_back (std::make_unique<juce::AudioParameterChoice> (juce::ParameterID { prefix + "_Comp_RelMode", 1 }, prefix + " Comp Release Mode", juce::StringArray { "Linear", "Opto", "Vintage" }, 0));
     params.push_back (std::make_unique<juce::AudioParameterFloat> (juce::ParameterID { prefix + "_Comp_PeakRms", 1 }, prefix + " Comp Peak/RMS", 0.0f, 1.0f, 0.0f));
     params.push_back (std::make_unique<juce::AudioParameterFloat> (juce::ParameterID { prefix + "_Comp_Gain", 1 }, prefix + " Comp Gain", -24.0f, 24.0f, 0.0f));
+
+    // Added in 0.6.0: at the end (the Pure Data externals' inlets follow this
+    // order), version 2 (for hosts that order parameters by it). At their
+    // defaults they change nothing.
+    using Range = juce::NormalisableRange<float>;
+    params.push_back (std::make_unique<juce::AudioParameterFloat> (juce::ParameterID { prefix + "_Comp_ScHighPass", 2 }, prefix + " Comp SC High-pass",
+                                                                   Range (kScHighPassOffHz, 2000.0f, 1.0f, 0.3f), kScHighPassOffHz));
+    params.push_back (std::make_unique<juce::AudioParameterFloat> (juce::ParameterID { prefix + "_Comp_ScLowPass", 2 }, prefix + " Comp SC Low-pass",
+                                                                   Range (500.0f, kScLowPassOffHz, 1.0f, 0.3f), kScLowPassOffHz));
+    if (withSidechain)
+        params.push_back (std::make_unique<juce::AudioParameterBool> (juce::ParameterID { prefix + "_Comp_ExtSc", 2 }, prefix + " Comp External Sidechain", false));
 }
 
 void Compressor::checkParameters()
@@ -135,13 +178,17 @@ void Compressor::checkParameters()
     if (kneeParam && *kneeParam != lastKnee) { setKnee (*kneeParam); lastKnee = *kneeParam; }
     if (relModeParam && *relModeParam != lastRelMode) { setReleaseMode ((int) *relModeParam); lastRelMode = *relModeParam; }
     if (peakRmsParam && *peakRmsParam != lastPeakRms) { setPeakRmsMix (*peakRmsParam); lastPeakRms = *peakRmsParam; }
+    if ((scHighPassParam && *scHighPassParam != scHighPassHz) || (scLowPassParam && *scLowPassParam != scLowPassHz))
+        setSidechainFilters (scHighPassParam != nullptr ? scHighPassParam->load() : scHighPassHz,
+                             scLowPassParam != nullptr ? scLowPassParam->load() : scLowPassHz);
+    if (extSidechainParam) externalSidechain = *extSidechainParam > 0.5f;
 
     // These don't require coefficient update
     if (threshParam) thresholddB = *threshParam;
     if (ratioParam) ratio = *ratioParam;
 }
 
-void Compressor::process (juce::AudioBuffer<float>& buffer)
+void Compressor::process (juce::AudioBuffer<float>& buffer, const juce::AudioBuffer<float>* sidechain)
 {
     if (! on)
         return;
@@ -161,13 +208,28 @@ void Compressor::process (juce::AudioBuffer<float>& buffer)
     const float oneMinusRms = 1.0f - rmsCoef;
     const float oneMinusStress = 1.0f - stressCoef;
 
+    // What the detector listens to: the input (after Pre Gain), or the key.
+    const bool useKey = externalSidechain && sidechain != nullptr && sidechain->getNumChannels() > 0
+                        && sidechain->getNumSamples() >= numSamples;
+    auto* const* detectorData = useKey ? sidechain->getArrayOfReadPointers() : buffer.getArrayOfReadPointers();
+    const int detectorChannels = useKey ? sidechain->getNumChannels() : numChannels;
+    const int numFilters = (int) scHighPass.size();
+
     for (int i = 0; i < numSamples; ++i)
     {
         // Sidechain: Max of all channels (Linked operation)
         float inputAbs = 0.0f;
-        for (int ch = 0; ch < numChannels; ++ch)
+        for (int ch = 0; ch < detectorChannels; ++ch)
         {
-            float s = std::abs (channelData[ch][i]);
+            // The input was cleaned above; the key was not: nothing bad into
+            // the filters and detectors, which hold state.
+            float x = useKey ? fxme::sanitiseSample (detectorData[ch][i], fxme::kMainPathLimit) : detectorData[ch][i];
+            if (ch < numFilters)
+            {
+                if (scHighPassOn) x = scHighPass[(size_t) ch].highPass (x);
+                if (scLowPassOn)  x = scLowPass[(size_t) ch].lowPass (x);
+            }
+            float s = std::abs (x);
             if (s > inputAbs) inputAbs = s;
         }
 

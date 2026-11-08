@@ -17,6 +17,10 @@ FxmeCompressorAudioProcessor::FxmeCompressorAudioProcessor()
                      #if ! JucePlugin_IsMidiEffect
                       #if ! JucePlugin_IsSynth
                        .withInput  ("Input",  juce::AudioChannelSet::stereo(), true)
+                     #ifndef FXME_PD_BUILD
+                       // The key for the Ext SC switch: off until the host routes something to it.
+                       .withInput  ("Sidechain", juce::AudioChannelSet::stereo(), false)
+                     #endif
                       #endif
                        .withOutput ("Output", juce::AudioChannelSet::stereo(), true)
                      #endif
@@ -39,7 +43,11 @@ FxmeCompressorAudioProcessor::~FxmeCompressorAudioProcessor()
 juce::AudioProcessorValueTreeState::ParameterLayout FxmeCompressorAudioProcessor::createParameterLayout()
 {
     std::vector<std::unique_ptr<juce::RangedAudioParameter>> params;
-    Compressor::addParameters (params, parameterPrefix);
+   #ifdef FXME_PD_BUILD
+    Compressor::addParameters (params, parameterPrefix);          // no aux input in Pd: no Ext SC switch
+   #else
+    Compressor::addParameters (params, parameterPrefix, true);
+   #endif
     return { params.begin(), params.end() };
 }
 
@@ -109,7 +117,7 @@ void FxmeCompressorAudioProcessor::changeProgramName (int index, const juce::Str
 void FxmeCompressorAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
     juce::ignoreUnused (samplesPerBlock);
-    compressor.prepare (sampleRate, getTotalNumInputChannels());
+    compressor.prepare (sampleRate, getMainBusNumInputChannels());
 }
 
 void FxmeCompressorAudioProcessor::releaseResources()
@@ -132,6 +140,14 @@ bool FxmeCompressorAudioProcessor::isBusesLayoutSupported (const BusesLayout& la
         return false;
    #endif
 
+    // The side-chain input is optional: absent, off, mono or stereo.
+    if (layouts.inputBuses.size() > 1)
+    {
+        const auto key = layouts.getChannelSet (true, 1);
+        if (! key.isDisabled() && key != juce::AudioChannelSet::mono() && key != juce::AudioChannelSet::stereo())
+            return false;
+    }
+
     return true;
   #endif
 }
@@ -149,7 +165,24 @@ void FxmeCompressorAudioProcessor::processBlock (juce::AudioBuffer<float>& buffe
         buffer.clear (i, 0, buffer.getNumSamples());
 
     compressor.checkParameters();
+   #ifdef FXME_PD_BUILD
     compressor.process (buffer);
+   #else
+    // The buffer holds the main channels and, after them, the side-chain's:
+    // the effect sees the main ones, and the key apart. No allocation: both
+    // only refer to the host's channels.
+    auto mainBus = getBusBuffer (buffer, true, 0);
+    auto* keyBus = getBus (true, 1);
+    if (keyBus != nullptr && keyBus->isEnabled() && keyBus->getNumberOfChannels() > 0)
+    {
+        const auto key = getBusBuffer (buffer, true, 1);
+        compressor.process (mainBus, &key);
+    }
+    else
+    {
+        compressor.process (mainBus);
+    }
+   #endif
 }
 
 bool FxmeCompressorAudioProcessor::hasEditor() const

@@ -18,7 +18,7 @@ void CompressorComponent::setSliderColours (juce::Slider& s, juce::Colour c)
     s.setColour (juce::Slider::rotarySliderOutlineColourId, c.darker (2.0f));
 }
 
-CompressorComponent::CompressorComponent (Compressor& comp, juce::AudioProcessorValueTreeState& state, const juce::String& prefix, bool showTitle, bool compactLayout)
+CompressorComponent::CompressorComponent (Compressor& comp, juce::AudioProcessorValueTreeState& state, const juce::String& prefix, bool showTitle, bool compactLayout, bool hasSidechain)
     : compressor (comp), apvts (state), compact (compactLayout),
       onButton (state, prefix + "_Comp_On", "On", fxmefx::theme::compressor)
 {
@@ -44,7 +44,24 @@ CompressorComponent::CompressorComponent (Compressor& comp, juce::AudioProcessor
     setupSlider (ratioSlider, ratioLabel, "Ratio", 1.0, 20.0, 1.0);
     setupSlider (kneeSlider, kneeLabel, "Knee (dB)", 0.0, 24.0, 0.0);
     setupSlider (peakRmsSlider, peakRmsLabel, "Peak / RMS", 0.0, 1.0, 0.0);
+    setupSlider (scHighPassSlider, scHighPassLabel, "SC HP", Compressor::kScHighPassOffHz, 2000.0, Compressor::kScHighPassOffHz);
+    setupSlider (scLowPassSlider, scLowPassLabel, "SC LP", 500.0, Compressor::kScLowPassOffHz, Compressor::kScLowPassOffHz);
+    scHighPassSlider.setTooltip ("Sidechain high-pass. \n On the detector only: the lows stop triggering the compressor, so "
+                                 "a bass or a kick is not pumped by its own weight. Off at 20 Hz.");
+    scLowPassSlider.setTooltip ("Sidechain low-pass. \n On the detector only: the highs stop triggering the compressor. Off at 20 kHz.");
+    scHighPassSlider.setTextValueSuffix (" Hz");
+    scLowPassSlider.setTextValueSuffix (" Hz");
     fxmefx::setupGainFader (*this, gainSlider, "Gain", fxmefx::theme::compressor, fxmeLookAndFeel);
+
+    if (hasSidechain)
+    {
+        extButton = std::make_unique<fxme::FxmeButton> (state, prefix + "_Comp_ExtSc", "Ext SC", fxmefx::theme::compressor);
+        addAndMakeVisible (*extButton);
+        extButton->setLookAndFeel (&fxmeLookAndFeel);
+        extButton->button.setTooltip ("External side-chain. \n The compressor reacts to the plugin's side-chain input instead of the "
+                                      "signal it compresses (ducking under a kick or a voice). Route a track to the side-chain input "
+                                      "in your host. Without one, it keeps listening to its input.");
+    }
 
     addAndMakeVisible (relModeBox);
     relModeBox.setLookAndFeel (&fxmeLookAndFeel);
@@ -64,6 +81,12 @@ CompressorComponent::CompressorComponent (Compressor& comp, juce::AudioProcessor
     kneeSlider.setAttachment(new juce::AudioProcessorValueTreeState::SliderAttachment (apvts, prefix + "_Comp_Knee", kneeSlider));
     peakRmsSlider.setAttachment(new juce::AudioProcessorValueTreeState::SliderAttachment (apvts, prefix + "_Comp_PeakRms", peakRmsSlider));
     gainSlider.setAttachment(new juce::AudioProcessorValueTreeState::SliderAttachment (apvts, prefix + "_Comp_Gain", gainSlider));
+    scHighPassSlider.setAttachment(new juce::AudioProcessorValueTreeState::SliderAttachment (apvts, prefix + "_Comp_ScHighPass", scHighPassSlider));
+    scLowPassSlider.setAttachment(new juce::AudioProcessorValueTreeState::SliderAttachment (apvts, prefix + "_Comp_ScLowPass", scLowPassSlider));
+    scHighPassSlider.setLogarithmic();
+    scLowPassSlider.setLogarithmic();
+    scHighPassSlider.setNumDecimalPlacesToDisplay (0);
+    scLowPassSlider.setNumDecimalPlacesToDisplay (0);
 
     addAndMakeVisible (grMeter);
     grMeter.setMeterColour (fxmefx::theme::gainReduction);
@@ -109,18 +132,21 @@ void CompressorComponent::resized()
 
     if (compact)
     {
-        // The switch and the release mode on one line; the input bar, the six
-        // knobs, the reduction meter and the output bar on one row.
+        // The switch and the release mode on one line; the input bar, the
+        // eight knobs, the reduction meter and the output bar on one row.
         juce::FlexBox top, row, column;
         top.flexDirection    = juce::FlexBox::Direction::row;
         row.flexDirection    = juce::FlexBox::Direction::row;
         column.flexDirection = juce::FlexBox::Direction::column;
         top.items.add (fi (onButton).withWidth (fxmefx::kOnButtonWidth).withMargin (juce::FlexItem::Margin (0.f, 8.f, 0.f, 0.f)));
         top.items.add (fi().withFlex (1.0f));
+        if (extButton != nullptr)
+            top.items.add (fi (*extButton).withWidth (76.0f));
         top.items.add (fi (relModeBox).withWidth (140.0f));
 
         row.items.add (fi (preGainSlider).withWidth (48.0f).withMargin (juce::FlexItem::Margin (0.f, 6.f, 0.f, 0.f)));
-        for (auto* s : { &attackSlider, &releaseSlider, &kneeSlider, &threshSlider, &ratioSlider, &peakRmsSlider })
+        for (auto* s : { &attackSlider, &releaseSlider, &kneeSlider, &threshSlider, &ratioSlider, &peakRmsSlider,
+                         &scHighPassSlider, &scLowPassSlider })
             row.items.add (fi (*s).withFlex (1.0f));
         row.items.add (fi (grMeter).withWidth (38.0f).withMargin (juce::FlexItem::Margin (0.f, 4.f, 0.f, 4.f)));
         row.items.add (fi (gainSlider).withWidth (48.0f).withMargin (juce::FlexItem::Margin (0.f, 6.f, 0.f, 0.f)));
@@ -140,13 +166,17 @@ void CompressorComponent::resized()
 
     f1.items.add(fi(onButton).withWidth(fxmefx::kOnButtonWidth));
     f1.items.add(fi(titleLabel).withFlex(1.0f));
+    if (extButton != nullptr)
+        f1.items.add(fi(*extButton).withWidth(76.0f));
     f1.items.add(fi(relModeBox).withFlex(0.7f).withMargin(juce::FlexItem::Margin(0.f, 4.f, 0.f, 4.f)));
     f2.items.add(fi(attackSlider).withFlex(1.f));
     f2.items.add(fi(releaseSlider).withFlex(1.f));
     f2.items.add(fi(kneeSlider).withFlex(1.f));
+    f2.items.add(fi(scHighPassSlider).withFlex(1.f));
     f3.items.add(fi(threshSlider).withFlex(1.f));
     f3.items.add(fi(ratioSlider).withFlex(1.f));
     f3.items.add(fi(peakRmsSlider).withFlex(1.f));
+    f3.items.add(fi(scLowPassSlider).withFlex(1.f));
     f4.items.add(fi(f2).withFlex(1.f));
     f4.items.add(fi(f3).withFlex(1.f));
     f5.items.add(fi(preGainSlider).withFlex(0.15f));

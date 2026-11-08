@@ -15,6 +15,9 @@
                  knobs, the meter and Output as a knob, for a host that gives
                  the effect a wide and short slot.
 
+    `hasSidechain`: the host has an aux input and the Ext SC parameter, so
+    the switch is shown.
+
     The ratio knob is only enabled in Expander mode (a gate's ratio is
     infinite).
 
@@ -35,7 +38,8 @@ public:
                    juce::AudioProcessorValueTreeState& apvts,
                    const juce::String& prefix,
                    bool showTitle = true,
-                   bool compact = false);
+                   bool compact = false,
+                   bool hasSidechain = false);
     ~GateComponent() override;
 
     void paint (juce::Graphics& g) override;
@@ -69,6 +73,7 @@ private:
 
     juce::Label titleLabel;
     fxme::FxmeButton onButton, listenButton;
+    std::unique_ptr<fxme::FxmeButton> extButton;   // only with a side-chain input (the plugin's own editor)
     juce::ComboBox modeBox;
     StateLed stateLed;
     fxme::DynamicsMeter meter;

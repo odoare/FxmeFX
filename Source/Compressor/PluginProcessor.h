@@ -71,7 +71,8 @@ private:
     juce::AudioProcessorValueTreeState apvts;
 
    #ifndef FXME_PD_BUILD
-    fxmefx::EffectPresets presets { apvts, "Compressor", juce::String (parameterPrefix) + "_Comp_" };
+    fxmefx::EffectPresets presets { apvts, "Compressor", juce::String (parameterPrefix) + "_Comp_",
+                                   [] (const juce::String& key) { return key != "ExtSc"; } };   // routing, not sound
    #endif
     Compressor compressor;
 

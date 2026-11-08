@@ -22,6 +22,9 @@
 
         fxmefx::EffectPresets presets { apvts, "Compressor", "Main_Comp_" };
 
+    `include` (optional) leaves keys out of the presets, for what is routing
+    rather than sound: loading a preset must not unplug a side-chain.
+
     Not available in the Pure Data externals (FXME_PD_BUILD): they have no
     FxmeTools module, and no GUI to show presets in.
 
@@ -50,7 +53,8 @@ struct EffectPresets
 
     EffectPresets (juce::AudioProcessorValueTreeState& apvts,
                    const juce::String& moduleName,
-                   const juce::String& idPrefix)
+                   const juce::String& idPrefix,
+                   std::function<bool (const juce::String& key)> include = {})
         : library (moduleName, formatVersion,
                    fxme::PresetManager::getModulePresetDirectory (moduleName)
                   #if FXMEFX_HAS_MODULE_PRESETS
@@ -59,7 +63,7 @@ struct EffectPresets
                    FxmeModulePresets::getNamedResource
                   #endif
                    ),
-          target (library, apvts, idPrefix)
+          target (library, apvts, idPrefix, std::move (include))
     {
     }
 

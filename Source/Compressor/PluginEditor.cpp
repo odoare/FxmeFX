@@ -14,7 +14,7 @@ FxmeCompressorAudioProcessorEditor::FxmeCompressorAudioProcessorEditor (FxmeComp
     : AudioProcessorEditor (&p),
       audioProcessor (p),
       topBar (JucePlugin_Name, fxmefx::theme::compressor),
-      compressorComponent (p.getCompressor(), p.getApvts(), FxmeCompressorAudioProcessor::parameterPrefix, false)
+      compressorComponent (p.getCompressor(), p.getApvts(), FxmeCompressorAudioProcessor::parameterPrefix, false, false, true)
 {
     topBar.setPresetBank (p.getPresets());
     addAndMakeVisible (topBar);

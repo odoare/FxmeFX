@@ -70,7 +70,8 @@ private:
     juce::AudioProcessorValueTreeState apvts;
 
    #ifndef FXME_PD_BUILD
-    fxmefx::EffectPresets presets { apvts, "Gate", juce::String (parameterPrefix) + "_Gate_" };
+    fxmefx::EffectPresets presets { apvts, "Gate", juce::String (parameterPrefix) + "_Gate_",
+                                   [] (const juce::String& key) { return key != "ExtSc"; } };   // routing, not sound
    #endif
     Gate gate;
 

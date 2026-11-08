@@ -19,6 +19,14 @@
     with the attack when it rises (opening) and the release when it falls
     (closing).
 
+    External key: with the Ext SC switch on and a side-chain buffer given to
+    process(), the detector (filters and all) listens to that buffer instead
+    of the input, and Listen plays it. The switch decides, not the buffer's
+    presence: a host may activate an aux bus nobody feeds, and a silent key
+    would shut the gate. Without a buffer the detector stays on the input.
+    Only a host with an aux input asks for the switch (addParameters'
+    withSidechain).
+
     Look-ahead delays the audio, not the detector, so the gate starts opening
     before a transient arrives and the attack does not eat it; the delay is
     reported to the host as latency (getLatencySamples()). Listen replaces
@@ -50,12 +58,15 @@ public:
     static constexpr float kMinLevelDb     = -80.0f;   // threshold and range floor
 
     void prepare (double sampleRate, int numChannels);
-    void process (juce::AudioBuffer<float>& buffer);
+    /** `sidechain` (optional, read only) is the key the Ext SC switch selects;
+        at least as many samples as `buffer`. */
+    void process (juce::AudioBuffer<float>& buffer, const juce::AudioBuffer<float>* sidechain = nullptr);
 
     void assignParameters (juce::AudioProcessorValueTreeState& apvts, const juce::String& prefix);
     void checkParameters();
+    /** `withSidechain`: also the Ext SC switch, for a host with an aux input. */
     static void addParameters (std::vector<std::unique_ptr<juce::RangedAudioParameter>>& params,
-                               const juce::String& prefix);
+                               const juce::String& prefix, bool withSidechain = false);
 
     /** The On parameter when there is one: right in a mirror (FxmeNet), which
         never processes, and no race with the audio thread. */
@@ -97,7 +108,7 @@ private:
     juce::SmoothedValue<float> onSmooth, outSmooth;
 
     // Resolved parameter values.
-    bool  on = true, listen = false;
+    bool  on = true, listen = false, externalSidechain = false;
     Mode  mode = Mode::gate;
     float thresholdDb = -40.0f, hysteresisDb = 4.0f, rangeDb = 80.0f, ratio = 2.0f;
     float attackMs = 0.5f, holdMs = 20.0f, releaseMs = 150.0f;
@@ -120,4 +131,5 @@ private:
     std::atomic<float>* listenParam    = nullptr;
     std::atomic<float>* lookaheadParam = nullptr;
     std::atomic<float>* outParam       = nullptr;
+    std::atomic<float>* extSidechainParam = nullptr;   // null without the switch
 };
