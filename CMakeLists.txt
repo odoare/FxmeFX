@@ -47,6 +47,7 @@ set(_all_plugins
     Crusher
     DeEsser
     Tape
+    NeuralAmp
 )
 
 if(PLUGIN STREQUAL "")

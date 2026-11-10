@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<FxmeModulePreset module="NeuralAmp" version="1" name="Tight High Gain">
+  <Param key="On" value="1"/>
+  <Param key="In" value="0"/>
+  <Param key="Gate" value="-55"/>
+  <Param key="Bass" value="-2"/>
+  <Param key="Mid" value="1"/>
+  <Param key="Treble" value="1"/>
+  <Param key="Out" value="0"/>
+  <Param key="Mix" value="100"/>
+  <Param key="Chan" value="1"/>
+  <Param key="Norm" value="1"/>
+</FxmeModulePreset>

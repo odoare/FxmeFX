@@ -55,7 +55,7 @@ namespace fxmefx::theme
     namespace modulation   { enum Member { chorus, phaser, flanger, count };
                              inline const juce::Colour from { 0xff3cc8be }, to { 0xff5a96f0 }; }   // teal, steel blue
 
-    namespace tone         { enum Member { tube, cab, crusher, tape, count };
+    namespace tone         { enum Member { tube, cab, crusher, tape, neuralAmp, count };
                              inline const juce::Colour from { 0xfff0a030 }, to { 0xfffbc490 }; }   // orange, apricot (salmon was too near the dynamics' red)
 
     namespace equalisation { enum Member { equalizer, count };
@@ -87,6 +87,7 @@ namespace fxmefx::theme
     inline const juce::Colour cab          = along (tone::from, tone::to, tone::cab,  tone::count);
     inline const juce::Colour crusher      = along (tone::from, tone::to, tone::crusher, tone::count);
     inline const juce::Colour tape         = along (tone::from, tone::to, tone::tape,    tone::count);
+    inline const juce::Colour neuralAmp    = along (tone::from, tone::to, tone::neuralAmp, tone::count);
 
     inline const juce::Colour equalizer    = along (equalisation::from, equalisation::to, equalisation::equalizer, equalisation::count);
 

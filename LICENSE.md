@@ -70,6 +70,15 @@ on the reworked FxmeTools licensing.
 - **The CLAP builds** link the CLAP wrapper fetched at build time:
   clap-juce-extensions (Paul Walker and contributors), clap and clap-helpers
   (Alexandre Bique and contributors), all three under the MIT licence.
+- **FxmeNeuralAmp** links the neural engine fetched at build time:
+  NeuralAudio (Mike Oliphant, MIT licence; FX-Mechanics' fork,
+  github.com/odoare/NeuralAudio, until its fixes are merged upstream),
+  NeuralAmpModelerCore (Steven Atkinson, MIT licence), RTNeural and
+  math_approx (Jatin Chowdhury, BSD 3-Clause licence), Eigen (Mozilla Public
+  Licence 2.0, used unmodified) and JSON for Modern C++ (Niels Lohmann, MIT
+  licence). Neural Amp Modeler is Steven Atkinson's project; FxmeNeuralAmp
+  plays its model files. No model is shipped: models belong to their
+  authors, and the user loads them.
 
 The shared FX-Mechanics code itself lives in the FxmeTools repository
 under that repository's `LICENSE.md`: its `core/` half is

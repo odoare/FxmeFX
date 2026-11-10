@@ -20,6 +20,12 @@ fxme_dependency(FxmeTools https://github.com/odoare/FxmeTools
 fxme_dependency(ClapJuceExtensions https://github.com/free-audio/clap-juce-extensions
     7adee3a1bd4684d4caa5601100e364abccff4b4d
     SIBLING clap-juce-extensions)
+# Neural amp models (FxmeNeuralAmp, fxmefx_attach_neural): our fork of
+# mikeoliphant/NeuralAudio until its fixes are merged upstream (branch
+# fxme-no-audio-alloc: no allocation on the audio thread). Brings NAM Core,
+# RTNeural and math_approx along as submodules.
+fxme_dependency(NeuralAudio https://github.com/odoare/NeuralAudio
+    2aeff04543bb678546c5128b3e4aa0dc54278e57)
 
 if(NOT COMMAND juce_add_plugin)
     add_subdirectory(${JUCE_DIR} JUCE)

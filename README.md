@@ -30,9 +30,11 @@ drum kits).
 | FxmeCrusher      | `CRSH`      | Bit and sample-rate crusher, after an old sampler's signal path. Drive into a converter that clips at full scale, Bits (1 to 24, fractional) with a mid-tread, mid-rise or mu-law quantizer, Rate (200 Hz up to Off), Jitter on the hold length, dither Noise, a Clean anti-alias filter and a Smooth reconstruction filter, Mix and Output. A waveform view shows the steps, input against output. |
 | FxmeDeEsser      | `DESS`      | De-esser. A band-pass (Frequency, Q) or high-pass detector on the sidechain, Threshold, Range and a single Speed knob; Wideband (the whole signal turned down) or Split band (only the band, through a dynamic bell or high shelf); Relative detection (the band against the whole signal, so the threshold holds at any level); Linked or Mid-only stereo; Listen to hear the band. A spectrum shows the detector's band, whose handle drags the frequency, and a meter the band's level against the threshold and the reduction. |
 | FxmeTape         | `TAPE`      | Tape saturation and colour: the magnetic hysteresis of tape (a Jiles-Atherton model, 2x or 4x oversampled) between the record pre-emphasis and the playback de-emphasis of the chosen Speed (7.5, 15, 30 ips) and EQ (NAB, IEC), then the playback head's loss and bump. Drive, Saturation, Bias (under-biased grit to over-biased darkness), three tape types, Hiss, Auto gain, Mix and Output. A display of the hysteresis loop and input and output VU meters. No wow or flutter: a colouring tool, not a transport. Measurements in `doc/Tape/`. |
+| FxmeNeuralAmp    | `NAMP`      | Plays neural amp and pedal models: [Neural Amp Modeler](https://github.com/sdatkinson/neural-amp-modeler) files (`.nam`: WaveNet A1 and A2, LSTM) and Keras models, through NeuralAudio. Input, a noise Gate before the model, Bass / Mid / Treble after it, Mix and Output; Mono (one model on the sum) or Dual mono; input calibration in dBu and loudness normalisation. The model is kept in the session and in presets. No cabinet: chain FxmeCab after it. VST3, CLAP and AU only (no Pd external). |
 
 All plugins build as **VST3**, **CLAP**, **AU** (macOS) and a **Standalone** application,
-and also as headless **Pure Data externals** — see the dedicated section below.
+and also as headless **Pure Data externals** — see the dedicated section below
+(all but FxmeNeuralAmp, which loads model files).
 
 ## Screenshots
 
@@ -116,6 +118,47 @@ too, and the gate's **Listen** plays it. The compressor's **Pre Gain** drives
 its input, not the side-chain.
 
 The Pure Data externals have no side-chain input and no Ext SC inlet.
+
+## FxmeNeuralAmp: models
+
+FxmeNeuralAmp plays [Neural Amp Modeler](https://github.com/sdatkinson/neural-amp-modeler)
+captures of amps and pedals: the `.nam` files shared on TONE3000 (formerly
+ToneHunt), or ones you train yourself. Keras models (`.json`, e.g. GuitarML's)
+load too. No model comes with the plugin.
+
+- **Loading.** Drop a `.nam` file on the plugin, use **Load...**, or pick one in
+  the browser, which lists the files under `FX-Mechanics/Models/NAM` in your
+  user data folder (`~/.config` on Linux, `~/Library/Application Support` on
+  macOS, `%APPDATA%` on Windows; subfolders included; "Open the models folder"
+  creates it). The model is then **stored in the session and in the effect's
+  presets** (compressed, a few hundred kB): the file is not needed afterwards,
+  and a session opens on another machine with its amp.
+- **Presets.** A preset saved with a model brings it back. The factory presets
+  have none: they set the gate and the tone stack and keep the model that is
+  playing. Level and Calibrate describe your interface, so presets leave them
+  alone.
+- **Levels.** Many models say at what level they were captured. With
+  **Calibrate** on, set **Level** to your interface's full scale in dBu (the
+  level a 0 dBFS input stands for, in its manual; 12 dBu when unsure), and the
+  model is driven as the real amp was. Models that do not give their capture
+  level ("no capture level" in the panel; many older ones) ignore Level, which
+  is then greyed out. **Normalize** brings every model to the
+  same loudness (-18 dB), so switching models does not jump in level.
+- **Sample rate.** Models are trained at 48 kHz and always run at that rate:
+  at any other session rate the plugin resamples around the model, which adds
+  a short latency it reports to the host (139 samples at 44.1 kHz, 275 at
+  96 kHz; none at 48 kHz). A model change crossfades, without a click.
+- **FxmeNet.** A model loaded in the DAW's editor travels to the server with
+  the plugin's state and plays there; the DAW side never runs it. The panel
+  shows the server's status (loading, playing, or failed).
+- **CPU.** The heaviest effect of the collection: a standard WaveNet takes
+  about 6 % of one core per model (a laptop i7), Mono runs one model, Dual mono
+  two; Nano, Feather and LSTM models are 3 to 10 times lighter. The plugin
+  shows the model's class (light, medium, heavy).
+- **Processor.** On Intel and AMD the networks need AVX2 (any CPU from 2013 on,
+  Haswell or Excavator and later). On an older one the plugin loads no model
+  and says so. Apple silicon is not concerned. On macOS the plugin needs
+  10.15 or later.
 
 ## Sending MIDI to FxmeStereoDelay
 
@@ -516,7 +559,8 @@ fixed 120 BPM** — in Pd, drive the rate in Hz and leave Sync at 0.
 FxmeFX/
 ├── CMakeLists.txt              # root: builds every plugin
 ├── cmake/
-│   └── FxmeModulePresets.cmake # fxmefx_add_module_presets(): embeds Source/<Effect>/Presets
+│   ├── FxmeModulePresets.cmake # fxmefx_add_module_presets(): embeds Source/<Effect>/Presets
+│   └── FxmeNeural.cmake        # fxmefx_attach_neural(): the neural engine, for NeuralAmp
 ├── Source/
 │   ├── Common/                 # TopBar (title + preset bar), EffectPresets.h, shared assets
 │   ├── Compressor/             # Compressor.{h,cpp} + CompressorComponent.{h,cpp}
@@ -534,6 +578,7 @@ FxmeFX/
 │   ├── Oct/                    # Boss-style frequency-division octaver
 │   ├── Limiter/                # look-ahead brickwall limiter / maximizer
 │   ├── Freeze/                 # spectral freeze
+│   ├── NeuralAmp/              # neural amp models (NAM), on FxmeTools' FxmeNeural
 │   ├── Chorus/                 # stereo chorus (tempo-syncable LFO)
 │   ├── Flanger/                # stereo flanger (tempo-syncable LFO)
 │   ├── Phaser/                 # stereo phaser  (tempo-syncable LFO)
@@ -679,5 +724,9 @@ Vendored / external code keeps its own terms:
   with [clap](https://github.com/free-audio/clap) and
   [clap-helpers](https://github.com/free-audio/clap-helpers), linked into the
   CLAP builds: MIT licence.
+- FxmeNeuralAmp's engine: [NeuralAudio](https://github.com/mikeoliphant/NeuralAudio)
+  (MIT, through FX-Mechanics' [fork](https://github.com/odoare/NeuralAudio) for now),
+  [NeuralAmpModelerCore](https://github.com/sdatkinson/NeuralAmpModelerCore) (MIT),
+  RTNeural and math_approx (BSD 3-Clause), Eigen (MPL 2.0), JSON for Modern C++ (MIT).
 - The built-in impulse responses and Pure Data's `m_pd.h`: their authors'
   terms (see [LICENSE.md](LICENSE.md)).
