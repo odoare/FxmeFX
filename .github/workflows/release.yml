@@ -175,7 +175,7 @@ jobs:
   # ── macOS universal (arm64 + x86_64) ──────────────────────────────────────
   build-macos:
     needs: check-notes
-    runs-on: macos-14
+    runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
         with:

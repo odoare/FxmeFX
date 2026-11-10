@@ -8,7 +8,7 @@ on:
 
 jobs:
   build:
-    runs-on: macos-14  # Apple Silicon — Clang cross-compiles x86_64 too
+    runs-on: macos-15  # Apple Silicon — Clang cross-compiles x86_64 too
 
     steps:
       - name: Checkout FxmeFX
