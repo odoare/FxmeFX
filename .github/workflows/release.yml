@@ -21,7 +21,7 @@ jobs:
   # ── Linux x86_64 ──────────────────────────────────────────────────────────
   build-linux-x86_64:
     needs: check-notes
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04  # not -latest: its glibc (2.43 now) would not load on older systems
     steps:
       - name: Install system dependencies
         run: |

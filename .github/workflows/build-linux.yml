@@ -8,7 +8,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04  # not -latest: its glibc (2.43 now) would not load on older systems
     name: Linux x86_64
 
     steps:
