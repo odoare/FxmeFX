@@ -56,8 +56,8 @@ and also as headless **Pure Data externals** — see the dedicated section below
 | ![FxmePhaser](doc/FxmePhaser.png) | ![FxmeGate](doc/FxmeGate.png) |
 | **FxmeCrusher** | **FxmeDeEsser** |
 | ![FxmeCrusher](doc/FxmeCrusher.png) | ![FxmeDeEsser](doc/FxmeDeEsser.png) |
-| **FxmeTape** | |
-| ![FxmeTape](doc/FxmeTape.png) | |
+| **FxmeTape** | **FxmeNeuralAmp** |
+| ![FxmeTape](doc/FxmeTape.png) | ![FxmeNeuralAmp](doc/FxmeNeuralAmp.png) |
 
 ## Installing
 
@@ -660,7 +660,7 @@ cmake --build build --parallel
 
 `PLUGIN` accepts: `Compressor`, `Equalizer`, `Tube`, `Transient`,
 `StereoDelay`, `ConvolReverb`, `Cab`, `Oct`, `Limiter`, `Freeze`, `Chorus`,
-`Flanger`, `Phaser`, `Reverb`, `Gate`, `Crusher`, `DeEsser`, `Tape`.
+`Flanger`, `Phaser`, `Reverb`, `Gate`, `Crusher`, `DeEsser`, `Tape`, `NeuralAmp`.
 
 ### A single plugin standalone
 
