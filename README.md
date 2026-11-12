@@ -1,6 +1,8 @@
 # FxmeFX
 
-A small collection of classical effect plugins by **FX-Mechanics**.
+A collection of 19 classical effect plugins by **FX-Mechanics**. Almost everything needed to get started with mixing is here.
+
+This series of plugins is now compatible with the FxmeNet distributed network computing system. Visit [FxmeNet repo](https://github.com/odoare/FxmeNet) for more info.
 
 Each effect is a self-contained DSP class plus a matching GUI component, wrapped
 in a minimal `AudioProcessor` / `AudioProcessorEditor` so they can be used both
