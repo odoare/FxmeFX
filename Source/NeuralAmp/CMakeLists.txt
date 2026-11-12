@@ -37,6 +37,23 @@ juce_add_plugin(FxmeNeuralAmp
     BUNDLE_ID                   "com.FXMechanics.FxmeNeuralAmp"
 )
 
+# Embed the bundled NAM models (<repo>/nam/*.nam) as binary data. The
+# component lists them at the top of the model combo box; adding or removing
+# a file there is picked up at the next configure (CONFIGURE_DEPENDS).
+file(GLOB FXME_NAM_MODELS CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/../../nam/*.nam")
+juce_add_binary_data(FxmeNamBinaryData
+    NAMESPACE   FxmeNamModels
+    HEADER_NAME FxmeNamModels.h
+    SOURCES     ${FXME_NAM_MODELS}
+)
+# Embedded byte arrays don't benefit from optimisation/LTO.
+set_target_properties(FxmeNamBinaryData PROPERTIES
+    INTERPROCEDURAL_OPTIMIZATION OFF
+    POSITION_INDEPENDENT_CODE ON)
+target_compile_options(FxmeNamBinaryData PRIVATE
+    $<$<CXX_COMPILER_ID:GNU,Clang,AppleClang>:-O0 -fno-lto>
+    $<$<CXX_COMPILER_ID:MSVC>:/Od>)
+
 target_sources(FxmeNeuralAmp PRIVATE
     PluginProcessor.cpp
     PluginEditor.cpp
@@ -74,6 +91,7 @@ fxmefx_attach_neural(FxmeNeuralAmp)
 target_link_libraries(FxmeNeuralAmp
     PRIVATE
         FxmeCommonBinaryData
+        FxmeNamBinaryData
         FxmeTools
         juce::juce_audio_basics
         juce::juce_audio_devices

@@ -9,6 +9,7 @@
 #include "NeuralAmpComponent.h"
 #include "../Common/TopBar.h"
 #include "../Common/Controls.h"
+#include <FxmeNamModels.h>
 
 //==============================================================================
 // ModelPanel
@@ -237,6 +238,8 @@ NeuralAmpComponent::NeuralAmpComponent (NeuralAmp& a, juce::AudioProcessorValueT
             folder.createDirectory();
             folder.startAsProcess();
         }
+        else if (id >= embeddedBaseId && id - embeddedBaseId < FxmeNamModels::namedResourceListSize)
+            loadEmbedded (id - embeddedBaseId);
         else if (id >= 2 && id - 2 < browsed.size())
             loadFile (browsed[id - 2]);
     };
@@ -342,6 +345,13 @@ void NeuralAmpComponent::rescanModels()
     modelBox.addItem ("Open the models folder", 1);
     modelBox.addSeparator();
 
+    // The models bundled with the plugin.
+    modelBox.addSectionHeading ("Built-in models");
+    for (int i = 0; i < FxmeNamModels::namedResourceListSize; ++i)
+        modelBox.addItem (juce::String (FxmeNamModels::originalFilenames[i]), embeddedBaseId + i);
+    modelBox.addSeparator();
+    modelBox.addSectionHeading ("Models folder");
+
     const auto folder = NeuralAmp::getModelsFolder();
     if (folder.isDirectory())
     {
@@ -356,6 +366,27 @@ void NeuralAmpComponent::rescanModels()
         modelBox.addItem (browsed[i].getRelativePathFrom (folder), i + 2);
     if (browsed.isEmpty())
         modelBox.addSectionHeading ("(no models in FX-Mechanics/Models/NAM yet)");
+}
+
+void NeuralAmpComponent::loadEmbedded (int index)
+{
+    int size = 0;
+    const char* data = FxmeNamModels::getNamedResource (FxmeNamModels::namedResourceList[index], size);
+    if (data == nullptr || size <= 0)
+        return;
+
+    // Models load from files (the state keeps the file name): write the
+    // resource under its original name in a temp folder.
+    const auto file = juce::File::getSpecialLocation (juce::File::tempDirectory)
+                          .getChildFile ("FxmeNeuralAmp")
+                          .getChildFile (FxmeNamModels::originalFilenames[index]);
+    if (! file.getParentDirectory().createDirectory().wasOk() || ! file.replaceWithData (data, (size_t) size))
+    {
+        localError = "Cannot unpack " + file.getFileName();
+        refreshStatus();
+        return;
+    }
+    loadFile (file);
 }
 
 void NeuralAmpComponent::loadFile (const juce::File& f)

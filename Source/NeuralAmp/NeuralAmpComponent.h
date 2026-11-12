@@ -108,6 +108,9 @@ private:
                       const juce::String& tooltip);
     void rescanModels();
     void loadFile (const juce::File& f);
+    /** A model bundled as binary data (FxmeNamModels), by index. */
+    void loadEmbedded (int index);
+    static constexpr int embeddedBaseId = 100000;   // above the browsed files' ids
     void chooseFile();
     void clear();
     void refreshStatus();
