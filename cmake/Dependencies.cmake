@@ -14,7 +14,7 @@ include(${CMAKE_CURRENT_LIST_DIR}/FxmeDeps.cmake)
 
 fxme_dependency(JUCE https://github.com/juce-framework/JUCE 9.0.4 SHALLOW)
 fxme_dependency(FxmeTools https://github.com/odoare/FxmeTools
-    d90334746de8fe2a2a9fbbd1fde4f1ed14fb07e2)
+    a2f76522918b31974b7618374f8a9478aa9a1450)
 # CLAP format (fxmetools_add_clap). Its last tag predates JUCE 9 support:
 # pinned to a commit. Brings the clap and clap-helpers submodules along.
 fxme_dependency(ClapJuceExtensions https://github.com/free-audio/clap-juce-extensions
