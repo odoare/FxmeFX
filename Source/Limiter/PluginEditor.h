@@ -17,7 +17,7 @@ class FxmeLimiterAudioProcessorEditor  : public juce::AudioProcessorEditor
 {
 public:
     static constexpr int kPreferredWidth  = 600;
-    static constexpr int kPreferredHeight = 300 + fxmefx::kTopBarHeight;
+    static constexpr int kPreferredHeight = 220 + fxmefx::kTopBarHeight;
 
     FxmeLimiterAudioProcessorEditor (FxmeLimiterAudioProcessor&);
     ~FxmeLimiterAudioProcessorEditor() override;

@@ -88,7 +88,8 @@ juce::String StereoDelayComponent::resolvedTimeText() const
 
 StereoDelayComponent::StereoDelayComponent(StereoDelay& d, juce::AudioProcessorValueTreeState& state, const juce::String& prefix, bool showTitle, bool compactLayout)
     : delay(d), apvts(state), compact (compactLayout),
-      onButton (state, prefix + "_Del_On", "On", fxmefx::theme::stereoDelay)
+      onButton (state, prefix + "_Del_On", "On", fxmefx::theme::stereoDelay),
+      pingPongButton (state, prefix + "_Del_PingPong", "Ping-pong", fxmefx::theme::stereoDelay)
 {
     // Tints this component's drop-down menus and tooltips; both are their own
     // windows and cannot see the widget that opened them.
@@ -104,6 +105,12 @@ StereoDelayComponent::StereoDelayComponent(StereoDelay& d, juce::AudioProcessorV
 
     addAndMakeVisible (onButton);
     onButton.setLookAndFeel(&fxmeLookAndFeel);
+
+    addAndMakeVisible (pingPongButton);
+    pingPongButton.setLookAndFeel (&fxmeLookAndFeel);
+    pingPongButton.button.setTooltip ("Ping-pong. \n The repeats cross from one side to the other: the left delay's "
+                                      "repeats go to the right, the right delay's to the left, so the echoes bounce. "
+                                      "Each side's Fdbk sets what it sends across; Cross is then what stays on the same side.");
 
     addAndMakeVisible(bpmLabel);
     bpmLabel.setJustificationType(juce::Justification::centredRight);
@@ -188,9 +195,10 @@ void StereoDelayComponent::resized()
         top.items.add (fi (modeRLabel).withWidth (46.0f));
         top.items.add (fi (modeRBox).withFlex (1.0f).withMargin (juce::FlexItem::Margin (0.f, 8.f, 0.f, 4.f)));
         top.items.add (fi (resolvedLabel).withFlex (1.2f));
+        top.items.add (fi (pingPongButton).withWidth (90.0f).withMargin (juce::FlexItem::Margin (0.f, 6.f, 0.f, 6.f)));
         top.items.add (fi (bpmLabel).withWidth (70.0f));
 
-        for (auto* s : { &delayLSlider, &delayRSlider, &fdbkLSlider, &fdbkRSlider, &crossFdbkSlider, &cutoffSlider, &qSlider })
+        for (auto* s : { &delayLSlider, &delayRSlider, &cutoffSlider, &qSlider, &fdbkLSlider, &fdbkRSlider, &crossFdbkSlider})
             row.items.add (fi (*s).withFlex (1.0f));
         dry.flexDirection = juce::FlexBox::Direction::column;
         wet.flexDirection = juce::FlexBox::Direction::column;
@@ -215,6 +223,7 @@ void StereoDelayComponent::resized()
 
     fTop.items.add(fi(onButton).withWidth(fxmefx::kOnButtonWidth));
     fTop.items.add(fi(titleLabel).withFlex(1.f));
+    fTop.items.add(fi(pingPongButton).withWidth(90.f).withMargin(juce::FlexItem::Margin(0.f, 6.f, 0.f, 6.f)));
     fTop.items.add(fi(bpmLabel).withFlex(0.3f));
 
     fModes.items.add (fi (modeLLabel).withWidth (52.0f));
@@ -236,11 +245,11 @@ void StereoDelayComponent::resized()
 
     fSliders1.items.add(fi(delayLSlider).withFlex(1.f));
     fSliders1.items.add(fi(delayRSlider).withFlex(1.f));
-    fSliders1.items.add(fi(fdbkLSlider).withFlex(1.f));
-    fSliders1.items.add(fi(fdbkRSlider).withFlex(1.f));
+    fSliders1.items.add(fi(cutoffSlider).withFlex(1.f));
+    fSliders1.items.add(fi(qSlider).withFlex(1.f));
+    fSliders2.items.add(fi(fdbkLSlider).withFlex(1.f));
+    fSliders2.items.add(fi(fdbkRSlider).withFlex(1.f));
     fSliders2.items.add(fi(crossFdbkSlider).withFlex(1.f));
-    fSliders2.items.add(fi(cutoffSlider).withFlex(1.f));
-    fSliders2.items.add(fi(qSlider).withFlex(1.f));
     fSliders2.items.add(fi(b8).withFlex(0.25f).withMargin(juce::FlexItem::Margin(0.f, 5.f, 0.f, 5.f)));
     fSliders2.items.add(fi(b9).withFlex(0.25f).withMargin(juce::FlexItem::Margin(0.f, fxmefx::kEdgeMargin, 0.f, 5.f)));
 

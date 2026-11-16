@@ -20,7 +20,7 @@ FxmeTransientAudioProcessorEditor::FxmeTransientAudioProcessorEditor (FxmeTransi
     addAndMakeVisible (topBar);
     addAndMakeVisible (transientComponent);
     setResizable (true, true);
-    setResizeLimits (400, 300 + fxmefx::kTopBarHeight, 1600, 1200);
+    setResizeLimits (400, 160 + fxmefx::kTopBarHeight, 1600, 1200);
     setSize (kPreferredWidth, kPreferredHeight);
 }
 

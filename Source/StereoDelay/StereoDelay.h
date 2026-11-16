@@ -93,6 +93,8 @@ private:
     float dryGain = 0.0f;
     float wetGain = -6.0f;
     bool on = true;
+    bool pingPong = false;
+    juce::SmoothedValue<float> pingPongMix;   // 0 straight, 1 crossed; a short ramp so toggling does not click
 
     // Smoothed gains
     double currentBPM = 120.0;
@@ -116,6 +118,7 @@ private:
     std::atomic<float>* onParam = nullptr;
     std::atomic<float>* modeLParam = nullptr;
     std::atomic<float>* modeRParam = nullptr;
+    std::atomic<float>* pingPongParam = nullptr;
 
     // Last values for change detection
     float lastDelayL = -1.0f, lastDelayR = -1.0f;
@@ -126,4 +129,5 @@ private:
     float lastDryGain = -100.0f;
     float lastWetGain = -100.0f;
     float lastOn = -1.0f;
+    float lastPingPong = -1.0f;
 };

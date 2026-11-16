@@ -10,6 +10,7 @@
 #include <FxmeTools/dsp/Sanitise.h>
 #include <resample.h>
 #include <FxmeTools/dsp/ImpulseEnergy.h>
+#include <FxmeTools/presets/EmbeddedAudio.h>
 
 Cab::Cab()
 {
@@ -20,6 +21,8 @@ Cab::~Cab()
 {
     // Stop polling before anything it touches goes away.
     poller.stopThread (500);
+    if (apvtsRef != nullptr)
+        apvtsRef->state.removeListener (this);
 }
 
 void Cab::prepare (double sampleRate, int samplesPerBlock)
@@ -53,9 +56,7 @@ void Cab::prepare (double sampleRate, int samplesPerBlock)
         if (rateChanged)
             for (int c = 0; c < NumSlots; ++c)
             {
-                const int idx = currentIndex[(size_t) c];
-                if (idx >= 0 && idx < irResources.size())
-                    loadResource (c, irResources[idx]);
+                loadSlot (c, currentIndex[(size_t) c]);
             }
         rebuildEngineImpulse();
     }
@@ -155,13 +156,13 @@ void Cab::selectImpulse (int channel, int index)
 {
     if (channel < 0 || channel >= NumSlots)
         return;
-    if (index < 0 || index >= irResources.size())
+    if (index < 0 || index > getExternalIndex())
         return;
 
     if (currentIndex[(size_t) channel] != index)
     {
         currentIndex[(size_t) channel] = index;
-        loadResource (channel, irResources[index]);
+        loadSlot (channel, index);
         rebuildEngineImpulse();
     }
 }
@@ -181,6 +182,13 @@ juce::AudioBuffer<float> Cab::getIR (int channel) const
 
 void Cab::assignParameters (juce::AudioProcessorValueTreeState& apvts, const juce::String& prefix)
 {
+    if (apvtsRef != nullptr)
+        apvtsRef->state.removeListener (this);
+    apvtsRef = &apvts;
+    for (int c = 0; c < NumSlots; ++c)
+        extSlotId[(size_t) c] = externalIRSlotId (prefix, c);
+    apvts.state.addListener (this);
+
     onParam      = apvts.getRawParameterValue (prefix + "_Cab_On");
     irLParam     = apvts.getRawParameterValue (prefix + "_Cab_IRL");
     irRParam     = apvts.getRawParameterValue (prefix + "_Cab_IRR");
@@ -192,14 +200,15 @@ void Cab::addParameters (std::vector<std::unique_ptr<juce::RangedAudioParameter>
                              const juce::String& prefix,
                              int numIRs)
 {
-    const int maxIR = juce::jmax (1, numIRs);
+    // One more than there are built-ins: the external slot.
+    const int maxIR = juce::jmax (1, numIRs) + 1;
 
     params.push_back (std::make_unique<juce::AudioParameterBool> (
         juce::ParameterID { prefix + "_Cab_On",   1 }, prefix + " Cab On", true));
     params.push_back (std::make_unique<juce::AudioParameterInt> (
         juce::ParameterID { prefix + "_Cab_IRL",  1 }, prefix + " Cab IR L", 1, maxIR, 1));
     params.push_back (std::make_unique<juce::AudioParameterInt> (
-        juce::ParameterID { prefix + "_Cab_IRR",  1 }, prefix + " Cab IR R", 1, maxIR, juce::jmin (2, maxIR)));
+        juce::ParameterID { prefix + "_Cab_IRR",  1 }, prefix + " Cab IR R", 1, maxIR, juce::jmin (2, maxIR - 1)));
     // versionHint 2: these replaced the single _Cab_Gain of version 1.
     params.push_back (std::make_unique<juce::AudioParameterFloat> (
         juce::ParameterID { prefix + "_Cab_GainL", 2 }, prefix + " Cab Gain L", -24.0f, 24.0f, 0.0f));
@@ -273,6 +282,90 @@ void Cab::loadResource (int channel, const juce::String& resourceName)
         loadIRFromReader (channel, *reader);
     else
         monoIR[(size_t) channel].clear();
+}
+
+void Cab::loadSlot (int channel, int index)
+{
+    if (index >= 0 && index < irResources.size())
+        loadResource (channel, irResources[index]);
+    else if (index == getExternalIndex())
+        loadExternal (channel);
+    else
+        monoIR[(size_t) channel].clear();
+}
+
+void Cab::loadExternal (int channel)
+{
+    // The IR embedded in the state; the reader owns a copy of the decoded
+    // bytes. None (not chosen yet, or unreadable): the slot is silent.
+    if (apvtsRef != nullptr)
+        if (auto reader = fxme::EmbeddedAudio::createReader (apvtsRef->state, extSlotId[(size_t) channel]))
+        {
+            loadIRFromReader (channel, *reader);
+            return;
+        }
+
+    monoIR[(size_t) channel].clear();
+}
+
+bool Cab::setExternalIRFile (int channel, const juce::File& file)
+{
+    if (apvtsRef == nullptr || channel < 0 || channel >= NumSlots)
+        return false;
+
+    // The state listener flags the change; the loader thread reloads the slot
+    // when it is the selected one.
+    return fxme::EmbeddedAudio::embedFile (apvtsRef->state, extSlotId[(size_t) channel], file);
+}
+
+bool Cab::hasExternalIR (int channel) const
+{
+    return apvtsRef != nullptr && channel >= 0 && channel < NumSlots
+        && fxme::EmbeddedAudio::hasEmbedded (apvtsRef->state, extSlotId[(size_t) channel]);
+}
+
+juce::String Cab::getExternalIRName (int channel) const
+{
+    if (apvtsRef == nullptr || channel < 0 || channel >= NumSlots)
+        return {};
+    return fxme::EmbeddedAudio::getEmbeddedName (apvtsRef->state, extSlotId[(size_t) channel]);
+}
+
+bool Cab::isExternalSlotEntry (const juce::ValueTree& tree) const
+{
+    if (! tree.hasType (fxme::EmbeddedAudio::entryType))
+        return false;
+    const auto slot = tree[fxme::EmbeddedAudio::slotProperty].toString();
+    return slot == extSlotId[0] || slot == extSlotId[1];
+}
+
+// The state changed under the embedded IRs (one embedded, a preset or a session
+// restored): flag the slots, the loader thread reloads those that are selected.
+void Cab::valueTreeRedirected (juce::ValueTree&)
+{
+    externalChanged[0] = externalChanged[1] = true;
+}
+
+void Cab::valueTreePropertyChanged (juce::ValueTree& tree, const juce::Identifier&)
+{
+    if (isExternalSlotEntry (tree))
+    {
+        const auto slot = tree[fxme::EmbeddedAudio::slotProperty].toString();
+        externalChanged[slot == extSlotId[0] ? 0 : 1] = true;
+    }
+}
+
+void Cab::valueTreeChildAdded (juce::ValueTree&, juce::ValueTree& child)
+{
+    if (child.hasType (fxme::EmbeddedAudio::containerType))
+        externalChanged[0] = externalChanged[1] = true;
+    else if (isExternalSlotEntry (child))
+        externalChanged[child[fxme::EmbeddedAudio::slotProperty].toString() == extSlotId[0] ? 0 : 1] = true;
+}
+
+void Cab::valueTreeChildRemoved (juce::ValueTree&, juce::ValueTree& child, int)
+{
+    valueTreeChildAdded (child, child);
 }
 
 void Cab::loadIRFromReader (int channel, juce::AudioFormatReader& reader)
@@ -407,9 +500,9 @@ void Cab::serviceParameters()
     for (int c = 0; c < NumSlots; ++c)
     {
         const int idx = currentIndex[(size_t) c];
-        if (normaliseIRs.load() != normalisedIR[(size_t) c] && idx >= 0 && idx < irResources.size())
+        if (normaliseIRs.load() != normalisedIR[(size_t) c] && idx >= 0 && idx <= getExternalIndex())
         {
-            loadResource (c, irResources[idx]);
+            loadSlot (c, idx);
             reloaded = true;
         }
     }
@@ -429,6 +522,19 @@ void Cab::serviceParameters()
         selectImpulse (1, idx);
         lastIRR = (int) *irRParam;
     }
+
+    // An embedded IR changed (a new file, a preset or a session restored):
+    // reload the slots that play it. A slot just loaded by the selection above
+    // is loaded once more, which costs nothing audible.
+    bool externalReloaded = false;
+    for (int c = 0; c < NumSlots; ++c)
+        if (externalChanged[(size_t) c].exchange (false) && currentIndex[(size_t) c] == getExternalIndex())
+        {
+            loadExternal (c);
+            externalReloaded = true;
+        }
+    if (externalReloaded)
+        rebuildEngineImpulse();
 }
 
 // Runs on the audio thread from process(): the gains and the bypass, which are

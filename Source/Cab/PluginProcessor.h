@@ -64,6 +64,11 @@ public:
    #endif
     Cab& getCab() { return cab; }
 
+   #ifndef FXME_PD_BUILD
+    /** An external IR was embedded in the state: FxmeNet copies it to the server. */
+    void externalIRChanged() { net.notifyStateChanged(); }
+   #endif
+
     /** Discover every .wav resource embedded by juce_add_binary_data and
         return the matching display names + resource symbol names. */
     static void getBuiltInIRList (juce::StringArray& names, juce::StringArray& resources);

@@ -30,6 +30,8 @@ void StereoDelay::prepare(double sampleRate, int samplesPerBlock)
     writePos = 0;
     filterL.reset();
     filterR.reset();
+    pingPongMix.reset (sampleRate, 0.03);   // 30 ms
+    pingPongMix.setCurrentAndTargetValue (pingPong ? 1.0f : 0.0f);
     updateDelayTimes();
 }
 
@@ -69,9 +71,23 @@ void StereoDelay::process(juce::AudioBuffer<float>& buffer)
             int readPosR = (writePos - delaySamplesR + maxDelaySamples) % maxDelaySamples;
             float delayedR = delayDataR[readPosR];
 
-            // Calculate feedback with cross-feedback
-            float feedbackL = delayedL * feedbackLGain + delayedR * crossFeedbackGain;
-            float feedbackR = delayedR * feedbackRGain + delayedL * crossFeedbackGain;
+            // Feedback: each line's own gain feeds itself, the cross gain
+            // feeds the other one. In ping-pong the two are swapped, so each
+            // line's repeats go to the other side (L to R, R to L) and the
+            // cross gain is what stays on the same side. Moving between the
+            // two is a short crossfade.
+            const float pp = pingPongMix.getNextValue();
+            const float straightL = delayedL * feedbackLGain + delayedR * crossFeedbackGain;
+            const float straightR = delayedR * feedbackRGain + delayedL * crossFeedbackGain;
+            float feedbackL = straightL;
+            float feedbackR = straightR;
+            if (pp > 0.0f)
+            {
+                const float crossedL = delayedR * feedbackRGain + delayedL * crossFeedbackGain;
+                const float crossedR = delayedL * feedbackLGain + delayedR * crossFeedbackGain;
+                feedbackL += pp * (crossedL - straightL);
+                feedbackR += pp * (crossedR - straightR);
+            }
 
             // Apply filter to feedback
             float filteredFeedbackL = filterL.processSample(feedbackL);
@@ -133,6 +149,10 @@ void StereoDelay::addParameters(std::vector<std::unique_ptr<juce::RangedAudioPar
     params.push_back(std::make_unique<juce::AudioParameterChoice>(
         juce::ParameterID { prefix + "_Del_ModeR", 2 }, prefix + " Del Mode R",
         delayModeChoices(), (int) fxme::DelayTimeMode::seconds));
+    // Ping-pong (after the modes, for the same reason): off, so a state saved
+    // before it existed sounds as it did.
+    params.push_back(std::make_unique<juce::AudioParameterBool>(
+        juce::ParameterID { prefix + "_Del_PingPong", 2 }, prefix + " Del Ping-pong", false));
 }
 
 void StereoDelay::assignParameters(juce::AudioProcessorValueTreeState& apvts, const juce::String& prefix)
@@ -149,6 +169,7 @@ void StereoDelay::assignParameters(juce::AudioProcessorValueTreeState& apvts, co
     onParam = apvts.getRawParameterValue(prefix + "_Del_On");
     modeLParam = apvts.getRawParameterValue(prefix + "_Del_ModeL");
     modeRParam = apvts.getRawParameterValue(prefix + "_Del_ModeR");
+    pingPongParam = apvts.getRawParameterValue(prefix + "_Del_PingPong");
 }
 
 void StereoDelay::checkParameters()
@@ -218,6 +239,12 @@ void StereoDelay::checkParameters()
         wetGain = *wetGainParam;
         lastWetGain = wetGain;
         updateGains();
+    }
+    if (pingPongParam && *pingPongParam != lastPingPong)
+    {
+        lastPingPong = *pingPongParam;
+        pingPong = lastPingPong > 0.5f;
+        pingPongMix.setTargetValue (pingPong ? 1.0f : 0.0f);
     }
     if (onParam && *onParam != lastOn)
     {

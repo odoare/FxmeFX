@@ -17,6 +17,7 @@ FxmeCabAudioProcessorEditor::FxmeCabAudioProcessorEditor (FxmeCabAudioProcessor&
       cabComponent (p.getCab(), p.getApvts(), FxmeCabAudioProcessor::parameterPrefix, false)
 {
     topBar.setPresetBank (p.getPresets());
+    cabComponent.onExternalLoaded = [&p] { p.externalIRChanged(); };
     addAndMakeVisible (topBar);
     addAndMakeVisible (cabComponent);
     setResizable (true, true);

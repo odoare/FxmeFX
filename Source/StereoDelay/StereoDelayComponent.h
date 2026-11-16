@@ -28,7 +28,7 @@ private:
     const bool compact;     // a wide, short slot: no title, flat knobs, one row of controls
 
     juce::Label titleLabel;
-    fxme::FxmeButton onButton;
+    fxme::FxmeButton onButton, pingPongButton;
 
     juce::Label bpmLabel;
     fxme::FxmeSlider delayLSlider, delayRSlider;

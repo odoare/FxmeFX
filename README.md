@@ -15,12 +15,12 @@ drum kits).
 | Name             | Plugin code | Description                                    |
 | ---------------- | ----------- | ---------------------------------------------- |
 | FxmeCompressor   | `COMP`      | Compressor with peak/RMS detector, three release modes (Linear / Opto / Vintage), soft-knee and gain-reduction meter. A high-pass and a low-pass on the detector, and a side-chain input (Ext SC). |
-| FxmeEqualizer    | `EQUL`      | 5-band parametric EQ. Each band switches between Lowpass, Highpass, Peak, Low Shelf and High Shelf, with an interactive frequency-response graph. |
+| FxmeEqualizer    | `EQUL`      | 5-band parametric EQ. Each band switches between Lowpass, Highpass, Peak, Low Shelf and High Shelf, with an interactive frequency-response graph. Each band works on both channels (Stereo), or only on the Mid or the Side of a stereo signal: see "FxmeEqualizer: Mid / Side" below. |
 | FxmeTube         | `TUBE`      | Valve / tube saturation with four models (Standard, Dynamic, Triode, Class-AB), bias, tone and power-supply sag. |
 | FxmeTransient    | `TRNS`      | SPL-style transient designer using the Differential Envelope Technique - independent attack and sustain shaping. |
-| FxmeStereoDelay  | `SDEL`      | Stereo delay with cross-feedback and a lowpass in the feedback path. Each side's delay time reads three ways, chosen per side: seconds, a proportion of a whole note locked to the host tempo, or a multiple of the period of the last MIDI note (which tunes the line to it). |
+| FxmeStereoDelay  | `SDEL`      | Stereo delay with cross-feedback and a lowpass in the feedback path. Each side's delay time reads three ways, chosen per side: seconds, a proportion of a whole note locked to the host tempo, or a multiple of the period of the last MIDI note (which tunes the line to it). A Ping-pong switch crosses the feedback, so the repeats bounce from one side to the other. |
 | FxmeConvolReverb | `CREV`      | Convolution reverb (WDL engine) with six embedded impulse responses, length / shape / start-offset shaping, plus an "External…" slot for loading a user IR. Every IR, built-in or external, is normalised to the same energy on load, so a long hall is no louder than a small room. (Sessions saved with an earlier version keep the IRs' own level.) The Forest and Council Chamber IRs, stored as omni / side channels, are decoded to left / right on load. |
-| FxmeCab          | `CABN`      | Stereo cabinet/IR loader. Two independent mono-IR slots (one per output channel), 19 embedded cabinet IRs, output gain. Every IR is normalised to the same energy on load, so all cabinets play at the same level. (Sessions saved with an earlier version keep the IRs' own level.) |
+| FxmeCab          | `CABN`      | Stereo cabinet/IR loader. Two independent mono-IR slots (one per output channel), 19 embedded cabinet IRs, plus a Load... button on each side for an IR file of your own (WAV, AIFF or FLAC, kept in the session and in presets), output gain. Every IR is normalised to the same energy on load, so all cabinets play at the same level. (Sessions saved with an earlier version keep the IRs' own level.) |
 | FxmeOct          | `OCTV`      | Boss OC-2-style monophonic octaver. Schmitt-trigger zero-crossing + ÷2 / ÷4 flip-flops, envelope-tracked square synthesis, dry / -1 oct / -2 oct mix, detection LPF and tone LPF. Zero latency, stable on bass. |
 | FxmeLimiter      | `LIMT`      | Look-ahead brickwall limiter / maximizer. A short look-ahead lets the gain envelope duck before a peak arrives; Drive pushes the signal into the ceiling, and a final hard clamp guarantees the output never exceeds it. Drive / Ceiling / Release controls and a gain-reduction meter. |
 | FxmeFreeze       | `FRZE`      | Spectral freeze (paulstretch-style FFT wash). Engaging it freezes the window of input *preceding* the switch, so the wash starts in the very next block. Mix and stereo Width. |
@@ -98,6 +98,36 @@ xattr -dr com.apple.quarantine ~/Library/Audio/Plug-Ins/Components/Fxme*.compone
 Then rescan in the host (Logic revalidates AUs on launch; most other hosts have
 a "rescan plugins" button). A host caches the module, so a reinstall over a
 running DAW needs a restart to take effect.
+
+## FxmeEqualizer: Mid / Side
+
+Each of the five bands has a mode, so it can shape the centre of a stereo
+mix apart from its sides:
+
+- **St (Stereo)**: the band filters the left and the right channel, as an
+  ordinary equalizer does.
+- **M (Mid)**: the band filters only the mid signal, `M = (L + R) / 2`: what
+  the two channels have in common (a lead vocal, the kick, the bass).
+- **S (Side)**: the band filters only the side signal, `S = (L - R) / 2`: what
+  differs between them (the width, the room, wide guitars and stereo effects).
+
+A click on a band's button steps through **Off, St, M, S** and back to Off;
+the button's text names the band and, once it is on, its mode. A double-click
+on a band's handle in the graph switches the band off, or back on in the mode
+it has. In the graph, the bands that work on the Mid or the Side are drawn
+dashed. The solid curve is the response of the signal's mid (Stereo and Mid
+bands); when a Side band is on, a second, dashed curve shows the response of
+the side (Stereo and Side bands).
+
+Typical uses: cut the low end of the side only (a high-pass in S mode, so the
+bass stays centred and mono-compatible), brighten the mid for a vocal without
+touching the width, or lift the highs of the side for more air. The bands run
+in order, each in its own domain. When no band is in Mid or Side mode the
+equalizer works as before, and sessions saved before the modes existed sound
+the same.
+
+With a mono or a multichannel track, a Mid band filters every channel and a
+Side band does nothing (there is no side signal).
 
 ## Side-chain: FxmeCompressor and FxmeGate
 
@@ -329,6 +359,7 @@ Attack/Sustain are signed amounts in percent (negative = attenuate, positive
 | 11 | Wet Gain (dB)      | -60 … 6                            | -6     |
 | 12 | Mode L             | 0 = seconds, 1 = sync, 2 = note    | 0      |
 | 13 | Mode R             | 0 = seconds, 1 = sync, 2 = note    | 0      |
+| 14 | Ping-pong          | 0 / 1                              | 0      |
 
 The two Delay inlets carry no unit of their own — the matching Mode inlet says
 how the number is read: seconds, a proportion of a whole note (0.25 being a

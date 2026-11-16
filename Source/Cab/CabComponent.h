@@ -42,9 +42,14 @@ public:
     void resized() override;
     void timerCallback() override;
 
+    /** Called after a file was embedded as an external IR (the plugin tells
+        FxmeNet that its state changed). */
+    std::function<void()> onExternalLoaded;
+
 private:
     Cab& cab;
     juce::AudioProcessorValueTreeState& apvts;
+    const juce::String paramPrefix;
     const bool compact;     // a wide, short slot: no title, flat knobs, one row of controls
 
     juce::Label        titleLabel;
@@ -52,6 +57,9 @@ private:
 
     juce::Label    irLLabel, irRLabel;
     juce::ComboBox irLBox, irRBox;
+    juce::TextButton irLLoad { "Load..." }, irRLoad { "Load..." };
+    std::unique_ptr<juce::FileChooser> chooser;
+    juce::String shownExtL, shownExtR;   // the external items' text, as last set
 
     fxme::FxmeSlider gainLSlider, gainRSlider;
     juce::Label      gainLLabel, gainRLabel;
@@ -66,6 +74,10 @@ private:
     std::unique_ptr<ComboBoxAttachment> irLAtt, irRAtt;
 
     fxme::FxmeLookAndFeel fxmeLookAndFeel;
+
+    juce::ComboBox& boxFor (int channel) { return channel == 0 ? irLBox : irRBox; }
+    void refreshExternalItemText();
+    void openExternalIRChooser (int channel);
 
     void setupGainSlider (fxme::FxmeSlider& slider, juce::Label& label,
                           const juce::String& text);

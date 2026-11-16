@@ -87,7 +87,7 @@ CabComponent::CabComponent (Cab& c,
                                     const juce::String& prefix,
                                     bool showTitle,
                                     bool compactLayout)
-    : cab (c), apvts (state), compact (compactLayout),
+    : cab (c), apvts (state), paramPrefix (prefix), compact (compactLayout),
       onButton (state, prefix + "_Cab_On", "On", cabTint),
       irLPlot (c, 0, cabTint),
       irRPlot (c, 1, cabTint.brighter (0.4f))
@@ -112,6 +112,8 @@ CabComponent::CabComponent (Cab& c,
         const auto& names = cab.getImpulseNames();
         for (int i = 0; i < names.size(); ++i)
             box.addItem (juce::File (names[i]).getFileNameWithoutExtension(), i + 1);
+        // One past the last built-in: the user's own file (the Load button's).
+        box.addItem ("External file", cab.getExternalIndex() + 1);
     };
 
     addAndMakeVisible (irLLabel);
@@ -122,7 +124,19 @@ CabComponent::CabComponent (Cab& c,
     irLBox.setColour (juce::ComboBox::outlineColourId, cabTint.darker());
     irLBox.setColour (juce::ComboBox::arrowColourId,   cabTint.brighter (0.3f));
     fillCombo (irLBox);
-    irLBox.onChange = [this] { graphNeedsUpdate = true; };
+    irLBox.onChange = [this]
+    {
+        graphNeedsUpdate = true;
+        // Picking "External file" with none loaded asks for one.
+        if (irLBox.getSelectedId() == cab.getExternalIndex() + 1 && ! cab.hasExternalIR (0))
+            openExternalIRChooser (0);
+    };
+
+    addAndMakeVisible (irLLoad);
+    irLLoad.setLookAndFeel (&fxmeLookAndFeel);
+    irLLoad.setColour (juce::TextButton::buttonColourId, cabTint.darker (0.6f));
+    irLLoad.setTooltip ("Load an impulse response of your own (WAV, AIFF or FLAC) for this side. It is stored in the session and in presets.");
+    irLLoad.onClick = [this] { openExternalIRChooser (0); };
     irLAtt = std::make_unique<ComboBoxAttachment> (apvts, prefix + "_Cab_IRL", irLBox);
 
     addAndMakeVisible (irRLabel);
@@ -133,7 +147,19 @@ CabComponent::CabComponent (Cab& c,
     irRBox.setColour (juce::ComboBox::outlineColourId, cabTint.darker());
     irRBox.setColour (juce::ComboBox::arrowColourId,   cabTint.brighter (0.3f));
     fillCombo (irRBox);
-    irRBox.onChange = [this] { graphNeedsUpdate = true; };
+    irRBox.onChange = [this]
+    {
+        graphNeedsUpdate = true;
+        // Picking "External file" with none loaded asks for one.
+        if (irRBox.getSelectedId() == cab.getExternalIndex() + 1 && ! cab.hasExternalIR (1))
+            openExternalIRChooser (1);
+    };
+
+    addAndMakeVisible (irRLoad);
+    irRLoad.setLookAndFeel (&fxmeLookAndFeel);
+    irRLoad.setColour (juce::TextButton::buttonColourId, cabTint.darker (0.6f));
+    irRLoad.setTooltip ("Load an impulse response of your own (WAV, AIFF or FLAC) for this side. It is stored in the session and in presets.");
+    irRLoad.onClick = [this] { openExternalIRChooser (1); };
     irRAtt = std::make_unique<ComboBoxAttachment> (apvts, prefix + "_Cab_IRR", irRBox);
 
     setupGainSlider (gainLSlider, gainLLabel, "Left Gain");
@@ -145,10 +171,73 @@ CabComponent::CabComponent (Cab& c,
     addAndMakeVisible (irLPlot);
     addAndMakeVisible (irRPlot);
 
+    refreshExternalItemText();
     startTimerHz (24);
 }
 
-CabComponent::~CabComponent() = default;
+CabComponent::~CabComponent()
+{
+    irLLoad.setLookAndFeel (nullptr);
+    irRLoad.setLookAndFeel (nullptr);
+}
+
+void CabComponent::refreshExternalItemText()
+{
+    const int id = cab.getExternalIndex() + 1;
+    for (int ch = 0; ch < Cab::NumSlots; ++ch)
+    {
+        const auto name = cab.getExternalIRName (ch);
+        const auto text = name.isNotEmpty() ? "Ext: " + juce::File (name).getFileNameWithoutExtension()
+                                            : juce::String ("External file");
+        auto& shown = ch == 0 ? shownExtL : shownExtR;
+        if (text != shown)
+        {
+            shown = text;
+            boxFor (ch).changeItemText (id, text);
+        }
+    }
+}
+
+void CabComponent::openExternalIRChooser (int channel)
+{
+    chooser = std::make_unique<juce::FileChooser> (
+        channel == 0 ? "Select the left impulse response" : "Select the right impulse response",
+        juce::File::getSpecialLocation (juce::File::userDocumentsDirectory),
+        "*.wav;*.aif;*.aiff;*.flac");
+
+    const auto chooserFlags = juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles;
+
+    // Safe against the editor closing while the chooser is open.
+    juce::Component::SafePointer<CabComponent> safe (this);
+    chooser->launchAsync (chooserFlags, [safe, channel] (const juce::FileChooser& fc)
+    {
+        if (safe == nullptr)
+            return;
+        auto& self = *safe;
+
+        const auto results = fc.getResults();
+        const bool loaded = ! results.isEmpty() && self.cab.setExternalIRFile (channel, results[0]);
+
+        const auto* paramId = channel == 0 ? "_Cab_IRL" : "_Cab_IRR";
+        auto* param = self.apvts.getParameter (self.paramPrefix + paramId);
+
+        if (! loaded)
+        {
+            // A cancel or an unreadable file: the box shows what the parameter holds.
+            if (param != nullptr)
+                self.boxFor (channel).setSelectedId ((int) param->convertFrom0to1 (param->getValue()),
+                                                     juce::dontSendNotification);
+            return;
+        }
+
+        self.refreshExternalItemText();
+        self.graphNeedsUpdate = true;
+        if (param != nullptr)
+            param->setValueNotifyingHost (param->convertTo0to1 ((float) (self.cab.getExternalIndex() + 1)));
+        if (self.onExternalLoaded)
+            self.onExternalLoaded();
+    });
+}
 
 void CabComponent::timerCallback()
 {
@@ -158,6 +247,7 @@ void CabComponent::timerCallback()
     if (graphNeedsUpdate.exchange (false) || generation != lastIrGeneration)
     {
         lastIrGeneration = generation;
+        refreshExternalItemText();
         irLPlot.updateGraph();
         irRPlot.updateGraph();
     }
@@ -173,24 +263,30 @@ void CabComponent::resized()
     using fi = juce::FlexItem;
     auto area = getLocalBounds().reduced (5);
 
-    juce::FlexBox top, cols, colL, colR, gainRowL, gainRowR, fMain;
+    juce::FlexBox top, cols, colL, colR, gainRowL, gainRowR, boxRowL, boxRowR, fMain;
     top.flexDirection      = juce::FlexBox::Direction::row;
     cols.flexDirection     = juce::FlexBox::Direction::row;
     colL.flexDirection     = juce::FlexBox::Direction::column;
     colR.flexDirection     = juce::FlexBox::Direction::column;
     gainRowL.flexDirection = juce::FlexBox::Direction::row;
     gainRowR.flexDirection = juce::FlexBox::Direction::row;
+    boxRowL.flexDirection  = juce::FlexBox::Direction::row;
+    boxRowR.flexDirection  = juce::FlexBox::Direction::row;
     fMain.flexDirection    = juce::FlexBox::Direction::column;
 
     top.items.add (fi (onButton).withWidth (fxmefx::kOnButtonWidth));
     top.items.add (fi (titleLabel).withFlex (1.0f));
 
-    auto buildColumn = [] (juce::FlexBox& col, juce::FlexBox& gainRow,
-                           juce::Label& header, juce::ComboBox& box, CabIRPlot& plot,
+    auto buildColumn = [] (juce::FlexBox& col, juce::FlexBox& gainRow, juce::FlexBox& boxRow,
+                           juce::Label& header, juce::ComboBox& box, juce::TextButton& load, CabIRPlot& plot,
                            juce::Label& gainLabel, fxme::FxmeSlider& gainSlider)
     {
         gainRow.items.add (fi (gainLabel).withFlex (0.25f));
         gainRow.items.add (fi (gainSlider).withFlex (0.75f));
+
+        // The chooser and, beside it, the button for a file of the user's.
+        boxRow.items.add (fi (box).withFlex (1.0f));
+        boxRow.items.add (fi (load).withWidth (60.0f).withMargin (juce::FlexItem::Margin (0.f, 0.f, 0.f, 4.f)));
 
         // The three control rows are sized by their minimum, not by their share
         // of the column: a maximum alone caps a row that has room to spare and
@@ -202,7 +298,7 @@ void CabComponent::resized()
         // waveform, while the others degrade into being unusable.
         col.items.add (fi (header).withFlex (0.10f, 0.0f)
                                   .withMinHeight (18.0f).withMaxHeight (24.0f));
-        col.items.add (fi (box).withFlex (0.12f, 0.0f)
+        col.items.add (fi (boxRow).withFlex (0.12f, 0.0f)
                                .withMinHeight (28.0f).withMaxHeight (32.0f)
                                .withMargin (juce::FlexItem::Margin (4.f, 0.f, 4.f, 0.f)));
         col.items.add (fi (plot).withFlex (1.0f, 4.0f).withMinHeight (0.0f));
@@ -211,8 +307,8 @@ void CabComponent::resized()
                                    .withMargin (juce::FlexItem::Margin (8.f, 0.f, 0.f, 0.f)));
     };
 
-    buildColumn (colL, gainRowL, irLLabel, irLBox, irLPlot, gainLLabel, gainLSlider);
-    buildColumn (colR, gainRowR, irRLabel, irRBox, irRPlot, gainRLabel, gainRSlider);
+    buildColumn (colL, gainRowL, boxRowL, irLLabel, irLBox, irLLoad, irLPlot, gainLLabel, gainLSlider);
+    buildColumn (colR, gainRowR, boxRowR, irRLabel, irRBox, irRLoad, irRPlot, gainRLabel, gainRSlider);
 
     cols.items.add (fi (colL).withFlex (1.0f).withMargin (juce::FlexItem::Margin (0.f, 5.f, 0.f, 0.f)));
     cols.items.add (fi (colR).withFlex (1.0f).withMargin (juce::FlexItem::Margin (0.f, 0.f, 0.f, 5.f)));

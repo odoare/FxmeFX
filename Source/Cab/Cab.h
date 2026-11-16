@@ -21,7 +21,7 @@
 #include <atomic>
 #include <vector>
 
-class Cab
+class Cab : private juce::ValueTree::Listener
 {
 public:
     static constexpr int NumSlots = 2;            // 0 = left, 1 = right
@@ -38,8 +38,23 @@ public:
     void setImpulseList (const juce::StringArray& names, const juce::StringArray& resources);
 
     /** Load slot @p channel (0 = L, 1 = R) with the IR at @p index in the
-        list passed to setImpulseList(). */
+        list passed to setImpulseList(), or, at getExternalIndex(), with the
+        file embedded for that slot (setExternalIRFile). */
     void selectImpulse (int channel, int index);
+
+    // An IR of the user's own for each side. The slot sits one past the last
+    // built-in (index getExternalIndex(), parameter value getExternalIndex() + 1).
+    // The file's audio is embedded in the APVTS state (fxme::EmbeddedAudio), so
+    // presets and sessions carry it. Needs assignParameters() first.
+    int  getExternalIndex() const noexcept { return irResources.size(); }
+    /** Embeds `file` (wav, aiff, flac) for `channel`; the caller then selects
+        the external slot. False when the file cannot be read. Message thread. */
+    bool setExternalIRFile (int channel, const juce::File& file);
+    bool hasExternalIR (int channel) const;
+    /** The embedded file's name ("MyCab.wav"), or empty. */
+    juce::String getExternalIRName (int channel) const;
+    static juce::String externalIRSlotId (const juce::String& prefix, int channel)
+        { return prefix + (channel == 0 ? "_Cab_ExtIRL" : "_Cab_ExtIRR"); }
 
     void setOn (bool shouldBeOn);
     bool isOn() const { return on; }
@@ -62,6 +77,8 @@ public:
         no locking, safe from process(). The IR selectors are handled by the
         loader thread instead; see serviceParameters(). */
     void checkParameters();
+    /** `numIRs` built-in IRs; the IR selectors take one more value, the
+        external slot. */
     static void addParameters (std::vector<std::unique_ptr<juce::RangedAudioParameter>>& params,
                                const juce::String& prefix,
                                int numIRs = 0);
@@ -167,12 +184,25 @@ private:
     std::atomic<float>* irRParam = nullptr;
     std::array<std::atomic<float>*, NumSlots> gainParam { nullptr, nullptr };
 
+    // External IRs: where they live in the state, and a flag per slot set
+    // (from any thread) when that part of the state changed.
+    juce::AudioProcessorValueTreeState* apvtsRef = nullptr;
+    std::array<juce::String, NumSlots> extSlotId;
+    std::array<std::atomic<bool>, NumSlots> externalChanged { false, false };
+    bool isExternalSlotEntry (const juce::ValueTree& tree) const;
+    void valueTreeRedirected (juce::ValueTree&) override;
+    void valueTreePropertyChanged (juce::ValueTree&, const juce::Identifier&) override;
+    void valueTreeChildAdded (juce::ValueTree&, juce::ValueTree&) override;
+    void valueTreeChildRemoved (juce::ValueTree&, juce::ValueTree&, int) override;
+
     float lastOn  = -1.0f;
     int   lastIRL = -1;
     int   lastIRR = -1;
     std::array<float, NumSlots> lastGain { -1000.0f, -1000.0f };
 
     void loadResource (int channel, const juce::String& resourceName);
+    void loadExternal (int channel);               // from the state; clears the slot when none
+    void loadSlot (int channel, int index);        // a built-in, the external, or nothing
     void loadIRFromReader (int channel, juce::AudioFormatReader& reader);
     void rebuildEngineImpulse();   // builds a new Stage and swaps it in
     void publishStage (std::unique_ptr<Stage> next);

@@ -17,7 +17,7 @@ class FxmeTransientAudioProcessorEditor  : public juce::AudioProcessorEditor
 {
 public:
     static constexpr int kPreferredWidth  = 480;
-    static constexpr int kPreferredHeight = 300 + fxmefx::kTopBarHeight;
+    static constexpr int kPreferredHeight = 220 + fxmefx::kTopBarHeight;
 
     FxmeTransientAudioProcessorEditor (FxmeTransientAudioProcessor&);
     ~FxmeTransientAudioProcessorEditor() override;
