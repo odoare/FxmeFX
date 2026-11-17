@@ -135,7 +135,8 @@ fxmetools_add_clap(FxmeCab
 
 # ── Pure Data external ────────────────────────────────────────────────────────
 # Reuses the same FxmeCabBinaryData target as the VST build, so the Pd
-# external ships the full cabinet IR collection without any file picker.
+# external ships the full cabinet IR collection without any file picker. The
+# user-IR slot is hidden in the Pd build (FXME_PD_BUILD in Cab::addParameters).
 include(${CMAKE_CURRENT_LIST_DIR}/../PdCommon/PdExternal.cmake)
 fxme_add_pd_external(FxmeCab_pd
     LIBNAME   fxmecab~
@@ -146,8 +147,10 @@ fxme_add_pd_external(FxmeCab_pd
         ${FXMETOOLS_WDL_DIR}/convoengine.cpp
         ${FXMETOOLS_WDL_DIR}/fft.c
         ${FXMETOOLS_WDL_DIR}/resample.cpp
+        ${FXMETOOLS_MODULE_DIR}/presets/EmbeddedAudio.cpp
     INCLUDES
         ${CMAKE_CURRENT_SOURCE_DIR}
+        ${FXMETOOLS_ROOT}
         ${FXMETOOLS_WDL_DIR}
     DEFINES
         JucePlugin_Name="FxmeCab"

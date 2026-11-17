@@ -200,8 +200,13 @@ void Cab::addParameters (std::vector<std::unique_ptr<juce::RangedAudioParameter>
                              const juce::String& prefix,
                              int numIRs)
 {
-    // One more than there are built-ins: the external slot.
+    // One more than there are built-ins: the external slot (hidden in the Pd
+    // build, which has no file picker).
+   #ifdef FXME_PD_BUILD
+    const int maxIR = juce::jmax (1, numIRs);
+   #else
     const int maxIR = juce::jmax (1, numIRs) + 1;
+   #endif
 
     params.push_back (std::make_unique<juce::AudioParameterBool> (
         juce::ParameterID { prefix + "_Cab_On",   1 }, prefix + " Cab On", true));
